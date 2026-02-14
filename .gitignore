@@ -1,0 +1,13 @@
+node_modules/
+dist/
+data-*/
+test-data/
+test-data-multi/
+.tmp-shares/
+.tmp-downloads/
+*.log
+.env
+nul
+*.zip
+desktop.ini
+.claude/

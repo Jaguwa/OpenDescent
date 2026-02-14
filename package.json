@@ -1,0 +1,42 @@
+{
+  "name": "decentra-net",
+  "version": "0.1.0",
+  "description": "Decentralized P2P social network with encrypted messaging and real-time calls",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "alice": "node dist/index.js --port 6001 --name Alice --web-port 3000 -d ./data-alice",
+    "bob": "node dist/index.js --port 6003 --name Bob --web-port 3001 -d ./data-bob",
+    "charlie": "node dist/index.js --port 6005 --name Charlie --web-port 3002 -d ./data-charlie",
+    "test:integration": "node dist/test/integration.js",
+    "test:multi": "node dist/test/multi-peer.js",
+    "test:all": "node dist/test/integration.js && node dist/test/multi-peer.js",
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@chainsafe/libp2p-noise": "^16.1.0",
+    "@chainsafe/libp2p-yamux": "^7.0.1",
+    "@libp2p/bootstrap": "^11.0.0",
+    "@libp2p/circuit-relay-v2": "^3.1.0",
+    "@libp2p/dcutr": "^2.0.0",
+    "@libp2p/identify": "^3.0.0",
+    "@libp2p/kad-dht": "^14.1.0",
+    "@libp2p/mdns": "^11.0.0",
+    "@libp2p/tcp": "^10.0.0",
+    "@libp2p/websockets": "^9.0.0",
+    "level": "^8.0.1",
+    "libp2p": "^2.4.0",
+    "multiformats": "^13.3.1",
+    "uint8arrays": "^5.1.0",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.18.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.0"
+  }
+}

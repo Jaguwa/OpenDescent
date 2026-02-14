@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DecentraNet</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ─── Sidebar ─────────────────────────────────────────── -->
+    <aside id="sidebar">
+      <div id="identity-bar">
+        <div id="my-name">Connecting...</div>
+        <div id="my-id"></div>
+        <div id="connection-status" class="status-dot offline"></div>
+      </div>
+
+      <div id="sidebar-tabs">
+        <button class="tab active" data-tab="chats">Chats</button>
+        <button class="tab" data-tab="contacts">Contacts</button>
+        <button class="tab" data-tab="groups">Groups</button>
+        <button id="btn-connect-peer" class="tab connect-tab" title="Connect Peer">+</button>
+      </div>
+
+      <!-- Chats list -->
+      <div id="tab-chats" class="tab-content active">
+        <div id="conversations-list" class="list"></div>
+      </div>
+
+      <!-- Contacts list -->
+      <div id="tab-contacts" class="tab-content">
+        <div id="contacts-list" class="list"></div>
+      </div>
+
+      <!-- Groups list -->
+      <div id="tab-groups" class="tab-content">
+        <button id="btn-create-group" class="action-btn">+ New Group</button>
+        <div id="groups-list" class="list"></div>
+      </div>
+    </aside>
+
+    <!-- ─── Main Chat Area ──────────────────────────────────── -->
+    <main id="chat-area">
+      <!-- Empty state -->
+      <div id="empty-state">
+        <div class="empty-icon">&#9672;</div>
+        <h2>DecentraNet</h2>
+        <p>Select a conversation or contact to start chatting.</p>
+        <p class="subtle">Peer-to-peer. End-to-end encrypted. No servers.</p>
+      </div>
+
+      <!-- Active chat -->
+      <div id="active-chat" class="hidden">
+        <div id="chat-header">
+          <div id="chat-peer-info">
+            <span id="chat-peer-name"></span>
+            <span id="chat-peer-status" class="subtle"></span>
+          </div>
+          <div id="chat-actions">
+            <button id="btn-voice-call" class="icon-btn" title="Voice Call">&#128222;</button>
+            <button id="btn-video-call" class="icon-btn" title="Video Call">&#128249;</button>
+            <button id="btn-share-file" class="icon-btn" title="Share File">&#128206;</button>
+          </div>
+        </div>
+
+        <div id="messages-container">
+          <div id="messages"></div>
+        </div>
+
+        <div id="input-area">
+          <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+          <button id="btn-send">Send</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ─── Call Overlay ────────────────────────────────────── -->
+    <div id="call-overlay" class="hidden">
+      <div id="call-container">
+        <div id="call-info">
+          <span id="call-peer-name"></span>
+          <span id="call-status">Connecting...</span>
+          <span id="call-timer"></span>
+        </div>
+        <div id="video-container" class="hidden">
+          <video id="remote-video" autoplay playsinline></video>
+          <video id="local-video" autoplay playsinline muted></video>
+        </div>
+        <div id="call-controls">
+          <button id="btn-toggle-mute" class="call-btn">Mute</button>
+          <button id="btn-toggle-video" class="call-btn hidden">Camera</button>
+          <button id="btn-end-call" class="call-btn end">End</button>
+        </div>
+        <div id="incoming-call-controls" class="hidden">
+          <button id="btn-accept-call" class="call-btn accept">Accept</button>
+          <button id="btn-reject-call" class="call-btn end">Reject</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Create Group Modal ──────────────────────────────── -->
+    <div id="group-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Create Group</h3>
+        <input type="text" id="group-name-input" placeholder="Group name">
+        <div id="group-member-picker">
+          <p class="subtle">Select members:</p>
+          <div id="group-members-list"></div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-cancel-group" class="btn-secondary">Cancel</button>
+          <button id="btn-confirm-group" class="btn-primary">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Connect Peer Modal ──────────────────────────────── -->
+    <div id="connect-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Connect Peer</h3>
+
+        <div class="connect-section">
+          <p class="subtle">Your invite code (share with others):</p>
+          <div id="invite-code-display" class="invite-code">Loading...</div>
+          <button id="btn-copy-invite" class="btn-primary" style="margin-top:8px; width:100%">Copy Invite Code</button>
+        </div>
+
+        <hr class="modal-divider">
+
+        <div class="connect-section">
+          <p class="subtle">Paste a peer's invite code:</p>
+          <textarea id="connect-code-input" class="invite-input" rows="3" placeholder="Paste invite code here..."></textarea>
+          <button id="btn-connect-invite" class="btn-primary" style="margin-top:8px; width:100%">Connect</button>
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px">
+          <button id="btn-cancel-connect" class="btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── File Received Toast ─────────────────────────────── -->
+    <div id="toast-container"></div>
+  </div>
+
+  <!-- Hidden file input -->
+  <input type="file" id="file-input" class="hidden">
+
+  <script src="app.js"></script>
+</body>
+</html>

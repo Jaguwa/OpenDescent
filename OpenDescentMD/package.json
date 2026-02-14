@@ -1,0 +1,38 @@
+{
+  "name": "decentra-net",
+  "version": "0.1.0",
+  "description": "Decentralized P2P social network with encrypted messaging and real-time calls",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@chainsafe/libp2p-noise": "^16.1.0",
+    "@chainsafe/libp2p-yamux": "^7.0.1",
+    "@libp2p/bootstrap": "^11.0.0",
+    "@libp2p/circuit-relay-v2": "^3.1.0",
+    "@libp2p/dcutr": "^2.0.0",
+    "@libp2p/identify": "^3.0.0",
+    "@libp2p/kad-dht": "^14.1.0",
+    "@libp2p/mdns": "^11.0.0",
+    "@libp2p/tcp": "^10.0.0",
+    "@libp2p/websockets": "^9.0.0",
+    "libp2p": "^2.4.0",
+    "level": "^8.0.1",
+    "multiformats": "^13.3.1",
+    "sodium-native": "^4.3.1",
+    "simple-peer": "^9.11.1",
+    "protobufjs": "^7.4.0",
+    "uint8arrays": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "ts-node": "^10.9.2",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.14"
+  }
+}
