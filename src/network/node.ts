@@ -31,8 +31,11 @@ import { multiaddr } from '@multiformats/multiaddr';
 import type { NodeConfig, Identity, PeerProfile, NetworkEvent, NetworkEventType } from '../types/index.js';
 import { generateIdentity, loadIdentity, saveIdentity, publicKeyToPeerId, createPeerProfile, verifyPeerProfile } from '../crypto/identity.js';
 
-/** Default bootstrap peers for the DecentraNet network (add public nodes here) */
-const DEFAULT_BOOTSTRAP_PEERS: string[] = [];
+/** Default bootstrap peers for the DecentraNet network */
+const DEFAULT_BOOTSTRAP_PEERS: string[] = [
+  '/ip4/188.166.151.203/tcp/6001/p2p/12D3KooWStM6ett7nNXKdSy7kTqxdYmYni2jcmvNSpAs9Pbfo1tA',
+  '/ip4/188.166.151.203/tcp/6002/ws/p2p/12D3KooWStM6ett7nNXKdSy7kTqxdYmYni2jcmvNSpAs9Pbfo1tA',
+];
 
 const PROTOCOL_PREFIX = '/decentranet';
 export const PROTOCOLS = {
