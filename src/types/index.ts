@@ -223,6 +223,7 @@ export interface NodeConfig {
   port: number;
   wsPort?: number;
   isPublic?: boolean;
+  announceIp?: string;
   displayName: string;
   bootstrapPeers: string[];
   dataDir: string;

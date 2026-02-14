@@ -88,12 +88,20 @@ export class DecentraNode {
       ...this.config.bootstrapPeers,
     ].filter((addr, i, arr) => arr.indexOf(addr) === i); // dedupe
 
+    // If an announce IP is set (e.g., public VPS IP), advertise those addresses
+    const announce: string[] = [];
+    if (this.config.announceIp) {
+      announce.push(`/ip4/${this.config.announceIp}/tcp/${this.config.port}`);
+      announce.push(`/ip4/${this.config.announceIp}/tcp/${wsPort}/ws`);
+    }
+
     const libp2pConfig: any = {
       addresses: {
         listen: [
           `/ip4/0.0.0.0/tcp/${this.config.port}`,
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
         ],
+        ...(announce.length > 0 ? { announce } : {}),
       },
       transports: [
         tcp(),

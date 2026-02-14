@@ -64,6 +64,9 @@ function parseArgs(): ParsedArgs {
       case '--public':
         config.isPublic = true;
         break;
+      case '--announce-ip':
+        config.announceIp = args[++i];
+        break;
       case '--connect':
       case '-c':
         config.connect = args[++i];
@@ -701,6 +704,7 @@ Options:
     port,
     wsPort: args.wsPort,
     isPublic: args.isPublic || false,
+    announceIp: args.announceIp,
     displayName: args.displayName || `Peer-${Math.floor(Math.random() * 10000)}`,
     bootstrapPeers: args.bootstrapPeers || [],
     dataDir,
