@@ -51,6 +51,7 @@ export const PROTOCOLS = {
   FRIEND_REQUEST: `${PROTOCOL_PREFIX}/friend-request/1.0.0`,
   POST_BROADCAST: `${PROTOCOL_PREFIX}/post-broadcast/1.0.0`,
   POST_INTERACTION: `${PROTOCOL_PREFIX}/post-interaction/1.0.0`,
+  VOUCH_BROADCAST: `${PROTOCOL_PREFIX}/vouch-broadcast/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -76,6 +77,7 @@ export class DecentraNode {
   private friendRequestHandler?: (data: string) => Promise<string>;
   private postBroadcastHandler?: (data: string) => Promise<void>;
   private postInteractionHandler?: (data: string) => Promise<string>;
+  private vouchBroadcastHandler?: (data: string) => Promise<void>;
   private passphrase: string;
 
   // Rate limiting: 100 messages per 60-second window per peer
@@ -352,6 +354,11 @@ export class DecentraNode {
   /** Register handler for post interactions (Phase 4) */
   setPostInteractionHandler(handler: (data: string) => Promise<string>): void {
     this.postInteractionHandler = handler;
+  }
+
+  /** Register handler for vouch broadcasts (Trust Web) */
+  setVouchBroadcastHandler(handler: (data: string) => Promise<void>): void {
+    this.vouchBroadcastHandler = handler;
   }
 
   /** Broadcast data to all connected peers on a given protocol */
@@ -860,6 +867,21 @@ export class DecentraNode {
         }
       } catch (error) {
         console.error(`[Protocol] Error handling post interaction:`, error);
+      }
+    });
+
+    // Vouch broadcast (Trust Web)
+    await this.node.handle(PROTOCOLS.VOUCH_BROADCAST, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.vouchBroadcastHandler) {
+          await this.vouchBroadcastHandler(text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('OK'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling vouch broadcast:`, error);
       }
     });
 

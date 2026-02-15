@@ -12,7 +12,7 @@ import { Level } from 'level';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment } from '../types/index.js';
+import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation } from '../types/index.js';
 
 /** Decrypted message for conversation history */
 export interface StoredMessage {
@@ -48,6 +48,9 @@ const NS = {
   POST_IDX: 'postidx:',
   REACTION: 'reaction:',
   COMMENT: 'comment:',
+  VOUCH: 'vouch:',
+  VOUCH_IDX: 'vouchidx:',
+  VOUCH_REV: 'vouchrev:',
 } as const;
 
 export class LocalStore {
@@ -686,6 +689,86 @@ export class LocalStore {
       comments.push(JSON.parse(value));
     }
     return comments;
+  }
+
+  // ─── Vouch Storage (Trust Web) ──────────────────────────────────────────
+
+  async storeVouch(vouch: Vouch): Promise<void> {
+    await this.db.put(NS.VOUCH + vouch.vouchId, JSON.stringify(vouch));
+    await this.db.put(NS.VOUCH_IDX + vouch.fromId + ':' + vouch.toId, vouch.vouchId);
+  }
+
+  async getVouch(vouchId: string): Promise<Vouch | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.VOUCH + vouchId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getVouchByPair(fromId: PeerId, toId: PeerId): Promise<Vouch | null> {
+    try {
+      const vouchId = await this.db.get(NS.VOUCH_IDX + fromId + ':' + toId);
+      return this.getVouch(vouchId);
+    } catch {
+      return null;
+    }
+  }
+
+  async revokeVouch(revocation: VouchRevocation): Promise<void> {
+    await this.db.put(NS.VOUCH_REV + revocation.vouchId, JSON.stringify(revocation));
+    // Delete the vouch and its index
+    const vouch = await this.getVouch(revocation.vouchId);
+    if (vouch) {
+      try { await this.db.del(NS.VOUCH + revocation.vouchId); } catch {}
+      try { await this.db.del(NS.VOUCH_IDX + vouch.fromId + ':' + vouch.toId); } catch {}
+    }
+  }
+
+  async isRevoked(vouchId: string): Promise<boolean> {
+    try {
+      await this.db.get(NS.VOUCH_REV + vouchId);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getVouchesFrom(peerId: PeerId): Promise<Vouch[]> {
+    const vouches: Vouch[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.VOUCH, lt: NS.VOUCH + '\xFF' })) {
+      const vouch = JSON.parse(value) as Vouch;
+      if (vouch.fromId === peerId) vouches.push(vouch);
+    }
+    return vouches;
+  }
+
+  async getVouchesFor(peerId: PeerId): Promise<Vouch[]> {
+    const vouches: Vouch[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.VOUCH, lt: NS.VOUCH + '\xFF' })) {
+      const vouch = JSON.parse(value) as Vouch;
+      if (vouch.toId === peerId) vouches.push(vouch);
+    }
+    return vouches;
+  }
+
+  async getVouchCount(peerId: PeerId): Promise<{ given: number; received: number }> {
+    let given = 0;
+    let received = 0;
+    for await (const [, value] of this.db.iterator({ gte: NS.VOUCH, lt: NS.VOUCH + '\xFF' })) {
+      const vouch = JSON.parse(value) as Vouch;
+      if (vouch.fromId === peerId) given++;
+      if (vouch.toId === peerId) received++;
+    }
+    return { given, received };
+  }
+
+  async getAllVouches(): Promise<Vouch[]> {
+    const vouches: Vouch[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.VOUCH, lt: NS.VOUCH + '\xFF' })) {
+      vouches.push(JSON.parse(value));
+    }
+    return vouches;
   }
 
   // ─── Stats ─────────────────────────────────────────────────────────────

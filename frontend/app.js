@@ -943,6 +943,7 @@ function renderBentoProfile(data) {
         html += `<div class="bento-card card-stats ${sizeClass}">
           <div class="stat-item"><div class="stat-value">${data.friendCount || 0}</div><div class="stat-label">Friends</div></div>
           <div class="stat-item"><div class="stat-value">${data.postCount || 0}</div><div class="stat-label">Posts</div></div>
+          <div class="stat-item"><div class="stat-value">${data.vouchCount || 0}</div><div class="stat-label">Vouches</div></div>
         </div>`;
         break;
       case 'music':
@@ -965,7 +966,47 @@ function renderBentoProfile(data) {
     }
   }
 
+  // Trust section (after bento cards)
+  const isSelf = data.isSelf;
+  const safePeerId = escapeAttr(peerId);
+  if (!isSelf) {
+    html += `<div class="trust-section" id="trust-section-${safePeerId}">`;
+    // Vouch / Revoke button
+    if (data.isFriend && !data.isVouched) {
+      html += `<button class="vouch-btn" onclick="vouchForPeer('${safePeerId}')">&#128737; Vouch for ${escapeHtml(displayName)}</button>`;
+    } else if (data.isVouched) {
+      html += `<button class="revoke-vouch-btn" id="revoke-btn-${safePeerId}">&#128737; Vouched &mdash; Click to Revoke</button>`;
+    }
+    // Trust path placeholder
+    html += `<div id="trust-path-${safePeerId}" class="trust-path-container"></div>`;
+    html += `</div>`;
+  }
+
   bento.innerHTML = html;
+
+  // Wire revoke button if present
+  if (!isSelf && data.isVouched) {
+    send('get_my_vouches').then(vouches => {
+      const myVouch = vouches.find(v => v.toId === peerId);
+      if (myVouch) {
+        const btn = document.getElementById('revoke-btn-' + peerId);
+        if (btn) btn.onclick = () => revokeVouch(myVouch.vouchId, peerId);
+      }
+    }).catch(() => {});
+  }
+
+  // Load trust path for non-self, non-direct-friend peers
+  if (!isSelf) {
+    loadTrustPath(peerId).then(result => {
+      const el = document.getElementById('trust-path-' + peerId);
+      if (el && result && result.found && result.distance > 1) {
+        el.innerHTML = `<div style="color:var(--text-secondary);font-size:0.85em;margin-bottom:6px">Trust path (${result.distance} hops):</div>` + renderTrustPath(result);
+        requestAnimationFrame(() => {
+          el.querySelectorAll('canvas[data-peerid]').forEach(c => generateAvatar(c.dataset.peerid, c, 28));
+        });
+      }
+    }).catch(() => {});
+  }
 
   // Render avatars after DOM update
   requestAnimationFrame(() => {
@@ -1103,7 +1144,7 @@ function renderDiscoverResults(results, friendIds, isBrowse) {
       <canvas width="40" height="40" data-peerid="${safePeerId}"></canvas>
       <div class="discover-info">
         <div class="discover-name" onclick="openPeerProfile('${safePeerId}')" style="cursor:pointer">${escapeHtml(r.displayName)}</div>
-        <div class="discover-meta">${r.isOnline ? '<span class="online-dot"></span> Online' : 'Offline'} &middot; ${r.hopDistance} hop${r.hopDistance > 1 ? 's' : ''}</div>
+        <div class="discover-meta">${r.isOnline ? '<span class="online-dot"></span> Online' : 'Offline'} &middot; ${r.hopDistance} hop${r.hopDistance > 1 ? 's' : ''}${r.vouchCount ? ' &middot; <span class="vouch-count-badge">&#128737; ' + r.vouchCount + '</span>' : ''}</div>
       </div>
       ${isFriend
         ? '<span class="discover-action friend-badge">Friend</span>'
@@ -1157,6 +1198,50 @@ async function respondFriendRequest(requestId, accept) {
     showToast(accept ? 'Friend added!' : 'Request rejected');
     loadFriendRequests();
   } catch (e) { showToast('Failed', e.message); }
+}
+
+// ─── Trust Web ──────────────────────────────────────────────────────────────
+
+async function vouchForPeer(peerId) {
+  try {
+    await send('vouch_peer', { peerId });
+    showToast('Vouched!', 'Trust vouch recorded');
+    openProfile(peerId);
+  } catch (e) { showToast('Failed to vouch', e.message); }
+}
+
+async function revokeVouch(vouchId, peerId) {
+  try {
+    await send('revoke_vouch', { vouchId });
+    showToast('Vouch revoked');
+    openProfile(peerId);
+  } catch (e) { showToast('Failed to revoke', e.message); }
+}
+
+async function loadTrustPath(peerId) {
+  try {
+    const result = await send('get_trust_path', { toId: peerId });
+    return result;
+  } catch (e) {
+    console.error('Failed to load trust path:', e);
+    return null;
+  }
+}
+
+function renderTrustPath(pathResult) {
+  if (!pathResult || !pathResult.found || pathResult.path.length <= 1) return '';
+  const nodes = pathResult.path.map((n, i) => {
+    const name = escapeHtml(n.displayName || n.peerId.slice(0, 8));
+    const safePeerId = escapeAttr(n.peerId);
+    const isFirst = i === 0;
+    const isLast = i === pathResult.path.length - 1;
+    const label = isFirst ? 'You' : name;
+    return `<div class="trust-path-node" onclick="openPeerProfile('${safePeerId}')" title="${name}">
+      <canvas width="28" height="28" data-peerid="${safePeerId}"></canvas>
+      <span>${label}</span>
+    </div>`;
+  });
+  return `<div class="trust-path-chain">${nodes.join('<span class="trust-arrow">&rarr;</span>')}</div>`;
 }
 
 // ─── Feed & Posts (Phase 4) ─────────────────────────────────────────────────

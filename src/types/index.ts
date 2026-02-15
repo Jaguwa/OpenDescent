@@ -452,6 +452,44 @@ export interface PostComment {
   signature: string;
 }
 
+// ─── Trust Web ───────────────────────────────────────────────────────────────
+
+/** A signed vouch — "I trust this peer" */
+export interface Vouch {
+  vouchId: string;
+  fromId: PeerId;
+  toId: PeerId;
+  fromName?: string;
+  toName?: string;
+  message?: string;
+  timestamp: number;
+  signature: string;
+  hopCount: number;
+  maxHops: number;
+}
+
+/** Revoke a previously issued vouch */
+export interface VouchRevocation {
+  revocationId: string;
+  vouchId: string;
+  fromId: PeerId;
+  timestamp: number;
+  signature: string;
+}
+
+/** A node in a trust path */
+export interface TrustPathNode {
+  peerId: PeerId;
+  displayName?: string;
+}
+
+/** Result of a trust path query */
+export interface TrustPathResult {
+  found: boolean;
+  path: TrustPathNode[];
+  distance: number;
+}
+
 // ─── Account Recovery ────────────────────────────────────────────────────────
 
 /** Account bundle distributed to network peers for recovery */

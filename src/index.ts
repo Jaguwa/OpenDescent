@@ -20,6 +20,7 @@ import { CallManager } from './media/webrtc.js';
 import { GroupManager } from './messaging/groups.js';
 import { ContentManager, type SharedFileInfo } from './content/sharing.js';
 import { PostService } from './content/posts.js';
+import { TrustWebService } from './trust/web.js';
 import { APIServer } from './api/server.js';
 import type { NodeConfig, Message, PeerProfile, ContentType } from './types/index.js';
 
@@ -761,6 +762,12 @@ Options:
   const groups = new GroupManager(node, store);
   const content = new ContentManager(node, store);
   const posts = new PostService(node, store);
+  const trustWeb = new TrustWebService(node, store);
+
+  // Wire vouch broadcast handler (Trust Web)
+  node.setVouchBroadcastHandler(async (data) => {
+    await trustWeb.handleIncomingVouch(data);
+  });
 
   // Wire group message handler into the messaging layer
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
@@ -954,6 +961,7 @@ Options:
     groups,
     content,
     posts,
+    trustWeb,
   });
 
   // Periodic cleanup of expired pending messages (hourly)

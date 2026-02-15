@@ -11,4 +11,5 @@ nul
 *.zip
 desktop.ini
 release/
+release2/
 .claude/

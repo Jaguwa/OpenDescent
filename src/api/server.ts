@@ -13,7 +13,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
-import type { Message, PeerId, ContentType, ThemePreferences, UserProfile, FriendRequest, Post } from '../types/index.js';
+import type { Message, PeerId, ContentType, ThemePreferences, UserProfile, FriendRequest, Post, Vouch } from '../types/index.js';
 import { sign, verify } from '../crypto/identity.js';
 import type { DecentraNode } from '../network/node.js';
 import type { LocalStore } from '../storage/store.js';
@@ -21,6 +21,7 @@ import type { MessagingService } from '../messaging/delivery.js';
 import type { GroupManager, StoredGroup } from '../messaging/groups.js';
 import type { ContentManager, SharedFileInfo } from '../content/sharing.js';
 import type { PostService } from '../content/posts.js';
+import type { TrustWebService } from '../trust/web.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ export interface APIServerDeps {
   groups: GroupManager;
   content: ContentManager;
   posts?: PostService;
+  trustWeb?: TrustWebService;
   /** Override frontend static files directory (default: <cwd>/frontend) */
   frontendDir?: string;
   /** Override temp directory for file shares/downloads (default: cwd) */
@@ -529,12 +531,19 @@ export class APIServer {
           const peerProfile = this.deps.node.getKnownPeer(targetId);
           const friends = await this.deps.store.getFriends();
           const postCount = await this.deps.store.getPostCount(targetId);
+          const vouchCount = await this.deps.store.getVouchCount(targetId);
+          const myId = this.deps.node.getPeerId();
+          const isVouched = targetId !== myId ? !!(await this.deps.store.getVouchByPair(myId, targetId)) : false;
+          const isFriendOfTarget = await this.deps.store.isFriend(targetId);
           return this.ok(id, {
             profile,
             displayName: peerProfile?.displayName || targetId.slice(0, 12),
             peerId: targetId,
             friendCount: friends.length,
             postCount,
+            vouchCount: vouchCount.received,
+            isVouched,
+            isFriend: isFriendOfTarget,
             isSelf: targetId === this.deps.node.getPeerId(),
           });
         }
@@ -588,19 +597,26 @@ export class APIServer {
 
           // Local search
           const term = (searchTerm || '').toLowerCase();
-          let results = allPeers
+          const localPeers = allPeers
             .filter(p => p.peerId !== myId)
             .filter(p => {
               if (!term) return true;
               return (p.displayName || '').toLowerCase().includes(term) ||
                      p.peerId.toLowerCase().includes(term);
-            })
-            .map(p => ({
+            });
+          // Enrich with vouch counts
+          const localResults: { peerId: string; displayName: string; isOnline: boolean; hopDistance: number; vouchCount?: number }[] = [];
+          for (const p of localPeers) {
+            const vc = await this.deps.store.getVouchCount(p.peerId);
+            localResults.push({
               peerId: p.peerId,
               displayName: p.displayName || p.peerId.slice(0, 12),
               isOnline: connectedIds.has(p.peerId),
               hopDistance: 1,
-            }));
+              vouchCount: vc.received,
+            });
+          }
+          let results = localResults;
 
           // Also query connected peers
           const { PROTOCOLS: SP } = await import('../network/node.js');
@@ -791,6 +807,43 @@ export class APIServer {
           const dataUrl = `data:${data.mimeType || 'application/octet-stream'};base64,${fileData.toString('base64')}`;
           try { fs.unlinkSync(outPath); } catch {}
           return this.ok(id, { dataUrl });
+        }
+
+        // ─── Trust Web ──────────────────────────────────────────
+
+        case 'vouch_peer': {
+          if (!this.deps.trustWeb) return this.err(id, 'Trust web not available');
+          const vouch = await this.deps.trustWeb.vouchForPeer(data.peerId, data.message);
+          return this.ok(id, { vouch });
+        }
+
+        case 'revoke_vouch': {
+          if (!this.deps.trustWeb) return this.err(id, 'Trust web not available');
+          await this.deps.trustWeb.revokeVouch(data.vouchId);
+          return this.ok(id, { revoked: true });
+        }
+
+        case 'get_trust_path': {
+          if (!this.deps.trustWeb) return this.err(id, 'Trust web not available');
+          const fromId = data.fromId || this.deps.node.getPeerId();
+          const result = await this.deps.trustWeb.findTrustPath(fromId, data.toId);
+          return this.ok(id, result);
+        }
+
+        case 'get_vouches': {
+          if (!this.deps.trustWeb) return this.err(id, 'Trust web not available');
+          const graph = await this.deps.trustWeb.getVouchGraph(data.peerId);
+          return this.ok(id, graph);
+        }
+
+        case 'get_vouch_count': {
+          const counts = await this.deps.store.getVouchCount(data.peerId);
+          return this.ok(id, counts);
+        }
+
+        case 'get_my_vouches': {
+          const myVouches = await this.deps.store.getVouchesFrom(this.deps.node.getPeerId());
+          return this.ok(id, myVouches);
         }
 
         default:
