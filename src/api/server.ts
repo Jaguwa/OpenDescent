@@ -713,7 +713,8 @@ export class APIServer {
           if (!data.content || typeof data.content !== 'string' || data.content.length > 10_000) {
             return this.err(id, 'Post content too long (max 10,000 chars)');
           }
-          const post = await this.deps.posts.createPost(data.content, data.attachments || []);
+          const visibility = data.visibility === 'friends' ? 'friends' : 'public';
+          const post = await this.deps.posts.createPost(data.content, data.attachments || [], visibility);
           return this.ok(id, post);
         }
 

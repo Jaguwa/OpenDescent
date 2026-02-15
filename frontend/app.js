@@ -1067,19 +1067,35 @@ async function saveProfile() {
 
 async function searchPeers() {
   const term = document.getElementById('discover-search-input').value.trim();
+  const isBrowse = !term;
   try {
-    const results = await send('search_peers', { searchTerm: term, maxResults: 20 });
+    const results = await send('search_peers', { searchTerm: term, maxResults: 50 });
     const friendIds = new Set((await send('get_friends')).map(f => f.peerId));
-    renderDiscoverResults(results, friendIds);
+    renderDiscoverResults(results, friendIds, isBrowse);
   } catch (e) { showToast('Search failed', e.message); }
 }
 
-function renderDiscoverResults(results, friendIds) {
+function renderDiscoverResults(results, friendIds, isBrowse) {
   const el = document.getElementById('discover-results');
+  // Update the section title based on mode
+  const titleEl = el.previousElementSibling;
+  if (titleEl && titleEl.classList.contains('section-title')) {
+    titleEl.textContent = isBrowse ? 'People on the Network' : 'Search Results';
+  }
   if (results.length === 0) {
-    el.innerHTML = '<div class="list-item"><span class="subtle">No peers found</span></div>';
+    el.innerHTML = isBrowse
+      ? '<div class="list-item"><span class="subtle">No peers discovered yet — connect to more nodes to find people</span></div>'
+      : '<div class="list-item"><span class="subtle">No peers found matching your search</span></div>';
     return;
   }
+  // Sort: online first, then friends, then alphabetically
+  results.sort((a, b) => {
+    if (a.isOnline !== b.isOnline) return a.isOnline ? -1 : 1;
+    const aFriend = friendIds.has(a.peerId);
+    const bFriend = friendIds.has(b.peerId);
+    if (aFriend !== bFriend) return aFriend ? -1 : 1;
+    return (a.displayName || '').localeCompare(b.displayName || '');
+  });
   el.innerHTML = results.map(r => {
     const isFriend = friendIds.has(r.peerId);
     const safePeerId = escapeAttr(r.peerId);
@@ -1087,7 +1103,7 @@ function renderDiscoverResults(results, friendIds) {
       <canvas width="40" height="40" data-peerid="${safePeerId}"></canvas>
       <div class="discover-info">
         <div class="discover-name" onclick="openPeerProfile('${safePeerId}')" style="cursor:pointer">${escapeHtml(r.displayName)}</div>
-        <div class="discover-meta">${r.isOnline ? 'Online' : 'Offline'} &middot; ${r.hopDistance} hop${r.hopDistance > 1 ? 's' : ''}</div>
+        <div class="discover-meta">${r.isOnline ? '<span class="online-dot"></span> Online' : 'Offline'} &middot; ${r.hopDistance} hop${r.hopDistance > 1 ? 's' : ''}</div>
       </div>
       ${isFriend
         ? '<span class="discover-action friend-badge">Friend</span>'
@@ -1224,7 +1240,7 @@ function renderPostCard(post) {
       <canvas class="post-avatar" width="40" height="40" data-peerid="${safeAuthorId}" onclick="openPeerProfile('${safeAuthorId}')"></canvas>
       <div class="post-author-info">
         <div class="post-author-name" onclick="openPeerProfile('${safeAuthorId}')">${escapeHtml(authorName)}</div>
-        <div class="post-time">${relativeTime(post.timestamp)}</div>
+        <div class="post-time">${relativeTime(post.timestamp)}${post.visibility === 'friends' ? ' &middot; <span class="visibility-badge" title="Friends only">&#128101;</span>' : ''}</div>
       </div>
     </div>
     ${post.content ? `<div class="post-content">${escapeHtml(post.content)}</div>` : ''}
@@ -1240,6 +1256,21 @@ function renderPostCard(post) {
   </div>`;
 }
 
+let postVisibility = 'public';
+
+function togglePostVisibility() {
+  const btn = document.getElementById('post-visibility-toggle');
+  if (postVisibility === 'public') {
+    postVisibility = 'friends';
+    btn.innerHTML = '&#128101; Friends';
+    btn.title = 'Visible to friends only';
+  } else {
+    postVisibility = 'public';
+    btn.innerHTML = '&#127758; Public';
+    btn.title = 'Visible to everyone';
+  }
+}
+
 async function createPost() {
   const input = document.getElementById('post-input');
   const content = input.value.trim();
@@ -1247,7 +1278,7 @@ async function createPost() {
   if (content.length > 2000) { showToast('Post too long (max 2000 chars)'); return; }
 
   try {
-    await send('create_post', { content, attachments: state.postAttachments });
+    await send('create_post', { content, attachments: state.postAttachments, visibility: postVisibility });
     input.value = '';
     document.getElementById('char-counter').textContent = '0/2000';
     state.postAttachments = [];
@@ -2162,7 +2193,7 @@ function switchTab(tabName) {
 
   // Show appropriate main view
   if (tabName === 'feed') { showView('feed'); loadFeed(); }
-  else if (tabName === 'discover') { loadFriendRequests(); }
+  else if (tabName === 'discover') { loadFriendRequests(); searchPeers(); }
   else if (tabName === 'chats' || tabName === 'contacts' || tabName === 'groups') {
     if (!state.activeChat) showView('empty');
   }

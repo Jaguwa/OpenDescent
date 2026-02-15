@@ -59,7 +59,7 @@
       <!-- Discover tab -->
       <div id="tab-discover" class="tab-content">
         <div class="discover-search">
-          <input type="text" id="discover-search-input" placeholder="Search peers..." autocomplete="off">
+          <input type="text" id="discover-search-input" placeholder="Search by name or browse..." autocomplete="off">
           <button id="btn-discover-search" class="btn-primary">Search</button>
         </div>
         <div id="friend-requests-section" class="hidden">
@@ -100,6 +100,7 @@
               <button class="composer-btn" onclick="triggerPostAudio()" title="Audio">&#127925;</button>
             </div>
             <div id="composer-meta">
+              <button id="post-visibility-toggle" class="visibility-toggle" onclick="togglePostVisibility()" title="Toggle visibility">&#127758; Public</button>
               <span id="char-counter">0/2000</span>
               <button id="btn-post" class="btn-primary" onclick="createPost()">Post</button>
             </div>

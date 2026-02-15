@@ -11,7 +11,7 @@ import * as crypto from 'crypto';
 import type { DecentraNode } from '../network/node.js';
 import { PROTOCOLS } from '../network/node.js';
 import type { LocalStore } from '../storage/store.js';
-import type { Post, PostReaction, PostComment, PeerId } from '../types/index.js';
+import type { Post, PostReaction, PostComment, PeerId, PostVisibility } from '../types/index.js';
 import { sign, verify } from '../crypto/identity.js';
 
 const MAX_HOPS = 5;
@@ -49,7 +49,7 @@ export class PostService {
     this.onInteractionCallbacks.push(callback);
   }
 
-  async createPost(content: string, mediaAttachments: Post['mediaAttachments'] = []): Promise<Post> {
+  async createPost(content: string, mediaAttachments: Post['mediaAttachments'] = [], visibility: PostVisibility = 'public'): Promise<Post> {
     const post: Post = {
       postId: crypto.randomUUID(),
       authorId: this.node.getPeerId(),
@@ -62,7 +62,8 @@ export class PostService {
       commentCount: 0,
       liked: false,
       hopCount: 0,
-      maxHops: 3,
+      maxHops: visibility === 'friends' ? 1 : 3, // Friends-only posts don't gossip beyond direct peers
+      visibility,
     };
 
     // Sign the immutable fields with our Ed25519 key
@@ -108,6 +109,14 @@ export class PostService {
       }
 
       this.seenPostIds.set(post.postId, post.timestamp);
+
+      // Friends-only posts: only store/display if author is our friend
+      if (post.visibility === 'friends') {
+        const isFriend = await this.store.isFriend(post.authorId);
+        if (!isFriend && post.authorId !== this.node.getPeerId()) {
+          return; // Not our friend — don't store or show this post
+        }
+      }
 
       // Store locally
       await this.store.storePost(post);
@@ -312,6 +321,7 @@ function getPostSignableData(post: Post): Uint8Array {
     timestamp: post.timestamp,
     parentPostId: post.parentPostId || null,
     maxHops: post.maxHops,
+    visibility: post.visibility || 'public',
   }));
 }
 

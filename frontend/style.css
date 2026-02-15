@@ -922,6 +922,36 @@ body {
   cursor: default;
 }
 
+.online-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.visibility-toggle {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: all 0.2s;
+}
+.visibility-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.visibility-badge {
+  font-size: 0.9em;
+  vertical-align: middle;
+}
+
 .friend-req-item {
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);

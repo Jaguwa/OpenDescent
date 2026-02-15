@@ -409,6 +409,9 @@ export interface MediaAttachment {
   data?: string;
 }
 
+/** Post visibility */
+export type PostVisibility = 'public' | 'friends';
+
 /** A post in the timeline */
 export interface Post {
   postId: string;
@@ -424,6 +427,8 @@ export interface Post {
   liked?: boolean;
   hopCount: number;
   maxHops: number;
+  /** Who can see this post — 'public' (default) or 'friends' only */
+  visibility?: PostVisibility;
 }
 
 /** A reaction to a post */
