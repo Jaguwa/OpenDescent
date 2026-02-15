@@ -73,9 +73,11 @@ function connectWS() {
       state.myName = data.displayName;
       document.getElementById('my-name').textContent = data.displayName || 'Anonymous';
       document.getElementById('my-id').textContent = data.peerId;
-      // First-run: prompt for display name if it's auto-generated
-      if (data.displayName && /^(Peer-\d+|Desktop-\d+)$/.test(data.displayName)) {
-        showNameModal();
+    });
+    // Check if mnemonic setup is needed (first run with legacy identity)
+    send('get_account_status').then((status) => {
+      if (status.mode === 'legacy') {
+        showMnemonicModal();
       }
     });
     refreshAll();

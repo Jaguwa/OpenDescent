@@ -420,6 +420,7 @@ export class APIServer {
           const seed = mnemonicToSeed(words);
           const identity = generateIdentityFromSeed(seed, data.displayName);
           const peerId = publicKeyToPeerId(identity.publicKey);
+          await this.deps.store.setMeta('identity_mode', 'mnemonic');
           return this.ok(id, { peerId, confirmed: true });
         }
 
@@ -452,13 +453,15 @@ export class APIServer {
             }
           }
 
+          await this.deps.store.setMeta('identity_mode', 'mnemonic');
           return this.ok(id, { peerId, bundleFound });
         }
 
         case 'get_account_status': {
+          const mode = await this.deps.store.getMeta('identity_mode') || 'legacy';
           return this.ok(id, {
             peerId: this.deps.node.getPeerId(),
-            mode: 'legacy', // Will be updated when mnemonic flow is used
+            mode,
           });
         }
 

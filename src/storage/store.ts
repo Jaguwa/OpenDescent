@@ -485,6 +485,20 @@ export class LocalStore {
     }
   }
 
+  // ─── Settings (META namespace) ──────────────────────────────────────────
+
+  async getMeta(key: string): Promise<string | null> {
+    try {
+      return await this.db.get(NS.META + key);
+    } catch {
+      return null;
+    }
+  }
+
+  async setMeta(key: string, value: string): Promise<void> {
+    await this.db.put(NS.META + key, value);
+  }
+
   // ─── Stats ─────────────────────────────────────────────────────────────
 
   getStorageUsage(): { used: number; max: number; percentage: number } {
