@@ -105,6 +105,7 @@
               <button class="composer-btn" onclick="triggerPostVideo()" title="Video">&#127909;</button>
               <button class="composer-btn" onclick="toggleVoicenoteRecorder()" title="Voicenote">&#127908;</button>
               <button class="composer-btn" onclick="triggerPostAudio()" title="Audio">&#127925;</button>
+              <button class="composer-btn" onclick="showCreatePollModal()" title="Create Poll">&#128202;</button>
             </div>
             <div id="composer-meta">
               <button id="post-visibility-toggle" class="visibility-toggle" onclick="togglePostVisibility()" title="Toggle visibility">&#127758; Public</button>
@@ -366,6 +367,60 @@
         </div>
         <div class="modal-actions" style="margin-top:12px">
           <button id="btn-close-comments" class="btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Create Poll Modal ──────────────────────────────── -->
+    <div id="poll-modal" class="modal hidden">
+      <div class="modal-content poll-modal-content">
+        <h3>Create Poll</h3>
+        <div class="settings-section">
+          <label>Question</label>
+          <input type="text" id="poll-question-input" placeholder="What do you want to ask?" maxlength="500">
+        </div>
+        <div class="settings-section">
+          <label>Options</label>
+          <div id="poll-options-list">
+            <input type="text" class="poll-option-input" placeholder="Option 1" maxlength="200">
+            <input type="text" class="poll-option-input" placeholder="Option 2" maxlength="200">
+          </div>
+          <button class="btn-secondary" onclick="addPollOption()" style="margin-top:8px">+ Add Option</button>
+        </div>
+        <div class="settings-section">
+          <label>Duration</label>
+          <select id="poll-duration-select">
+            <option value="300000">5 minutes</option>
+            <option value="3600000">1 hour</option>
+            <option value="86400000" selected>24 hours</option>
+            <option value="259200000">3 days</option>
+            <option value="604800000">7 days</option>
+          </select>
+        </div>
+        <div class="settings-section">
+          <label>Scope</label>
+          <select id="poll-scope-select">
+            <option value="public">Public (Feed)</option>
+          </select>
+        </div>
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn-secondary" onclick="closePollModal()">Cancel</button>
+          <button class="btn-primary" onclick="submitCreatePoll()">Create Poll</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Poll Results Modal ──────────────────────────────── -->
+    <div id="poll-results-modal" class="modal hidden">
+      <div class="modal-content poll-results-content">
+        <h3 id="poll-results-title">Poll Results</h3>
+        <div id="poll-results-body"></div>
+        <div id="poll-verify-section" class="hidden">
+          <button class="btn-secondary" onclick="verifyPollVote()" id="btn-verify-vote">Verify My Vote</button>
+          <div id="poll-verify-result" class="hidden"></div>
+        </div>
+        <div class="modal-actions" style="margin-top:12px">
+          <button class="btn-secondary" onclick="closePollResultsModal()">Close</button>
         </div>
       </div>
     </div>

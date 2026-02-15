@@ -54,6 +54,8 @@ export const PROTOCOLS = {
   VOUCH_BROADCAST: `${PROTOCOL_PREFIX}/vouch-broadcast/1.0.0`,
   DEAD_DROP_BROADCAST: `${PROTOCOL_PREFIX}/dead-drop-broadcast/1.0.0`,
   DEAD_DROP_RELAY: `${PROTOCOL_PREFIX}/dead-drop-relay/1.0.0`,
+  POLL_BROADCAST: `${PROTOCOL_PREFIX}/poll-broadcast/1.0.0`,
+  POLL_VOTE: `${PROTOCOL_PREFIX}/poll-vote/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -82,6 +84,8 @@ export class DecentraNode {
   private vouchBroadcastHandler?: (data: string) => Promise<void>;
   private deadDropBroadcastHandler?: (data: string) => Promise<void>;
   private deadDropRelayHandler?: (data: string) => Promise<void>;
+  private pollBroadcastHandler?: (data: string) => Promise<void>;
+  private pollVoteHandler?: (data: string) => Promise<void>;
   private passphrase: string;
 
   // Rate limiting: 100 messages per 60-second window per peer
@@ -373,6 +377,16 @@ export class DecentraNode {
   /** Register handler for dead drop relay (onion routing) */
   setDeadDropRelayHandler(handler: (data: string) => Promise<void>): void {
     this.deadDropRelayHandler = handler;
+  }
+
+  /** Register handler for poll broadcasts */
+  setPollBroadcastHandler(handler: (data: string) => Promise<void>): void {
+    this.pollBroadcastHandler = handler;
+  }
+
+  /** Register handler for poll votes */
+  setPollVoteHandler(handler: (data: string) => Promise<void>): void {
+    this.pollVoteHandler = handler;
   }
 
   /** Broadcast data to all connected peers on a given protocol */
@@ -926,6 +940,36 @@ export class DecentraNode {
         await writeToSink(stream, new TextEncoder().encode('OK'));
       } catch (error) {
         console.error(`[Protocol] Error handling dead drop relay:`, error);
+      }
+    });
+
+    // Poll broadcast (polls + results, differentiated by type field)
+    await this.node.handle(PROTOCOLS.POLL_BROADCAST, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.pollBroadcastHandler) {
+          await this.pollBroadcastHandler(text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('OK'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling poll broadcast:`, error);
+      }
+    });
+
+    // Poll vote (direct peer-to-peer: voter -> creator)
+    await this.node.handle(PROTOCOLS.POLL_VOTE, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.pollVoteHandler) {
+          await this.pollVoteHandler(text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('VOTE_RECEIVED'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling poll vote:`, error);
       }
     });
 

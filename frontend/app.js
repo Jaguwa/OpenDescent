@@ -65,6 +65,11 @@ const state = {
   deadDrops: [],
   deadDropContents: {},
   deadDropVoted: {},
+  // Polls
+  polls: [],
+  pollReceipts: {},
+  pollResultsData: {},
+  currentPollId: null,
 };
 
 // ─── Theme Presets ──────────────────────────────────────────────────────────
@@ -419,6 +424,15 @@ function handleEvent(event, data) {
       break;
     case 'new_dead_drop':
       onNewDeadDrop(data);
+      break;
+    case 'new_poll':
+      onNewPoll(data);
+      break;
+    case 'poll_results':
+      onPollResultsEvent(data);
+      break;
+    case 'poll_vote_received':
+      onPollVoteReceived(data);
       break;
   }
 }
@@ -1256,19 +1270,38 @@ function renderTrustPath(pathResult) {
 
 async function loadFeed() {
   try {
-    const posts = await send('get_timeline', { limit: 50 });
+    const [posts, polls] = await Promise.all([
+      send('get_timeline', { limit: 50 }),
+      send('get_polls', { scope: 'public', limit: 50 }).catch(() => []),
+    ]);
     state.feedPosts = posts;
+    state.polls = polls;
+    // Cache vote/results state
+    for (const p of polls) {
+      if (p.hasVoted) state.pollReceipts[p.pollId] = p.votedOptionIndex;
+      if (p.results) state.pollResultsData[p.pollId] = p.results;
+    }
     renderFeed();
   } catch (e) { console.error('Failed to load feed:', e); }
 }
 
 function renderFeed() {
   const el = document.getElementById('feed-posts');
-  if (state.feedPosts.length === 0) {
+  // Merge posts + polls into single sorted array
+  const items = [];
+  for (const post of state.feedPosts) {
+    items.push({ type: 'post', data: post, timestamp: post.timestamp });
+  }
+  for (const poll of state.polls) {
+    items.push({ type: 'poll', data: poll, timestamp: poll.createdAt });
+  }
+  items.sort((a, b) => b.timestamp - a.timestamp);
+
+  if (items.length === 0) {
     el.innerHTML = '<div style="text-align:center;padding:40px"><p class="subtle">No posts yet. Be the first to post!</p></div>';
     return;
   }
-  el.innerHTML = state.feedPosts.map(renderPostCard).join('');
+  el.innerHTML = items.map(item => item.type === 'post' ? renderPostCard(item.data) : renderPollCard(item.data)).join('');
   // Render avatars + voicenote waveforms
   requestAnimationFrame(() => {
     el.querySelectorAll('canvas[data-peerid]').forEach(c => generateAvatar(c.dataset.peerid, c, parseInt(c.width)));
@@ -2461,6 +2494,296 @@ function onNewDeadDrop(data) {
     const hint = feed.querySelector('.sidebar-hint');
     if (hint) hint.remove();
     feed.prepend(renderDeadDropCard(drop));
+  }
+}
+
+// ─── Encrypted Polls ──────────────────────────────────────────────────────────
+
+function renderPollCard(poll) {
+  const isCreator = poll.isCreator || poll.creatorId === state.myPeerId;
+  const hasVoted = poll.hasVoted || state.pollReceipts[poll.pollId] !== undefined;
+  const votedIdx = poll.votedOptionIndex ?? state.pollReceipts[poll.pollId] ?? null;
+  const results = poll.results || state.pollResultsData[poll.pollId];
+  const isTallied = poll.status === 'tallied' && results;
+  const isExpired = poll.expiresAt < Date.now();
+  const isOpen = poll.status === 'open' && !isExpired;
+
+  const creatorName = escapeHtml(poll.creatorName || poll.creatorId.slice(0, 12));
+  const safePollId = escapeAttr(poll.pollId);
+  const safeCreatorId = escapeAttr(poll.creatorId);
+  const time = relativeTime(poll.createdAt);
+
+  let timeLabel = '';
+  if (isTallied) {
+    timeLabel = 'Final results';
+  } else if (isExpired) {
+    timeLabel = 'Expired';
+  } else {
+    const remaining = poll.expiresAt - Date.now();
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    timeLabel = h > 0 ? `${h}h ${m}m left` : `${m}m left`;
+  }
+
+  let optionsHTML = '';
+  if (isTallied) {
+    const total = results.tally.reduce((a, b) => a + b, 0);
+    optionsHTML = poll.options.map((opt, i) => {
+      const count = results.tally[i] || 0;
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      const isMyVote = votedIdx === i;
+      return `<div class="poll-result-bar${isMyVote ? ' my-vote' : ''}">
+        <div class="poll-result-fill" style="width:${pct}%"></div>
+        <span class="poll-result-label">${escapeHtml(opt)}</span>
+        <span class="poll-result-pct">${pct}% (${count})</span>
+      </div>`;
+    }).join('');
+    optionsHTML += `<div class="poll-total">${total} vote${total !== 1 ? 's' : ''}</div>`;
+  } else if (hasVoted) {
+    optionsHTML = poll.options.map((opt, i) => {
+      const isSelected = votedIdx === i;
+      return `<div class="poll-option-btn${isSelected ? ' selected' : ''}">${escapeHtml(opt)}${isSelected ? ' &#10003;' : ''}</div>`;
+    }).join('');
+    optionsHTML += `<div class="poll-voted-msg subtle">Your vote is encrypted. Awaiting tally.</div>`;
+  } else if (isOpen) {
+    optionsHTML = poll.options.map((opt, i) => {
+      return `<div class="poll-option-btn clickable" onclick="castPollVote('${safePollId}', ${i})">${escapeHtml(opt)}</div>`;
+    }).join('');
+  } else {
+    optionsHTML = poll.options.map(opt => {
+      return `<div class="poll-option-btn">${escapeHtml(opt)}</div>`;
+    }).join('');
+    optionsHTML += `<div class="poll-voted-msg subtle">Poll closed. Awaiting tally.</div>`;
+  }
+
+  let actionsHTML = '';
+  if (isCreator && (isExpired || poll.status === 'closed') && !isTallied) {
+    actionsHTML += `<button class="poll-tally-btn btn-primary" onclick="tallyPoll('${safePollId}')">Tally &amp; Publish Results</button>`;
+  }
+  if (isTallied && hasVoted) {
+    actionsHTML += `<button class="btn-secondary" onclick="openPollResults('${safePollId}')">Verify</button>`;
+  }
+  if (isTallied) {
+    actionsHTML += `<button class="btn-secondary" onclick="openPollResults('${safePollId}')">Details</button>`;
+  }
+
+  return `<div class="poll-card" id="poll-${safePollId}">
+    <div class="post-header">
+      <canvas class="post-avatar" width="32" height="32" data-peerid="${safeCreatorId}"></canvas>
+      <div class="post-author-info">
+        <span class="post-author clickable-name" onclick="openProfile('${safeCreatorId}')">${creatorName}</span>
+        <span class="poll-badge">Poll</span>
+        <span class="post-time">${time}</span>
+      </div>
+      <span class="poll-time-label subtle">${timeLabel}</span>
+    </div>
+    <div class="poll-question">${escapeHtml(poll.question)}</div>
+    <div class="poll-options">${optionsHTML}</div>
+    ${actionsHTML ? `<div class="poll-actions">${actionsHTML}</div>` : ''}
+    ${isCreator && isOpen ? `<div class="poll-total subtle">${poll.voteCount || 0} vote${(poll.voteCount || 0) !== 1 ? 's' : ''} received</div>` : ''}
+  </div>`;
+}
+
+async function castPollVote(pollId, optionIndex) {
+  try {
+    await send('cast_vote', { pollId, optionIndex });
+    state.pollReceipts[pollId] = optionIndex;
+    // Update the poll in state
+    const poll = state.polls.find(p => p.pollId === pollId);
+    if (poll) {
+      poll.hasVoted = true;
+      poll.votedOptionIndex = optionIndex;
+    }
+    renderFeed();
+    showToast('Vote cast! Your vote is encrypted.');
+  } catch (e) {
+    showToast('Failed to vote: ' + (e.message || e));
+  }
+}
+
+async function tallyPoll(pollId) {
+  try {
+    const res = await send('tally_poll', { pollId });
+    state.pollResultsData[pollId] = res.results;
+    const poll = state.polls.find(p => p.pollId === pollId);
+    if (poll) {
+      poll.status = 'tallied';
+      poll.results = res.results;
+    }
+    renderFeed();
+    showToast('Results published!');
+  } catch (e) {
+    showToast('Failed to tally: ' + (e.message || e));
+  }
+}
+
+function openPollResults(pollId) {
+  state.currentPollId = pollId;
+  const poll = state.polls.find(p => p.pollId === pollId);
+  const results = state.pollResultsData[pollId] || (poll && poll.results);
+  if (!poll || !results) {
+    showToast('Results not available');
+    return;
+  }
+
+  document.getElementById('poll-results-title').textContent = poll.question;
+  const total = results.tally.reduce((a, b) => a + b, 0);
+  const votedIdx = state.pollReceipts[pollId] ?? null;
+
+  let html = '';
+  poll.options.forEach((opt, i) => {
+    const count = results.tally[i] || 0;
+    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    const isMyVote = votedIdx === i;
+    html += `<div class="poll-result-detail${isMyVote ? ' my-vote' : ''}">
+      <span>${escapeHtml(opt)}${isMyVote ? ' (your vote)' : ''}</span>
+      <span>${pct}% (${count})</span>
+    </div>`;
+  });
+  html += `<div class="poll-total">${total} total vote${total !== 1 ? 's' : ''}</div>`;
+  html += `<div class="subtle" style="margin-top:8px">Proof hashes: ${results.proofHashes.length} | Published: ${new Date(results.publishedAt).toLocaleString()}</div>`;
+
+  document.getElementById('poll-results-body').innerHTML = html;
+
+  // Show verify section if we voted
+  const verifySection = document.getElementById('poll-verify-section');
+  const verifyResult = document.getElementById('poll-verify-result');
+  if (votedIdx !== null && votedIdx !== undefined) {
+    verifySection.classList.remove('hidden');
+    verifyResult.classList.add('hidden');
+  } else {
+    verifySection.classList.add('hidden');
+  }
+
+  document.getElementById('poll-results-modal').classList.remove('hidden');
+}
+
+function closePollResultsModal() {
+  document.getElementById('poll-results-modal').classList.add('hidden');
+  state.currentPollId = null;
+}
+
+async function verifyPollVote() {
+  const pollId = state.currentPollId;
+  if (!pollId) return;
+  try {
+    const res = await send('verify_poll_vote', { pollId });
+    const el = document.getElementById('poll-verify-result');
+    el.classList.remove('hidden');
+    if (res.verified) {
+      el.style.color = 'var(--green)';
+      el.textContent = res.message;
+    } else {
+      el.style.color = 'var(--red)';
+      el.textContent = res.message;
+    }
+  } catch (e) {
+    showToast('Verification failed: ' + (e.message || e));
+  }
+}
+
+function showCreatePollModal(groupId) {
+  // Reset inputs
+  document.getElementById('poll-question-input').value = '';
+  const optionsList = document.getElementById('poll-options-list');
+  optionsList.innerHTML = `
+    <input type="text" class="poll-option-input" placeholder="Option 1" maxlength="200">
+    <input type="text" class="poll-option-input" placeholder="Option 2" maxlength="200">
+  `;
+  document.getElementById('poll-duration-select').value = '86400000';
+
+  // Populate scope
+  const scopeSelect = document.getElementById('poll-scope-select');
+  scopeSelect.innerHTML = '<option value="public">Public (Feed)</option>';
+  if (groupId) {
+    scopeSelect.innerHTML += `<option value="group" selected>Group</option>`;
+    scopeSelect.dataset.groupId = groupId;
+  } else {
+    scopeSelect.dataset.groupId = '';
+  }
+
+  document.getElementById('poll-modal').classList.remove('hidden');
+}
+
+function closePollModal() {
+  document.getElementById('poll-modal').classList.add('hidden');
+}
+
+function addPollOption() {
+  const list = document.getElementById('poll-options-list');
+  const count = list.querySelectorAll('.poll-option-input').length;
+  if (count >= 10) { showToast('Maximum 10 options'); return; }
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'poll-option-input';
+  input.placeholder = `Option ${count + 1}`;
+  input.maxLength = 200;
+  list.appendChild(input);
+}
+
+async function submitCreatePoll() {
+  const question = document.getElementById('poll-question-input').value.trim();
+  const optInputs = document.querySelectorAll('#poll-options-list .poll-option-input');
+  const options = Array.from(optInputs).map(i => i.value.trim()).filter(Boolean);
+  const durationMs = parseInt(document.getElementById('poll-duration-select').value);
+  const scopeSelect = document.getElementById('poll-scope-select');
+  const scope = scopeSelect.value;
+  const groupId = scopeSelect.dataset.groupId || undefined;
+
+  if (!question) { showToast('Question is required'); return; }
+  if (options.length < 2) { showToast('At least 2 options required'); return; }
+
+  try {
+    const res = await send('create_poll', { question, options, durationMs, scope, groupId });
+    closePollModal();
+    // Add to local state
+    const poll = res.poll;
+    poll.isCreator = true;
+    poll.hasVoted = false;
+    poll.votedOptionIndex = null;
+    poll.results = null;
+    state.polls.unshift(poll);
+    renderFeed();
+    showToast('Poll created!');
+  } catch (e) {
+    showToast('Failed to create poll: ' + (e.message || e));
+  }
+}
+
+function onNewPoll(poll) {
+  // Dedup
+  if (state.polls.some(p => p.pollId === poll.pollId)) return;
+  poll.hasVoted = false;
+  poll.votedOptionIndex = null;
+  poll.results = null;
+  poll.isCreator = poll.creatorId === state.myPeerId;
+  state.polls.unshift(poll);
+  if (state.activeView === 'feed') renderFeed();
+  showToast(`${poll.creatorName || 'Someone'} created a poll`, poll.question.slice(0, 40));
+}
+
+function onPollResultsEvent(data) {
+  const { poll, results } = data;
+  state.pollResultsData[poll.pollId] = results;
+  const existing = state.polls.find(p => p.pollId === poll.pollId);
+  if (existing) {
+    existing.status = 'tallied';
+    existing.results = results;
+  }
+  if (state.activeView === 'feed') renderFeed();
+  showToast('Poll results published!', poll.question.slice(0, 40));
+}
+
+function onPollVoteReceived(data) {
+  const existing = state.polls.find(p => p.pollId === data.pollId);
+  if (existing) {
+    existing.voteCount = (existing.voteCount || 0) + 1;
+    // Re-render just the vote count if visible
+    const card = document.getElementById('poll-' + data.pollId);
+    if (card) {
+      const totalEl = card.querySelector('.poll-total.subtle');
+      if (totalEl) totalEl.textContent = `${existing.voteCount} vote${existing.voteCount !== 1 ? 's' : ''} received`;
+    }
   }
 }
 

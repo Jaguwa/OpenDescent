@@ -23,6 +23,7 @@ import type { ContentManager, SharedFileInfo } from '../content/sharing.js';
 import type { PostService } from '../content/posts.js';
 import type { TrustWebService } from '../trust/web.js';
 import type { DeadDropService } from '../content/deaddrops.js';
+import type { PollService } from '../content/polls.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ export interface APIServerDeps {
   posts?: PostService;
   trustWeb?: TrustWebService;
   deadDrops?: DeadDropService;
+  polls?: PollService;
   /** Override frontend static files directory (default: <cwd>/frontend) */
   frontendDir?: string;
   /** Override temp directory for file shares/downloads (default: cwd) */
@@ -878,6 +880,70 @@ export class APIServer {
           return this.ok(id, { voted: true, votes: newVotes });
         }
 
+        // ─── Encrypted Polls ──────────────────────────────────
+
+        case 'create_poll': {
+          if (!this.deps.polls) return this.err(id, 'Polls not available');
+          if (!data.question || typeof data.question !== 'string' || data.question.length > 500) {
+            return this.err(id, 'Question too long (max 500 chars)');
+          }
+          if (!data.options || !Array.isArray(data.options) || data.options.length < 2 || data.options.length > 10) {
+            return this.err(id, 'Must have 2-10 options');
+          }
+          const poll = await this.deps.polls.createPoll(
+            data.question, data.options, data.durationMs, data.scope, data.groupId,
+          );
+          return this.ok(id, { poll });
+        }
+
+        case 'get_polls': {
+          if (!this.deps.polls) return this.err(id, 'Polls not available');
+          const pollLimit = data?.limit || 50;
+          const polls = await this.deps.store.getPolls(pollLimit, data?.scope, data?.groupId);
+          const myId3 = this.deps.node.getPeerId();
+          // Enrich with vote/results state
+          const enriched = [];
+          for (const p of polls) {
+            const receipt = await this.deps.store.getVoteReceipt(p.pollId);
+            const results = await this.deps.store.getPollResults(p.pollId);
+            enriched.push({
+              ...p,
+              hasVoted: !!receipt,
+              votedOptionIndex: receipt?.optionIndex ?? null,
+              results: results || null,
+              isCreator: p.creatorId === myId3,
+            });
+          }
+          return this.ok(id, enriched);
+        }
+
+        case 'cast_vote': {
+          if (!this.deps.polls) return this.err(id, 'Polls not available');
+          if (!data.pollId || data.optionIndex === undefined) return this.err(id, 'Missing pollId or optionIndex');
+          const receipt = await this.deps.polls.castVote(data.pollId, data.optionIndex);
+          return this.ok(id, { receipt });
+        }
+
+        case 'tally_poll': {
+          if (!this.deps.polls) return this.err(id, 'Polls not available');
+          if (!data.pollId) return this.err(id, 'Missing pollId');
+          const tallyResults = await this.deps.polls.tallyPoll(data.pollId);
+          return this.ok(id, { results: tallyResults });
+        }
+
+        case 'verify_poll_vote': {
+          if (!this.deps.polls) return this.err(id, 'Polls not available');
+          if (!data.pollId) return this.err(id, 'Missing pollId');
+          const verification = await this.deps.polls.verifyMyVote(data.pollId);
+          return this.ok(id, verification);
+        }
+
+        case 'get_poll_results': {
+          const pr = await this.deps.store.getPollResults(data.pollId);
+          const pp = await this.deps.store.getPoll(data.pollId);
+          return this.ok(id, { poll: pp, results: pr });
+        }
+
         default:
           return this.err(id, `Unknown action: ${action}`);
       }
@@ -1011,6 +1077,19 @@ export class APIServer {
     if (this.deps.deadDrops) {
       this.deps.deadDrops.onNewDrop.push((drop, content) => {
         this.broadcast({ type: 'event', event: 'new_dead_drop', data: { drop, content } });
+      });
+    }
+
+    // Poll events
+    if (this.deps.polls) {
+      this.deps.polls.onNewPoll.push((poll) => {
+        this.broadcast({ type: 'event', event: 'new_poll', data: poll });
+      });
+      this.deps.polls.onPollResults.push((poll, results) => {
+        this.broadcast({ type: 'event', event: 'poll_results', data: { poll, results } });
+      });
+      this.deps.polls.onVoteReceived.push((pollId, voterId) => {
+        this.broadcast({ type: 'event', event: 'poll_vote_received', data: { pollId, voterId } });
       });
     }
 

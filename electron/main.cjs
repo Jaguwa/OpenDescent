@@ -80,6 +80,15 @@ async function startApp() {
   const { PostService } = await import(
     /* webpackIgnore: true */ '../dist/content/posts.js'
   );
+  const { TrustWebService } = await import(
+    /* webpackIgnore: true */ '../dist/trust/web.js'
+  );
+  const { DeadDropService } = await import(
+    /* webpackIgnore: true */ '../dist/content/deaddrops.js'
+  );
+  const { PollService } = await import(
+    /* webpackIgnore: true */ '../dist/content/polls.js'
+  );
   const { APIServer } = await import(
     /* webpackIgnore: true */ '../dist/api/server.js'
   );
@@ -126,6 +135,30 @@ async function startApp() {
   const groups = new GroupManager(backendNode, backendStore);
   const content = new ContentManager(backendNode, backendStore);
   const posts = new PostService(backendNode, backendStore);
+  const trustWeb = new TrustWebService(backendNode, backendStore);
+  const deadDrops = new DeadDropService(backendNode, backendStore);
+  const polls = new PollService(backendNode, backendStore);
+
+  // Wire poll handlers
+  backendNode.setPollBroadcastHandler(async (data) => {
+    await polls.handleIncomingBroadcast(data);
+  });
+  backendNode.setPollVoteHandler(async (data) => {
+    await polls.handleIncomingVote(data);
+  });
+
+  // Wire dead drop handlers
+  backendNode.setDeadDropBroadcastHandler(async (data) => {
+    await deadDrops.handleIncomingBroadcast(data);
+  });
+  backendNode.setDeadDropRelayHandler(async (data) => {
+    await deadDrops.handleRelayMessage(data);
+  });
+
+  // Wire vouch broadcast handler (Trust Web)
+  backendNode.setVouchBroadcastHandler(async (data) => {
+    await trustWeb.handleIncomingVouch(data);
+  });
 
   // Wire group message handler
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
@@ -239,6 +272,18 @@ async function startApp() {
   // Periodic cleanup of expired pending messages (hourly)
   setInterval(() => backendStore.cleanExpiredMessages(config.messageRetentionSeconds), 60 * 60 * 1000);
 
+  // Periodic cleanup of expired dead drops (every 30 minutes)
+  setInterval(async () => {
+    const cleaned = await backendStore.cleanExpiredDrops();
+    if (cleaned > 0) console.log(`[DeadDrops] Cleaned ${cleaned} expired drops`);
+  }, 30 * 60 * 1000);
+
+  // Periodic cleanup of expired polls (every 15 minutes)
+  setInterval(async () => {
+    const closed = await backendStore.closeExpiredPolls();
+    if (closed > 0) console.log(`[Polls] Closed ${closed} expired polls`);
+  }, 15 * 60 * 1000);
+
   // 7. Start API server with custom paths
   apiServer = new APIServer(apiPort, {
     node: backendNode,
@@ -247,6 +292,9 @@ async function startApp() {
     groups,
     content,
     posts,
+    trustWeb,
+    deadDrops,
+    polls,
     frontendDir,
     tempDir,
   });

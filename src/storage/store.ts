@@ -12,7 +12,7 @@ import { Level } from 'level';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote } from '../types/index.js';
+import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote, Poll, EncryptedVote, PollResults, PollVoteReceipt } from '../types/index.js';
 
 /** Decrypted message for conversation history */
 export interface StoredMessage {
@@ -54,6 +54,11 @@ const NS = {
   DEAD_DROP: 'ddrop:',
   DEAD_DROP_IDX: 'ddropidx:',
   DEAD_DROP_VOTE: 'ddropvote:',
+  POLL: 'poll:',
+  POLL_IDX: 'pollidx:',
+  POLL_VOTE: 'pollvote:',
+  POLL_RECEIPT: 'pollreceipt:',
+  POLL_RESULTS: 'pollresults:',
 } as const;
 
 export class LocalStore {
@@ -844,6 +849,99 @@ export class LocalStore {
       } catch {}
     }
     return cleaned;
+  }
+
+  // ─── Encrypted Polls ──────────────────────────────────────────────────
+
+  async storePoll(poll: Poll): Promise<void> {
+    await this.db.put(NS.POLL + poll.pollId, JSON.stringify(poll));
+    const tsKey = poll.createdAt.toString().padStart(15, '0');
+    await this.db.put(NS.POLL_IDX + tsKey + ':' + poll.pollId, poll.pollId);
+  }
+
+  async getPoll(pollId: string): Promise<Poll | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.POLL + pollId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getPolls(limit: number = 50, scope?: string, groupId?: string): Promise<Poll[]> {
+    const polls: Poll[] = [];
+    const now = Date.now();
+    const cutoff = now - 7 * 24 * 60 * 60 * 1000; // hide closed polls older than 7 days
+    for await (const [, pollId] of this.db.iterator({ gte: NS.POLL_IDX, lt: NS.POLL_IDX + '\xFF', reverse: true, limit: limit * 3 })) {
+      try {
+        const poll: Poll = JSON.parse(await this.db.get(NS.POLL + pollId));
+        if (poll.status === 'closed' && poll.expiresAt < cutoff) continue;
+        if (scope && poll.scope !== scope) continue;
+        if (groupId && poll.groupId !== groupId) continue;
+        polls.push(poll);
+        if (polls.length >= limit) break;
+      } catch {}
+    }
+    return polls;
+  }
+
+  async storeEncryptedVote(vote: EncryptedVote): Promise<void> {
+    await this.db.put(NS.POLL_VOTE + vote.pollId + ':' + vote.voterId, JSON.stringify(vote));
+  }
+
+  async hasVoteFrom(pollId: string, voterId: string): Promise<boolean> {
+    try {
+      await this.db.get(NS.POLL_VOTE + pollId + ':' + voterId);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getVotesForPoll(pollId: string): Promise<EncryptedVote[]> {
+    const votes: EncryptedVote[] = [];
+    const prefix = NS.POLL_VOTE + pollId + ':';
+    for await (const [, value] of this.db.iterator({ gte: prefix, lt: prefix + '\xFF' })) {
+      votes.push(JSON.parse(value));
+    }
+    return votes;
+  }
+
+  async storeVoteReceipt(receipt: PollVoteReceipt): Promise<void> {
+    await this.db.put(NS.POLL_RECEIPT + receipt.pollId, JSON.stringify(receipt));
+  }
+
+  async getVoteReceipt(pollId: string): Promise<PollVoteReceipt | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.POLL_RECEIPT + pollId));
+    } catch {
+      return null;
+    }
+  }
+
+  async storePollResults(results: PollResults): Promise<void> {
+    await this.db.put(NS.POLL_RESULTS + results.pollId, JSON.stringify(results));
+  }
+
+  async getPollResults(pollId: string): Promise<PollResults | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.POLL_RESULTS + pollId));
+    } catch {
+      return null;
+    }
+  }
+
+  async closeExpiredPolls(): Promise<number> {
+    const now = Date.now();
+    let closed = 0;
+    for await (const [, value] of this.db.iterator({ gte: NS.POLL, lt: NS.POLL + '\xFF' })) {
+      const poll: Poll = JSON.parse(value);
+      if (poll.status === 'open' && poll.expiresAt < now) {
+        poll.status = 'closed';
+        await this.db.put(NS.POLL + poll.pollId, JSON.stringify(poll));
+        closed++;
+      }
+    }
+    return closed;
   }
 
   // ─── Stats ─────────────────────────────────────────────────────────────

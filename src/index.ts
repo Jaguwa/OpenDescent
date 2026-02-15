@@ -22,6 +22,7 @@ import { ContentManager, type SharedFileInfo } from './content/sharing.js';
 import { PostService } from './content/posts.js';
 import { TrustWebService } from './trust/web.js';
 import { DeadDropService } from './content/deaddrops.js';
+import { PollService } from './content/polls.js';
 import { APIServer } from './api/server.js';
 import type { NodeConfig, Message, PeerProfile, ContentType } from './types/index.js';
 
@@ -765,6 +766,15 @@ Options:
   const posts = new PostService(node, store);
   const trustWeb = new TrustWebService(node, store);
   const deadDrops = new DeadDropService(node, store);
+  const polls = new PollService(node, store);
+
+  // Wire poll handlers
+  node.setPollBroadcastHandler(async (data) => {
+    await polls.handleIncomingBroadcast(data);
+  });
+  node.setPollVoteHandler(async (data) => {
+    await polls.handleIncomingVote(data);
+  });
 
   // Wire dead drop handlers
   node.setDeadDropBroadcastHandler(async (data) => {
@@ -973,6 +983,7 @@ Options:
     posts,
     trustWeb,
     deadDrops,
+    polls,
   });
 
   // Periodic cleanup of expired dead drops (every 30 minutes)
@@ -980,6 +991,12 @@ Options:
     const cleaned = await store.cleanExpiredDrops();
     if (cleaned > 0) console.log(`[DeadDrops] Cleaned ${cleaned} expired drops`);
   }, 30 * 60 * 1000);
+
+  // Periodic cleanup of expired polls (every 15 minutes)
+  setInterval(async () => {
+    const closed = await store.closeExpiredPolls();
+    if (closed > 0) console.log(`[Polls] Closed ${closed} expired polls`);
+  }, 15 * 60 * 1000);
 
   // Periodic cleanup of expired pending messages (hourly)
   setInterval(() => store.cleanExpiredMessages(config.messageRetentionSeconds), 60 * 60 * 1000);

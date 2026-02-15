@@ -519,6 +519,66 @@ export interface OnionLayer {
   innerPayload: string;    // base64 encrypted next layer (or final content at exit)
 }
 
+// ─── Encrypted Polls ─────────────────────────────────────────────────────────
+
+/** Where a poll lives */
+export type PollScope = 'public' | 'group';
+
+/** Status lifecycle of a poll */
+export type PollStatus = 'open' | 'closed' | 'tallied';
+
+/** A poll created by a peer */
+export interface Poll {
+  pollId: string;
+  creatorId: PeerId;
+  creatorName?: string;
+  question: string;
+  options: string[];
+  scope: PollScope;
+  groupId?: string;
+  status: PollStatus;
+  createdAt: number;
+  expiresAt: number;
+  durationMs: number;
+  voteCount: number;
+  signature: string;
+  hopCount: number;
+  maxHops: number;
+}
+
+/** Encrypted vote — sent directly to creator via POLL_VOTE protocol */
+export interface EncryptedVote {
+  pollId: string;
+  voterId: PeerId;
+  encryptedPayload: string;
+  timestamp: number;
+}
+
+/** Plaintext inside EncryptedVote (encrypted with creator's X25519 pubkey) */
+export interface VotePlaintext {
+  pollId: string;
+  optionIndex: number;
+  voteSecret: string;
+}
+
+/** Published results with cryptographic proof */
+export interface PollResults {
+  pollId: string;
+  creatorId: PeerId;
+  tally: number[];
+  proofHashes: string[];
+  tallySignature: string;
+  publishedAt: number;
+}
+
+/** Voter-side receipt stored locally after casting a vote */
+export interface PollVoteReceipt {
+  pollId: string;
+  optionIndex: number;
+  voteSecret: string;
+  timestamp: number;
+}
+
 // ─── Account Recovery ────────────────────────────────────────────────────────
 
 /** Account bundle distributed to network peers for recovery */
