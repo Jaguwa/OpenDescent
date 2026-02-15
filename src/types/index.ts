@@ -490,6 +490,35 @@ export interface TrustPathResult {
   distance: number;
 }
 
+// ─── Dead Drops ──────────────────────────────────────────────────────────────
+
+/** An anonymous post — no authorId, no signature, zero attribution */
+export interface DeadDrop {
+  dropId: string;          // random UUID
+  ciphertext: string;      // base64, AES-256-GCM encrypted content
+  nonce: string;           // base64, 12-byte AES nonce
+  authTag: string;         // base64, 16-byte GCM auth tag
+  timestamp: number;       // set by exit relay, NOT author
+  expiresAt: number;       // timestamp + 24h
+  proofOfWork: string;     // hex SHA-256 hash with leading zero bits
+  powNonce: number;        // nonce that produces the PoW hash
+  votes: number;           // net score (up - down)
+}
+
+/** A vote on a dead drop — anonymous, gossiped */
+export interface DeadDropVote {
+  dropId: string;
+  voteId: string;          // random UUID
+  direction: 'up' | 'down';
+  timestamp: number;
+}
+
+/** One layer of onion encryption for relay routing */
+export interface OnionLayer {
+  nextHop: string;         // DecentraNet PeerId of next relay (empty = exit)
+  innerPayload: string;    // base64 encrypted next layer (or final content at exit)
+}
+
 // ─── Account Recovery ────────────────────────────────────────────────────────
 
 /** Account bundle distributed to network peers for recovery */

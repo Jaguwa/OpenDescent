@@ -52,6 +52,8 @@ export const PROTOCOLS = {
   POST_BROADCAST: `${PROTOCOL_PREFIX}/post-broadcast/1.0.0`,
   POST_INTERACTION: `${PROTOCOL_PREFIX}/post-interaction/1.0.0`,
   VOUCH_BROADCAST: `${PROTOCOL_PREFIX}/vouch-broadcast/1.0.0`,
+  DEAD_DROP_BROADCAST: `${PROTOCOL_PREFIX}/dead-drop-broadcast/1.0.0`,
+  DEAD_DROP_RELAY: `${PROTOCOL_PREFIX}/dead-drop-relay/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -78,6 +80,8 @@ export class DecentraNode {
   private postBroadcastHandler?: (data: string) => Promise<void>;
   private postInteractionHandler?: (data: string) => Promise<string>;
   private vouchBroadcastHandler?: (data: string) => Promise<void>;
+  private deadDropBroadcastHandler?: (data: string) => Promise<void>;
+  private deadDropRelayHandler?: (data: string) => Promise<void>;
   private passphrase: string;
 
   // Rate limiting: 100 messages per 60-second window per peer
@@ -359,6 +363,16 @@ export class DecentraNode {
   /** Register handler for vouch broadcasts (Trust Web) */
   setVouchBroadcastHandler(handler: (data: string) => Promise<void>): void {
     this.vouchBroadcastHandler = handler;
+  }
+
+  /** Register handler for dead drop broadcasts */
+  setDeadDropBroadcastHandler(handler: (data: string) => Promise<void>): void {
+    this.deadDropBroadcastHandler = handler;
+  }
+
+  /** Register handler for dead drop relay (onion routing) */
+  setDeadDropRelayHandler(handler: (data: string) => Promise<void>): void {
+    this.deadDropRelayHandler = handler;
   }
 
   /** Broadcast data to all connected peers on a given protocol */
@@ -882,6 +896,36 @@ export class DecentraNode {
         await writeToSink(stream, new TextEncoder().encode('OK'));
       } catch (error) {
         console.error(`[Protocol] Error handling vouch broadcast:`, error);
+      }
+    });
+
+    // Dead drop broadcast
+    await this.node.handle(PROTOCOLS.DEAD_DROP_BROADCAST, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.deadDropBroadcastHandler) {
+          await this.deadDropBroadcastHandler(text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('OK'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling dead drop broadcast:`, error);
+      }
+    });
+
+    // Dead drop relay (onion routing)
+    await this.node.handle(PROTOCOLS.DEAD_DROP_RELAY, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.deadDropRelayHandler) {
+          await this.deadDropRelayHandler(text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('OK'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling dead drop relay:`, error);
       }
     });
 

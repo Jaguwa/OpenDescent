@@ -22,6 +22,7 @@ import type { GroupManager, StoredGroup } from '../messaging/groups.js';
 import type { ContentManager, SharedFileInfo } from '../content/sharing.js';
 import type { PostService } from '../content/posts.js';
 import type { TrustWebService } from '../trust/web.js';
+import type { DeadDropService } from '../content/deaddrops.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ export interface APIServerDeps {
   content: ContentManager;
   posts?: PostService;
   trustWeb?: TrustWebService;
+  deadDrops?: DeadDropService;
   /** Override frontend static files directory (default: <cwd>/frontend) */
   frontendDir?: string;
   /** Override temp directory for file shares/downloads (default: cwd) */
@@ -846,6 +848,36 @@ export class APIServer {
           return this.ok(id, myVouches);
         }
 
+        // ─── Dead Drops ──────────────────────────────────────────
+
+        case 'create_dead_drop': {
+          if (!this.deps.deadDrops) return this.err(id, 'Dead drops not available');
+          if (!data.content || typeof data.content !== 'string' || data.content.length > 1000) {
+            return this.err(id, 'Drop content too long (max 1,000 chars)');
+          }
+          const drop = await this.deps.deadDrops.createDeadDrop(data.content);
+          return this.ok(id, { drop });
+        }
+
+        case 'get_dead_drops': {
+          if (!this.deps.deadDrops) return this.err(id, 'Dead drops not available');
+          const ddLimit = data?.limit || 50;
+          const drops = await this.deps.store.getDeadDropFeed(ddLimit);
+          const contents: Record<string, string> = {};
+          for (const d of drops) {
+            const text = this.deps.deadDrops.decryptDrop(d);
+            if (text) contents[d.dropId] = text;
+          }
+          return this.ok(id, { drops, contents });
+        }
+
+        case 'vote_dead_drop': {
+          if (!this.deps.deadDrops) return this.err(id, 'Dead drops not available');
+          if (!data.dropId || !data.direction) return this.err(id, 'Missing dropId or direction');
+          const newVotes = await this.deps.deadDrops.voteDrop(data.dropId, data.direction);
+          return this.ok(id, { voted: true, votes: newVotes });
+        }
+
         default:
           return this.err(id, `Unknown action: ${action}`);
       }
@@ -972,6 +1004,13 @@ export class APIServer {
           event: 'post_interaction',
           data,
         });
+      });
+    }
+
+    // Dead drop events
+    if (this.deps.deadDrops) {
+      this.deps.deadDrops.onNewDrop.push((drop, content) => {
+        this.broadcast({ type: 'event', event: 'new_dead_drop', data: { drop, content } });
       });
     }
 

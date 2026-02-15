@@ -12,7 +12,7 @@ import { Level } from 'level';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation } from '../types/index.js';
+import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote } from '../types/index.js';
 
 /** Decrypted message for conversation history */
 export interface StoredMessage {
@@ -51,6 +51,9 @@ const NS = {
   VOUCH: 'vouch:',
   VOUCH_IDX: 'vouchidx:',
   VOUCH_REV: 'vouchrev:',
+  DEAD_DROP: 'ddrop:',
+  DEAD_DROP_IDX: 'ddropidx:',
+  DEAD_DROP_VOTE: 'ddropvote:',
 } as const;
 
 export class LocalStore {
@@ -769,6 +772,78 @@ export class LocalStore {
       vouches.push(JSON.parse(value));
     }
     return vouches;
+  }
+
+  // ─── Dead Drops ──────────────────────────────────────────────────────────
+
+  async storeDeadDrop(drop: DeadDrop): Promise<void> {
+    await this.db.put(NS.DEAD_DROP + drop.dropId, JSON.stringify(drop));
+    const tsKey = drop.timestamp.toString().padStart(15, '0');
+    await this.db.put(NS.DEAD_DROP_IDX + tsKey + ':' + drop.dropId, drop.dropId);
+  }
+
+  async getDeadDrop(dropId: string): Promise<DeadDrop | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.DEAD_DROP + dropId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getDeadDropFeed(limit: number = 50): Promise<DeadDrop[]> {
+    const drops: DeadDrop[] = [];
+    const now = Date.now();
+    for await (const [, dropId] of this.db.iterator({ gte: NS.DEAD_DROP_IDX, lt: NS.DEAD_DROP_IDX + '\xFF', reverse: true, limit: limit * 2 })) {
+      try {
+        const drop: DeadDrop = JSON.parse(await this.db.get(NS.DEAD_DROP + dropId));
+        if (drop.expiresAt > now) {
+          drops.push(drop);
+          if (drops.length >= limit) break;
+        }
+      } catch {}
+    }
+    return drops;
+  }
+
+  async updateDropVotes(dropId: string, votes: number): Promise<void> {
+    const drop = await this.getDeadDrop(dropId);
+    if (drop) {
+      drop.votes = votes;
+      await this.db.put(NS.DEAD_DROP + dropId, JSON.stringify(drop));
+    }
+  }
+
+  async hasVotedOnDrop(dropId: string): Promise<boolean> {
+    const prefix = NS.DEAD_DROP_VOTE + dropId + ':';
+    for await (const _ of this.db.keys({ gte: prefix, lt: prefix + '\xFF', limit: 1 })) {
+      return true;
+    }
+    return false;
+  }
+
+  async recordDropVote(vote: DeadDropVote): Promise<void> {
+    await this.db.put(NS.DEAD_DROP_VOTE + vote.dropId + ':' + vote.voteId, JSON.stringify(vote));
+  }
+
+  async cleanExpiredDrops(): Promise<number> {
+    const now = Date.now();
+    let cleaned = 0;
+    for await (const [key, dropId] of this.db.iterator({ gte: NS.DEAD_DROP_IDX, lt: NS.DEAD_DROP_IDX + '\xFF' })) {
+      try {
+        const drop: DeadDrop = JSON.parse(await this.db.get(NS.DEAD_DROP + dropId));
+        if (drop.expiresAt < now) {
+          await this.db.del(NS.DEAD_DROP + dropId);
+          await this.db.del(key);
+          // Clean associated votes
+          const votePrefix = NS.DEAD_DROP_VOTE + dropId + ':';
+          for await (const voteKey of this.db.keys({ gte: votePrefix, lt: votePrefix + '\xFF' })) {
+            await this.db.del(voteKey);
+          }
+          cleaned++;
+        }
+      } catch {}
+    }
+    return cleaned;
   }
 
   // ─── Stats ─────────────────────────────────────────────────────────────

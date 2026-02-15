@@ -61,6 +61,10 @@ const state = {
   commentPostId: null,
   // Avatar cache
   avatarCache: {},
+  // Dead Drops
+  deadDrops: [],
+  deadDropContents: {},
+  deadDropVoted: {},
 };
 
 // ─── Theme Presets ──────────────────────────────────────────────────────────
@@ -413,6 +417,9 @@ function handleEvent(event, data) {
       showToast('Friend request received!', data.fromName);
       loadFriendRequests();
       break;
+    case 'new_dead_drop':
+      onNewDeadDrop(data);
+      break;
   }
 }
 
@@ -618,6 +625,7 @@ function showView(view) {
   document.getElementById('active-chat').classList.toggle('hidden', view !== 'chat');
   document.getElementById('empty-state').classList.toggle('hidden', view !== 'empty');
   document.getElementById('profile-view').classList.toggle('hidden', view !== 'profile');
+  document.getElementById('deaddrops-view').classList.toggle('hidden', view !== 'deaddrops');
 }
 
 // ─── Chat Navigation ────────────────────────────────────────────────────────
@@ -2278,6 +2286,7 @@ function switchTab(tabName) {
 
   // Show appropriate main view
   if (tabName === 'feed') { showView('feed'); loadFeed(); }
+  else if (tabName === 'deaddrops') { showView('deaddrops'); loadDeadDrops(); }
   else if (tabName === 'discover') { loadFriendRequests(); searchPeers(); }
   else if (tabName === 'chats' || tabName === 'contacts' || tabName === 'groups') {
     if (!state.activeChat) showView('empty');
@@ -2325,6 +2334,155 @@ function relativeTime(ts) {
   if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
   return Math.floor(diff / 86400000) + 'd ago';
 }
+
+// ─── Dead Drops ──────────────────────────────────────────────────────────────
+
+async function loadDeadDrops() {
+  try {
+    const result = await send('get_dead_drops', { limit: 50 });
+    state.deadDrops = result.drops || [];
+    state.deadDropContents = result.contents || {};
+    renderDeadDrops();
+  } catch (e) {
+    console.error('Failed to load dead drops:', e);
+  }
+}
+
+function renderDeadDrops() {
+  const feed = document.getElementById('deaddrop-feed');
+  if (!feed) return;
+  feed.innerHTML = '';
+
+  if (state.deadDrops.length === 0) {
+    feed.innerHTML = '<div class="sidebar-hint"><p class="subtle">No drops yet. Be the first.</p></div>';
+    return;
+  }
+
+  // Sort by timestamp desc
+  const sorted = [...state.deadDrops].sort((a, b) => b.timestamp - a.timestamp);
+  for (const drop of sorted) {
+    feed.appendChild(renderDeadDropCard(drop));
+  }
+}
+
+function renderDeadDropCard(drop) {
+  const card = document.createElement('div');
+  card.className = 'deaddrop-card';
+  card.id = `deaddrop-${drop.dropId}`;
+
+  const content = state.deadDropContents[drop.dropId] || '(encrypted)';
+  const time = relativeTime(drop.timestamp);
+  const expiresIn = drop.expiresAt - Date.now();
+  const hoursLeft = Math.max(0, Math.floor(expiresIn / (60 * 60 * 1000)));
+  const minsLeft = Math.max(0, Math.floor((expiresIn % (60 * 60 * 1000)) / (60 * 1000)));
+  const expiryText = expiresIn > 0 ? `${hoursLeft}h ${minsLeft}m left` : 'Expired';
+
+  // Random anonymous icon characters
+  const anonIcons = ['?', '!', '*', '~', '#', '&', '%', '@'];
+  const iconChar = anonIcons[Math.abs(hashCode(drop.dropId)) % anonIcons.length];
+
+  const voted = state.deadDropVoted[drop.dropId];
+
+  card.innerHTML = `
+    <div class="deaddrop-header">
+      <div class="deaddrop-anon-icon">${iconChar}</div>
+      <span>Anonymous</span>
+      <span>&middot;</span>
+      <span>${time}</span>
+    </div>
+    <div class="deaddrop-content">${escapeHtml(content)}</div>
+    <div class="deaddrop-actions">
+      <button class="deaddrop-vote-btn ${voted === 'up' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'up')">&#9650;</button>
+      <span class="deaddrop-score">${drop.votes || 0}</span>
+      <button class="deaddrop-vote-btn ${voted === 'down' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'down')">&#9660;</button>
+      <span class="deaddrop-expiry">${expiryText}</span>
+    </div>
+  `;
+
+  return card;
+}
+
+async function submitDeadDrop() {
+  const input = document.getElementById('deaddrop-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (text.length > 1000) {
+    showToast('Drop too long', 'Max 1000 characters');
+    return;
+  }
+
+  const btn = document.getElementById('btn-dead-drop');
+  const powStatus = document.getElementById('deaddrop-pow-status');
+  btn.disabled = true;
+  powStatus.classList.remove('hidden');
+
+  try {
+    await send('create_dead_drop', { content: text });
+    input.value = '';
+    document.getElementById('deaddrop-char-counter').textContent = '0/1000';
+    showToast('Drop submitted', 'Your anonymous message is being routed...');
+  } catch (e) {
+    showToast('Drop failed', e.message || 'Unknown error');
+  } finally {
+    btn.disabled = false;
+    powStatus.classList.add('hidden');
+  }
+}
+
+async function voteDeadDrop(dropId, direction) {
+  if (state.deadDropVoted[dropId]) {
+    showToast('Already voted', 'You can only vote once per drop');
+    return;
+  }
+  try {
+    const result = await send('vote_dead_drop', { dropId, direction });
+    state.deadDropVoted[dropId] = direction;
+    // Update local state
+    const drop = state.deadDrops.find(d => d.dropId === dropId);
+    if (drop) drop.votes = result.votes;
+    // Re-render card
+    const card = document.getElementById(`deaddrop-${dropId}`);
+    if (card && drop) {
+      card.replaceWith(renderDeadDropCard(drop));
+    }
+  } catch (e) {
+    showToast('Vote failed', e.message || 'Unknown error');
+  }
+}
+
+function onNewDeadDrop(data) {
+  const { drop, content } = data;
+  // Dedup
+  if (state.deadDrops.find(d => d.dropId === drop.dropId)) return;
+  state.deadDrops.unshift(drop);
+  if (content) state.deadDropContents[drop.dropId] = content;
+  if (state.activeView === 'deaddrops') {
+    const feed = document.getElementById('deaddrop-feed');
+    const hint = feed.querySelector('.sidebar-hint');
+    if (hint) hint.remove();
+    feed.prepend(renderDeadDropCard(drop));
+  }
+}
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+// Wire character counter for dead drop input
+document.addEventListener('DOMContentLoaded', () => {
+  const ddInput = document.getElementById('deaddrop-input');
+  if (ddInput) {
+    ddInput.addEventListener('input', () => {
+      const len = ddInput.value.length;
+      document.getElementById('deaddrop-char-counter').textContent = `${len}/1000`;
+    });
+  }
+});
 
 function escapeHtml(text) {
   if (!text) return '';

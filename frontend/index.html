@@ -30,6 +30,7 @@
         <button class="tab" data-tab="contacts">Contacts</button>
         <button class="tab" data-tab="groups">Groups</button>
         <button class="tab" data-tab="discover">Discover</button>
+        <button class="tab" data-tab="deaddrops">Dead Drops</button>
         <button id="btn-connect-peer" class="tab connect-tab" title="Connect Peer">+</button>
       </div>
 
@@ -68,6 +69,12 @@
         </div>
         <h4 class="section-title">Results</h4>
         <div id="discover-results" class="list"></div>
+      </div>
+      <!-- Dead Drops tab -->
+      <div id="tab-deaddrops" class="tab-content">
+        <div class="sidebar-hint">
+          <p class="subtle">Anonymous posts. No identity. No trace.</p>
+        </div>
       </div>
     </aside>
 
@@ -120,6 +127,23 @@
         <!-- Feed Posts -->
         <div id="feed-posts"></div>
         <div id="feed-loading" class="hidden"><span class="subtle">Loading...</span></div>
+      </div>
+
+      <!-- Dead Drops View -->
+      <div id="deaddrops-view" class="hidden">
+        <div id="deaddrops-header">
+          <h2>Dead Drops</h2>
+          <span class="subtle">Anonymous &middot; Encrypted &middot; Ephemeral (24h)</span>
+        </div>
+        <div id="deaddrop-composer">
+          <textarea id="deaddrop-input" placeholder="Drop an anonymous message..." rows="3" maxlength="1000"></textarea>
+          <div id="deaddrop-composer-bottom">
+            <span id="deaddrop-char-counter">0/1000</span>
+            <span id="deaddrop-pow-status" class="hidden subtle">Computing proof-of-work...</span>
+            <button id="btn-dead-drop" class="btn-primary" onclick="submitDeadDrop()">Drop</button>
+          </div>
+        </div>
+        <div id="deaddrop-feed"></div>
       </div>
 
       <!-- Active chat -->

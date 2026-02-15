@@ -21,6 +21,7 @@ import { GroupManager } from './messaging/groups.js';
 import { ContentManager, type SharedFileInfo } from './content/sharing.js';
 import { PostService } from './content/posts.js';
 import { TrustWebService } from './trust/web.js';
+import { DeadDropService } from './content/deaddrops.js';
 import { APIServer } from './api/server.js';
 import type { NodeConfig, Message, PeerProfile, ContentType } from './types/index.js';
 
@@ -763,6 +764,15 @@ Options:
   const content = new ContentManager(node, store);
   const posts = new PostService(node, store);
   const trustWeb = new TrustWebService(node, store);
+  const deadDrops = new DeadDropService(node, store);
+
+  // Wire dead drop handlers
+  node.setDeadDropBroadcastHandler(async (data) => {
+    await deadDrops.handleIncomingBroadcast(data);
+  });
+  node.setDeadDropRelayHandler(async (data) => {
+    await deadDrops.handleRelayMessage(data);
+  });
 
   // Wire vouch broadcast handler (Trust Web)
   node.setVouchBroadcastHandler(async (data) => {
@@ -962,7 +972,14 @@ Options:
     content,
     posts,
     trustWeb,
+    deadDrops,
   });
+
+  // Periodic cleanup of expired dead drops (every 30 minutes)
+  setInterval(async () => {
+    const cleaned = await store.cleanExpiredDrops();
+    if (cleaned > 0) console.log(`[DeadDrops] Cleaned ${cleaned} expired drops`);
+  }, 30 * 60 * 1000);
 
   // Periodic cleanup of expired pending messages (hourly)
   setInterval(() => store.cleanExpiredMessages(config.messageRetentionSeconds), 60 * 60 * 1000);

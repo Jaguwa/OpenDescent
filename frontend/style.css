@@ -1699,6 +1699,64 @@ body {
   font-weight: 500;
 }
 
+/* ─── Dead Drops ───────────────────────────────────────────────────────── */
+
+#deaddrops-view { max-width: 600px; margin: 0 auto; padding: 20px; flex: 1; overflow-y: auto; }
+#deaddrops-header { margin-bottom: 16px; }
+#deaddrops-header h2 { margin: 0; font-size: 1.2em; }
+
+#deaddrop-composer {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  margin-bottom: 20px;
+}
+#deaddrop-composer textarea {
+  width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary);
+  resize: none; font-family: inherit; font-size: 14px; outline: none;
+  border-radius: var(--radius); padding: 10px 14px;
+}
+#deaddrop-composer textarea:focus { border-color: var(--accent); }
+#deaddrop-composer-bottom {
+  display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+  margin-top: 8px;
+}
+#deaddrop-char-counter { color: var(--text-muted); font-size: 0.8em; }
+#deaddrop-pow-status { font-size: 12px; }
+
+.deaddrop-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.deaddrop-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px; font-size: 13px; color: var(--text-muted);
+}
+.deaddrop-anon-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center;
+  justify-content: center; font-size: 14px; color: white;
+  flex-shrink: 0;
+}
+.deaddrop-content { font-size: 15px; line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; word-wrap: break-word; }
+.deaddrop-actions {
+  display: flex; align-items: center; gap: 12px;
+  border-top: 1px solid var(--border); padding-top: 8px;
+}
+.deaddrop-vote-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer; color: var(--text-muted);
+  font-size: 13px; transition: all 0.15s;
+}
+.deaddrop-vote-btn:hover { border-color: var(--accent); color: var(--accent); }
+.deaddrop-vote-btn.voted { border-color: var(--accent); color: var(--accent); }
+.deaddrop-score { font-size: 14px; font-weight: 600; min-width: 30px; text-align: center; }
+.deaddrop-expiry { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+
 /* ─── Responsive ───────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
