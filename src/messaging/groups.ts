@@ -184,11 +184,43 @@ export class GroupManager {
   /**
    * Handle an incoming group control message.
    * Called by the messaging layer when it detects a group message.
+   * Validates sender membership/authorization before processing.
    */
   async handleGroupControlMessage(raw: any): Promise<boolean> {
     if (!raw.type || !raw.groupId) return false;
 
     const controlMsg = raw as GroupControlMessage;
+    const group = this.groups.get(controlMsg.groupId);
+
+    // For messages that require an existing group, verify sender membership
+    if (controlMsg.type === 'group_message') {
+      if (!group) {
+        console.warn(`[Groups] Received message for unknown group ${controlMsg.groupId}`);
+        return true; // consumed but ignored
+      }
+      if (!group.members.includes(controlMsg.from)) {
+        console.warn(`[Groups] Rejected group_message from non-member ${controlMsg.from} in "${group.name}"`);
+        return true;
+      }
+    }
+
+    // Key updates must come from the group creator
+    if (controlMsg.type === 'group_key_update') {
+      if (!group) return true;
+      if (controlMsg.from !== group.creatorId) {
+        console.warn(`[Groups] Rejected key_update from non-creator ${controlMsg.from} in "${group.name}"`);
+        return true;
+      }
+    }
+
+    // Leave messages: verify the claimed leaver is a current member
+    if (controlMsg.type === 'group_leave') {
+      if (!group) return true;
+      if (!group.members.includes(controlMsg.from)) {
+        console.warn(`[Groups] Ignored leave from non-member ${controlMsg.from}`);
+        return true;
+      }
+    }
 
     switch (controlMsg.type) {
       case 'group_invite':

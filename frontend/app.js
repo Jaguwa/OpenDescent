@@ -477,7 +477,7 @@ function renderConversations() {
     const icon = c.isGroup ? '&#128101; ' : '';
     return `
       <div class="list-item ${isActive ? 'active' : ''}"
-           onclick="openConversation('${c.conversationId}', '${escapeHtml(c.displayName)}', ${c.isGroup})">
+           onclick="openConversation('${escapeAttr(c.conversationId)}', '${escapeAttr(c.displayName)}', ${c.isGroup})">
         <div class="item-name">${icon}${escapeHtml(c.displayName)} <span class="item-time">${time}</span></div>
         <div class="item-preview">${escapeHtml(preview)}</div>
       </div>`;
@@ -491,7 +491,7 @@ function renderContacts() {
     return;
   }
   el.innerHTML = state.contacts.map((c) => `
-    <div class="list-item" onclick="startDM('${c.peerId}', '${escapeHtml(c.displayName || c.peerId.slice(0, 12))}')">
+    <div class="list-item" onclick="startDM('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')">
       <div class="item-name">
         ${c.online ? '<span class="online-dot"></span>' : ''}
         ${escapeHtml(c.displayName || c.peerId.slice(0, 12))}
@@ -508,7 +508,7 @@ function renderGroups() {
     return;
   }
   el.innerHTML = state.groups.map((g) => `
-    <div class="list-item" onclick="openGroup('${g.groupId}', '${escapeHtml(g.name)}')">
+    <div class="list-item" onclick="openGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')">
       <div class="item-name">&#128101; ${escapeHtml(g.name)}</div>
       <div class="item-preview">${g.memberCount} members</div>
     </div>`
@@ -596,7 +596,7 @@ function renderFileMessageHTML(isMine, senderName, fileInfo, time) {
       <div class="msg-body">
         &#128206; <strong>${escapeHtml(fileInfo.fileName)}</strong><br>
         <span class="subtle">${formatBytes(fileInfo.fileSize)}</span>
-        ${!isMine ? `<br><button class="file-download-btn" onclick="downloadFile('${fileInfo.contentId}')">Download</button>` : ''}
+        ${!isMine ? `<br><button class="file-download-btn" onclick="downloadFile('${escapeAttr(fileInfo.contentId)}')">Download</button>` : ''}
       </div>
       <div class="msg-time">${time}</div>
     </div>`;
@@ -913,7 +913,9 @@ function renderBentoProfile(data) {
       case 'vibe':
         if (cardData.vibe) {
           const v = cardData.vibe;
-          html += `<div class="bento-card card-vibe ${sizeClass}" style="background:linear-gradient(135deg,${v.gradientStart},${v.gradientEnd})">
+          const safeGradStart = isSafeColor(v.gradientStart) ? v.gradientStart : '#ff6b6b';
+          const safeGradEnd = isSafeColor(v.gradientEnd) ? v.gradientEnd : '#4ecdc4';
+          html += `<div class="bento-card card-vibe ${sizeClass}" style="background:linear-gradient(135deg,${safeGradStart},${safeGradEnd})">
             <div class="vibe-emoji">${escapeHtml(v.emoji)}</div>
             <div class="vibe-text">${escapeHtml(v.text)}</div>
           </div>`;
@@ -921,7 +923,7 @@ function renderBentoProfile(data) {
         break;
       case 'about':
         if (cardData.about) {
-          const fontClass = cardData.about.fontStyle !== 'sans' ? 'font-' + cardData.about.fontStyle : '';
+          const fontClass = isSafeFontStyle(cardData.about.fontStyle) && cardData.about.fontStyle !== 'sans' ? 'font-' + cardData.about.fontStyle : '';
           html += `<div class="bento-card card-about ${sizeClass}">
             <h4 style="margin-bottom:8px;color:var(--text-secondary)">About</h4>
             <div class="about-text ${fontClass}">${escapeHtml(cardData.about.text)}</div>
@@ -1080,15 +1082,16 @@ function renderDiscoverResults(results, friendIds) {
   }
   el.innerHTML = results.map(r => {
     const isFriend = friendIds.has(r.peerId);
+    const safePeerId = escapeAttr(r.peerId);
     return `<div class="discover-card">
-      <canvas width="40" height="40" data-peerid="${r.peerId}"></canvas>
+      <canvas width="40" height="40" data-peerid="${safePeerId}"></canvas>
       <div class="discover-info">
-        <div class="discover-name" onclick="openPeerProfile('${r.peerId}')" style="cursor:pointer">${escapeHtml(r.displayName)}</div>
+        <div class="discover-name" onclick="openPeerProfile('${safePeerId}')" style="cursor:pointer">${escapeHtml(r.displayName)}</div>
         <div class="discover-meta">${r.isOnline ? 'Online' : 'Offline'} &middot; ${r.hopDistance} hop${r.hopDistance > 1 ? 's' : ''}</div>
       </div>
       ${isFriend
         ? '<span class="discover-action friend-badge">Friend</span>'
-        : `<button class="discover-action" onclick="sendFriendRequest('${r.peerId}')">Add Friend</button>`}
+        : `<button class="discover-action" onclick="sendFriendRequest('${safePeerId}')">Add Friend</button>`}
     </div>`;
   }).join('');
   // Render avatars
@@ -1111,19 +1114,21 @@ async function loadFriendRequests() {
     const list = document.getElementById('friend-requests-list');
     if (requests.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
-    list.innerHTML = requests.map(r => `
-      <div class="friend-req-item">
-        <canvas width="32" height="32" data-peerid="${r.from}"></canvas>
+    list.innerHTML = requests.map(r => {
+      const safeReqId = escapeAttr(r.requestId);
+      const safeFrom = escapeAttr(r.from);
+      return `<div class="friend-req-item">
+        <canvas width="32" height="32" data-peerid="${safeFrom}"></canvas>
         <div class="friend-req-info">
           <div class="friend-req-name">${escapeHtml(r.fromName)}</div>
           ${r.message ? `<div class="friend-req-msg">${escapeHtml(r.message)}</div>` : ''}
         </div>
         <div class="friend-req-actions">
-          <button class="btn-accept" onclick="respondFriendRequest('${r.requestId}', true)">Accept</button>
-          <button class="btn-reject" onclick="respondFriendRequest('${r.requestId}', false)">Reject</button>
+          <button class="btn-accept" onclick="respondFriendRequest('${safeReqId}', true)">Accept</button>
+          <button class="btn-reject" onclick="respondFriendRequest('${safeReqId}', false)">Reject</button>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
     requestAnimationFrame(() => {
       list.querySelectorAll('canvas[data-peerid]').forEach(c => generateAvatar(c.dataset.peerid, c, 32));
     });
@@ -1178,50 +1183,57 @@ function renderPostCard(post) {
     for (let i = 0; i < count; i++) {
       const att = post.mediaAttachments[i];
       const imgSrc = att.data || att.thumbnail;
-      if (att.type === 'image' && imgSrc) {
+      const safeContentId = escapeAttr(att.contentId);
+      if (att.type === 'image' && imgSrc && isSafeMediaSrc(imgSrc)) {
         mediaHTML += `<div class="post-media-item"><img src="${imgSrc}" alt=""></div>`;
+      } else if (att.type === 'image' && imgSrc) {
+        mediaHTML += `<div class="post-media-item"><span class="subtle">Unsafe image source blocked</span></div>`;
       } else if (att.type === 'voicenote') {
         const hasData = !!att.data;
         const hasWaveform = att.waveform && att.waveform.length > 0;
+        const safeWaveform = hasWaveform ? escapeAttr(JSON.stringify(att.waveform)) : '';
         mediaHTML += `<div class="voicenote-player">
-          <button class="vn-play-btn" onclick="playVoicenote('${att.contentId}')" ${!hasData ? 'disabled title="No audio data"' : ''}>&#9654;</button>
+          <button class="vn-play-btn" onclick="playVoicenote('${safeContentId}')" ${!hasData ? 'disabled title="No audio data"' : ''}>&#9654;</button>
           ${hasWaveform
-            ? `<canvas class="vn-waveform-display" data-contentid="${att.contentId}" data-waveform='${JSON.stringify(att.waveform)}' width="200" height="30"></canvas>`
+            ? `<canvas class="vn-waveform-display" data-contentid="${safeContentId}" data-waveform="${safeWaveform}" width="200" height="30"></canvas>`
             : `<div class="vn-bar"></div>`}
           <span class="vn-duration">${att.duration ? formatDuration(att.duration) : '--:--'}</span>
         </div>`;
       } else if (att.type === 'audio' && att.data) {
         mediaHTML += `<div class="voicenote-player">
-          <button class="vn-play-btn" onclick="playVoicenote('${att.contentId}')">&#9654;</button>
+          <button class="vn-play-btn" onclick="playVoicenote('${safeContentId}')">&#9654;</button>
           <div class="vn-bar"></div>
           <span class="vn-duration">${escapeHtml(att.fileName || 'audio')}</span>
         </div>`;
-      } else if (att.type === 'video' && att.data) {
+      } else if (att.type === 'video' && att.data && isSafeMediaSrc(att.data)) {
         mediaHTML += `<div class="post-media-item"><video src="${att.data}" controls style="max-width:100%;max-height:300px"></video></div>`;
       } else {
         mediaHTML += `<div class="post-media-item" style="display:flex;align-items:center;justify-content:center">
-          <span class="subtle">${att.type}: ${att.fileName || att.contentId.slice(0, 8)}</span>
+          <span class="subtle">${escapeHtml(att.type)}: ${escapeHtml(att.fileName || att.contentId?.slice(0, 8) || 'file')}</span>
         </div>`;
       }
     }
     mediaHTML += '</div>';
   }
 
-  return `<div class="post-card" data-postid="${post.postId}">
+  const safeAuthorId = escapeAttr(post.authorId);
+  const safePostId = escapeAttr(post.postId);
+
+  return `<div class="post-card" data-postid="${safePostId}">
     <div class="post-card-header">
-      <canvas class="post-avatar" width="40" height="40" data-peerid="${post.authorId}" onclick="openPeerProfile('${post.authorId}')"></canvas>
+      <canvas class="post-avatar" width="40" height="40" data-peerid="${safeAuthorId}" onclick="openPeerProfile('${safeAuthorId}')"></canvas>
       <div class="post-author-info">
-        <div class="post-author-name" onclick="openPeerProfile('${post.authorId}')">${escapeHtml(authorName)}</div>
+        <div class="post-author-name" onclick="openPeerProfile('${safeAuthorId}')">${escapeHtml(authorName)}</div>
         <div class="post-time">${relativeTime(post.timestamp)}</div>
       </div>
     </div>
     ${post.content ? `<div class="post-content">${escapeHtml(post.content)}</div>` : ''}
     ${mediaHTML}
     <div class="post-actions">
-      <button class="post-action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike('${post.postId}', ${!!post.liked})">
+      <button class="post-action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike('${safePostId}', ${!!post.liked})">
         ${post.liked ? '&#10084;' : '&#9825;'} ${post.likeCount || 0}
       </button>
-      <button class="post-action-btn" onclick="openComments('${post.postId}')">
+      <button class="post-action-btn" onclick="openComments('${safePostId}')">
         &#128172; ${post.commentCount || 0}
       </button>
     </div>
@@ -1959,13 +1971,15 @@ function cancelChatVn() {
 /** Render a voicenote message bubble in the chat */
 function renderVoicenoteMessageHTML(isMine, vn, time, senderHTML) {
   const hasWaveform = vn.waveform && vn.waveform.length > 0;
+  const safeId = escapeAttr(vn.contentId);
+  const safeWaveform = hasWaveform ? escapeAttr(JSON.stringify(vn.waveform)) : '';
   return `
     <div class="message ${isMine ? 'sent' : 'received'}">
       ${senderHTML || ''}
       <div class="voicenote-player">
-        <button class="vn-play-btn" onclick="playVoicenote('${vn.contentId}')">&#9654;</button>
+        <button class="vn-play-btn" onclick="playVoicenote('${safeId}')">&#9654;</button>
         ${hasWaveform
-          ? `<canvas class="vn-waveform-display" data-contentid="${vn.contentId}" data-waveform='${JSON.stringify(vn.waveform)}' width="200" height="30"></canvas>`
+          ? `<canvas class="vn-waveform-display" data-contentid="${safeId}" data-waveform="${safeWaveform}" width="200" height="30"></canvas>`
           : `<div class="vn-bar"></div>`}
         <span class="vn-duration">${vn.duration ? formatDuration(vn.duration) : '--:--'}</span>
       </div>
@@ -2201,6 +2215,31 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+/** Escape a string for safe use inside HTML attribute values (single-quoted) */
+function escapeAttr(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Validate that a string is a safe data URL for media (image/video/audio base64) or blob URL */
+function isSafeMediaSrc(src) {
+  if (!src) return false;
+  if (src.startsWith('blob:')) return true;
+  if (/^data:(image|video|audio)\/[a-zA-Z0-9+.\-]+;base64,[A-Za-z0-9+/=\s]+$/.test(src)) return true;
+  return false;
+}
+
+/** Validate CSS color value (hex, rgb, hsl only) */
+function isSafeColor(val) {
+  if (!val) return false;
+  return /^#[0-9a-fA-F]{3,8}$/.test(val) || /^(rgb|hsl)a?\([0-9, .%]+\)$/.test(val);
+}
+
+/** Whitelist check for font style values */
+function isSafeFontStyle(val) {
+  return ['sans', 'serif', 'mono', 'handwritten'].includes(val);
 }
 
 // ─── Display Name ───────────────────────────────────────────────────────────

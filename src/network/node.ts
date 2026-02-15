@@ -546,15 +546,16 @@ export class DecentraNode {
         const theirProfile = deserializeProfile(theirProfileData);
 
         if (verifyPeerProfile(theirProfile)) {
-          // TOFU check
+          // TOFU check — reject peer if key changed (don't silently accept)
           if (this.tofuHandler) {
             const trusted = await this.tofuHandler(theirProfile.peerId, theirProfile.publicKey);
             if (!trusted) {
-              console.warn(`[TOFU] Key change detected for ${theirProfile.peerId}! Peer not auto-accepted.`);
+              console.warn(`[TOFU] Key change detected for ${theirProfile.peerId}! Rejecting peer.`);
               this.emit('peer:key_changed', {
                 peerId: theirProfile.peerId,
                 displayName: theirProfile.displayName,
               }, theirProfile.peerId);
+              return; // Do NOT register — key mismatch
             }
           }
           this.registerKnownPeer(theirProfile, libp2pId);
@@ -636,21 +637,25 @@ export class DecentraNode {
         const theirProfile = deserializeProfile(theirProfileData);
 
         if (verifyPeerProfile(theirProfile)) {
-          // TOFU check
+          // TOFU check — reject peer if key changed (don't silently accept)
+          let tofuRejected = false;
           if (this.tofuHandler) {
             const trusted = await this.tofuHandler(theirProfile.peerId, theirProfile.publicKey);
             if (!trusted) {
-              console.warn(`[TOFU] Key change detected for ${theirProfile.peerId}!`);
+              console.warn(`[TOFU] Key change detected for ${theirProfile.peerId}! Rejecting peer.`);
               this.emit('peer:key_changed', {
                 peerId: theirProfile.peerId,
                 displayName: theirProfile.displayName,
               }, theirProfile.peerId);
+              tofuRejected = true;
             }
           }
-          this.registerKnownPeer(theirProfile, libp2pId);
-          const name = theirProfile.displayName || theirProfile.peerId.slice(0, 12);
-          console.log(`[Exchange] Received profile from ${name} (${theirProfile.peerId})`);
-          this.emit('peer:connected', theirProfile, theirProfile.peerId);
+          if (!tofuRejected) {
+            this.registerKnownPeer(theirProfile, libp2pId);
+            const name = theirProfile.displayName || theirProfile.peerId.slice(0, 12);
+            console.log(`[Exchange] Received profile from ${name} (${theirProfile.peerId})`);
+            this.emit('peer:connected', theirProfile, theirProfile.peerId);
+          }
         } else {
           console.warn(`[Exchange] Profile from ${libp2pId} failed verification`);
         }
@@ -884,10 +889,18 @@ function deserializeProfile(raw: any): PeerProfile {
 
 // ─── Stream Helpers (libp2p async iterable API) ──────────────────────────────
 
+const MAX_STREAM_BYTES = 10 * 1024 * 1024; // 10MB — reject streams larger than this
+
 async function readFromSource(source: AsyncIterable<any>): Promise<Uint8Array> {
   const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
   for await (const chunk of source) {
-    chunks.push(chunk.subarray());
+    const bytes = chunk.subarray();
+    totalBytes += bytes.length;
+    if (totalBytes > MAX_STREAM_BYTES) {
+      throw new Error(`Stream exceeded ${MAX_STREAM_BYTES} byte limit`);
+    }
+    chunks.push(bytes);
   }
   return concatenateUint8Arrays(chunks);
 }

@@ -20,7 +20,7 @@ import type {
   PeerId,
 } from '../types/index.js';
 import { encryptForPeer, decryptFromPeer, type EncryptedPayload } from '../crypto/encryption.js';
-import { sign, publicKeyToPeerId } from '../crypto/identity.js';
+import { sign, verify, publicKeyToPeerId } from '../crypto/identity.js';
 import { DecentraNode, PROTOCOLS } from '../network/node.js';
 import { LocalStore, type StoredMessage } from '../storage/store.js';
 
@@ -204,6 +204,27 @@ export class MessagingService {
         return;
       }
 
+      // Verify sender signature
+      const senderProfile = this.node.getKnownPeer(envelope.from);
+      if (senderProfile && envelope.signature.length > 0) {
+        const dataToVerify = new TextEncoder().encode(JSON.stringify({
+          messageId: envelope.messageId,
+          from: envelope.from,
+          to: envelope.to,
+          encryptedPayload: Buffer.from(envelope.encryptedPayload).toString('base64'),
+          nonce: Buffer.from(envelope.nonce).toString('base64'),
+          ephemeralPublicKey: Buffer.from(envelope.ephemeralPublicKey).toString('base64'),
+          authTag: Buffer.from(envelope.authTag).toString('base64'),
+          timestamp: envelope.timestamp,
+          ttl: envelope.ttl,
+          contentTypeHint: envelope.contentTypeHint,
+        }));
+        if (!verify(dataToVerify, envelope.signature, senderProfile.publicKey)) {
+          console.warn(`[Messaging] Invalid signature from ${envelope.from} — dropping message`);
+          return;
+        }
+      }
+
       await this.store.storeMessage(envelope);
 
       // Decrypt
@@ -243,7 +264,30 @@ export class MessagingService {
 
   private async handleStoreForwardRequest(raw: any): Promise<void> {
     const recipientId = raw.recipientId;
+    if (!recipientId || typeof recipientId !== 'string') return;
     const envelope = deserializeEnvelopeFromWire(raw.envelope);
+
+    // Verify envelope signature before storing
+    const senderProfile = this.node.getKnownPeer(envelope.from);
+    if (senderProfile && envelope.signature.length > 0) {
+      const dataToVerify = new TextEncoder().encode(JSON.stringify({
+        messageId: envelope.messageId,
+        from: envelope.from,
+        to: envelope.to,
+        encryptedPayload: Buffer.from(envelope.encryptedPayload).toString('base64'),
+        nonce: Buffer.from(envelope.nonce).toString('base64'),
+        ephemeralPublicKey: Buffer.from(envelope.ephemeralPublicKey).toString('base64'),
+        authTag: Buffer.from(envelope.authTag).toString('base64'),
+        timestamp: envelope.timestamp,
+        ttl: envelope.ttl,
+        contentTypeHint: envelope.contentTypeHint,
+      }));
+      if (!verify(dataToVerify, envelope.signature, senderProfile.publicKey)) {
+        console.warn(`[Messaging] Rejected store-forward: invalid signature from ${envelope.from}`);
+        return;
+      }
+    }
+
     await this.store.queuePendingMessage(recipientId, envelope);
     console.log(`[Messaging] Holding message ${envelope.messageId} for ${recipientId}`);
   }

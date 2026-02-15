@@ -10,6 +10,7 @@
  */
 
 import * as crypto from 'crypto';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { DecentraNode } from './network/node.js';
@@ -700,7 +701,26 @@ Options:
 
   const port = args.port || 6001;
   const dataDir = args.dataDir || `./data-${port}`;
-  const passphrase = args.passphrase || 'decentranet-dev-passphrase';
+
+  // Resolve passphrase: explicit > device-key > legacy default (for existing identities)
+  let passphrase: string;
+  const identityFile = path.join(dataDir, 'identity.json');
+  const deviceKeyFile = path.join(dataDir, '.device-key');
+  if (args.passphrase) {
+    passphrase = args.passphrase;
+  } else if (fs.existsSync(deviceKeyFile)) {
+    passphrase = fs.readFileSync(deviceKeyFile, 'utf8').trim();
+  } else if (fs.existsSync(identityFile)) {
+    // Existing identity without device key → use legacy default for backward compatibility
+    passphrase = 'decentranet-dev-passphrase';
+    console.warn('[Security] Using legacy default passphrase. Run with --passphrase to set a custom one.');
+  } else {
+    // Fresh install → generate random device-specific key
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    passphrase = crypto.randomBytes(32).toString('hex');
+    fs.writeFileSync(deviceKeyFile, passphrase);
+    console.log('[Security] Generated device-specific encryption key.');
+  }
 
   const config: NodeConfig = {
     port,
@@ -750,6 +770,30 @@ Options:
   node.setProfileUpdateHandler(async (peerId, data) => {
     try {
       const profile = JSON.parse(data);
+      // Verify the profile update came from the claimed peer
+      if (profile.peerId !== peerId) {
+        console.warn(`[Profile] Rejected update: claimed peerId ${profile.peerId} != sender ${peerId}`);
+        return;
+      }
+      // Verify signature if present
+      if (profile.signature) {
+        const senderProfile = node.getKnownPeer(peerId);
+        if (senderProfile) {
+          const { verify: verifyProfile } = await import('./crypto/identity.js');
+          const sigData = new TextEncoder().encode(JSON.stringify({
+            peerId: profile.peerId,
+            cards: profile.cards,
+            cardData: profile.cardData,
+            version: profile.version,
+            updatedAt: profile.updatedAt,
+          }));
+          const sigBytes = new Uint8Array(Buffer.from(profile.signature, 'base64'));
+          if (!verifyProfile(sigData, sigBytes, senderProfile.publicKey)) {
+            console.warn(`[Profile] Rejected update: invalid signature from ${peerId}`);
+            return;
+          }
+        }
+      }
       await store.storeUserProfile(profile);
     } catch {}
   });
@@ -796,7 +840,26 @@ Options:
         }
         return 'OK';
       }
-      // Incoming friend request
+      // Incoming friend request — verify signature if present
+      if (msg.signature && msg.from) {
+        const senderProfile = node.getKnownPeer(msg.from);
+        if (senderProfile) {
+          const { verify: verifyFR } = await import('./crypto/identity.js');
+          const sigData = new TextEncoder().encode(JSON.stringify({
+            requestId: msg.requestId,
+            from: msg.from,
+            to: msg.to,
+            fromName: msg.fromName,
+            message: msg.message || '',
+            timestamp: msg.timestamp,
+          }));
+          const sigBytes = new Uint8Array(Buffer.from(msg.signature, 'base64'));
+          if (!verifyFR(sigData, sigBytes, senderProfile.publicKey)) {
+            console.warn(`[FriendReq] Rejected: invalid signature from ${msg.from}`);
+            return 'INVALID_SIGNATURE';
+          }
+        }
+      }
       await store.storeFriendRequest(msg);
       return 'RECEIVED';
     } catch {
@@ -897,6 +960,7 @@ Options:
   setInterval(() => store.cleanExpiredMessages(config.messageRetentionSeconds), 60 * 60 * 1000);
 
   // Periodic account bundle auto-save and distribution (every 5 minutes)
+  // Bundles are encrypted before distribution so storing peers can't read contacts/groups
   const { sign: signData } = await import('./crypto/identity.js');
   setInterval(async () => {
     try {
@@ -906,12 +970,27 @@ Options:
         signature: Buffer.from(bundle.signature).toString('base64'),
       });
 
+      // Encrypt the bundle with a key derived from our private key
+      // Only someone with the same private key (i.e., mnemonic recovery) can decrypt
+      const bundleKey = crypto.createHash('sha256').update(node.getIdentity().privateKey).digest();
+      const bundleIv = crypto.randomBytes(16);
+      const bundleCipher = crypto.createCipheriv('aes-256-gcm', bundleKey, bundleIv);
+      let encrypted = bundleCipher.update(serialized, 'utf8', 'base64');
+      encrypted += bundleCipher.final('base64');
+      const bundleAuthTag = bundleCipher.getAuthTag();
+      const encryptedBundle = JSON.stringify({
+        v: 1,
+        iv: bundleIv.toString('base64'),
+        authTag: bundleAuthTag.toString('base64'),
+        data: encrypted,
+      });
+
       // Distribute to connected peers
       const { PROTOCOLS: P } = await import('./network/node.js');
       const request = new TextEncoder().encode(JSON.stringify({
         action: 'store',
         peerId: node.getPeerId(),
-        data: serialized,
+        data: encryptedBundle,
       }));
       for (const peer of node.getConnectedPeers()) {
         if (peer.decentraId) {
@@ -930,6 +1009,24 @@ Options:
       console.error(`[Startup] Failed to connect with invite code: ${error.message}`);
     }
   }
+
+  // Graceful shutdown handler
+  let shuttingDown = false;
+  const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`\n[Shutdown] ${signal} received, cleaning up...`);
+    try {
+      await node.stop();
+      await store.close();
+      console.log('[Shutdown] Clean shutdown complete.');
+    } catch (err) {
+      console.error('[Shutdown] Error during cleanup:', err);
+    }
+    process.exit(0);
+  };
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 
   const cli = new DecentraNetCLI(node, store, messaging, calls, groups, content);
   cli.setWebPort(webPort);

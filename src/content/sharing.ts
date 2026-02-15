@@ -208,8 +208,8 @@ export class ContentManager {
       decipher.final(),
     ]);
 
-    // Write to output
-    const outputPath = path.join(outputDir, fileInfo.fileName);
+    // Write to output (sanitize filename to prevent path traversal from remote peers)
+    const outputPath = path.join(outputDir, path.basename(fileInfo.fileName));
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }

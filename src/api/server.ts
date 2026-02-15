@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Message, PeerId, ContentType, ThemePreferences, UserProfile, FriendRequest, Post } from '../types/index.js';
+import { sign, verify } from '../crypto/identity.js';
 import type { DecentraNode } from '../network/node.js';
 import type { LocalStore } from '../storage/store.js';
 import type { MessagingService } from '../messaging/delivery.js';
@@ -99,7 +100,7 @@ export class APIServer {
     });
 
     // WebSocket server
-    this.wss = new WebSocketServer({ server: this.httpServer });
+    this.wss = new WebSocketServer({ server: this.httpServer, maxPayload: 5 * 1024 * 1024 }); // 5MB limit
     this.wss.on('connection', (ws) => this.handleConnection(ws));
 
     // Wire up events from the backend
@@ -120,10 +121,11 @@ export class APIServer {
     // Strip query strings
     urlPath = urlPath.split('?')[0];
 
-    const filePath = path.join(this.frontendDir, urlPath);
+    const filePath = path.resolve(this.frontendDir, '.' + urlPath);
+    const resolvedFrontend = path.resolve(this.frontendDir);
 
     // Security: prevent directory traversal
-    if (!filePath.startsWith(this.frontendDir)) {
+    if (!filePath.startsWith(resolvedFrontend + path.sep) && filePath !== resolvedFrontend) {
       res.writeHead(403);
       res.end('Forbidden');
       return;
@@ -133,6 +135,8 @@ export class APIServer {
     const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
 
     const securityHeaders: Record<string, string> = {
+      // Note: 'unsafe-inline' required for script-src because the frontend uses inline onclick handlers.
+      // XSS is mitigated at the application layer via escapeAttr() and input sanitization (Phase A).
       'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* wss://localhost:*; img-src 'self' data: blob:; media-src 'self' blob: data:;",
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
@@ -253,6 +257,9 @@ export class APIServer {
 
         case 'send_message': {
           const { to, text } = data;
+          if (!text || typeof text !== 'string' || text.length > 50_000) {
+            return this.err(id, 'Message too long (max 50,000 chars)');
+          }
           const recipientId = this.resolveRecipient(to);
           if (!recipientId) return this.err(id, `Unknown recipient: ${to}`);
           const msgId = await this.deps.messaging.sendTextMessage(recipientId, text);
@@ -304,6 +311,9 @@ export class APIServer {
 
         case 'send_group_message': {
           const { groupId, text } = data;
+          if (!text || typeof text !== 'string' || text.length > 50_000) {
+            return this.err(id, 'Message too long (max 50,000 chars)');
+          }
           const group = this.deps.groups.findGroup(groupId);
           if (!group) return this.err(id, `Unknown group: ${groupId}`);
           const msgId = await this.deps.groups.sendGroupMessage(group.groupId, text);
@@ -326,10 +336,19 @@ export class APIServer {
           const recipientId = this.resolveRecipient(to);
           if (!recipientId) return this.err(id, `Unknown recipient: ${to}`);
 
+          // Size limit: 50MB decoded (base64 is ~33% overhead)
+          if (!fileData || typeof fileData !== 'string' || fileData.length > 70_000_000) {
+            return this.err(id, 'File too large (max 50MB)');
+          }
+
+          // Sanitize filename to prevent path traversal
+          const safeName = path.basename(String(fileName || 'file'));
+          if (!safeName || safeName === '.' || safeName === '..') return this.err(id, 'Invalid file name');
+
           // Write temp file, share it, clean up
           const tmpDir = path.join(this.tempDir, '.tmp-shares');
           if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-          const tmpPath = path.join(tmpDir, fileName);
+          const tmpPath = path.join(tmpDir, safeName);
           fs.writeFileSync(tmpPath, Buffer.from(fileData, 'base64'));
 
           try {
@@ -449,8 +468,30 @@ export class APIServer {
             if (response) {
               const text = new TextDecoder().decode(response);
               if (text !== 'NOT_FOUND' && text !== 'UNSUPPORTED') {
-                bundleFound = true;
-                break;
+                // Try to decrypt the bundle (encrypted bundles use v:1 envelope)
+                try {
+                  const envelope = JSON.parse(text);
+                  if (envelope.v === 1 && envelope.iv && envelope.data) {
+                    // Decrypt with key derived from recovered identity's private key
+                    const bundleKey = crypto.createHash('sha256').update(identity.privateKey).digest();
+                    const iv = Buffer.from(envelope.iv, 'base64');
+                    const authTag = Buffer.from(envelope.authTag, 'base64');
+                    const decipher = crypto.createDecipheriv('aes-256-gcm', bundleKey, iv);
+                    decipher.setAuthTag(authTag);
+                    let decrypted = decipher.update(envelope.data, 'base64', 'utf8');
+                    decrypted += decipher.final('utf8');
+                    const bundle = JSON.parse(decrypted);
+                    await this.deps.store.restoreFromBundle(bundle);
+                    bundleFound = true;
+                  } else {
+                    // Legacy unencrypted bundle
+                    await this.deps.store.restoreFromBundle(envelope);
+                    bundleFound = true;
+                  }
+                } catch (decryptErr) {
+                  console.warn(`[Recovery] Failed to decrypt bundle from peer:`, decryptErr);
+                }
+                if (bundleFound) break;
               }
             }
           }
@@ -506,6 +547,15 @@ export class APIServer {
             updatedAt: Date.now(),
             signature: '',
           };
+          // Sign the profile with Ed25519
+          const profileSignData = new TextEncoder().encode(JSON.stringify({
+            peerId: profile.peerId,
+            cards: profile.cards,
+            cardData: profile.cardData,
+            version: profile.version,
+            updatedAt: profile.updatedAt,
+          }));
+          profile.signature = Buffer.from(sign(profileSignData, this.deps.node.getIdentity().privateKey)).toString('base64');
           await this.deps.store.storeUserProfile(profile);
           // Broadcast to connected peers
           const { PROTOCOLS: P } = await import('../network/node.js');
@@ -591,6 +641,16 @@ export class APIServer {
             status: 'pending',
             signature: '',
           };
+          // Sign the friend request
+          const frSignData = new TextEncoder().encode(JSON.stringify({
+            requestId: friendReq.requestId,
+            from: friendReq.from,
+            to: friendReq.to,
+            fromName: friendReq.fromName,
+            message: friendReq.message || '',
+            timestamp: friendReq.timestamp,
+          }));
+          friendReq.signature = Buffer.from(sign(frSignData, myProfile.privateKey)).toString('base64');
           await this.deps.store.storeFriendRequest(friendReq);
 
           // Send to target peer
@@ -650,6 +710,9 @@ export class APIServer {
 
         case 'create_post': {
           if (!this.deps.posts) return this.err(id, 'Posts not available');
+          if (!data.content || typeof data.content !== 'string' || data.content.length > 10_000) {
+            return this.err(id, 'Post content too long (max 10,000 chars)');
+          }
           const post = await this.deps.posts.createPost(data.content, data.attachments || []);
           return this.ok(id, post);
         }
@@ -681,6 +744,9 @@ export class APIServer {
 
         case 'comment_post': {
           if (!this.deps.posts) return this.err(id, 'Posts not available');
+          if (!data.content || typeof data.content !== 'string' || data.content.length > 5_000) {
+            return this.err(id, 'Comment too long (max 5,000 chars)');
+          }
           const comment = await this.deps.posts.commentOnPost(data.postId, data.content);
           return this.ok(id, comment);
         }
@@ -694,8 +760,14 @@ export class APIServer {
           // For large files (>500KB): write to temp, shard via ContentManager
           if (!this.deps.content) return this.err(id, 'Content manager not available');
           const { base64Data, fileName, mimeType } = data;
+          // Size limit: 50MB decoded
+          if (!base64Data || typeof base64Data !== 'string' || base64Data.length > 70_000_000) {
+            return this.err(id, 'File too large (max 50MB)');
+          }
+          const safeMediaName = path.basename(String(fileName || 'upload'));
+          if (!safeMediaName || safeMediaName === '.' || safeMediaName === '..') return this.err(id, 'Invalid file name');
           const buf = Buffer.from(base64Data.replace(/^data:[^;]+;base64,/, ''), 'base64');
-          const tempPath = path.join(this.tempDir, `upload_${crypto.randomUUID()}_${fileName}`);
+          const tempPath = path.join(this.tempDir, `upload_${crypto.randomUUID()}_${safeMediaName}`);
           fs.writeFileSync(tempPath, buf);
           try {
             const fileInfo = await this.deps.content.shareFile(tempPath);

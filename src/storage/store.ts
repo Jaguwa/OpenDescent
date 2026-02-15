@@ -27,6 +27,8 @@ export interface StoredMessage {
   status: 'sent' | 'delivered' | 'failed';
 }
 
+const SCHEMA_VERSION = 2; // Increment when changing storage format
+
 const NS = {
   SHARD: 'shard:',
   MESSAGE: 'msg:',
@@ -67,8 +69,22 @@ export class LocalStore {
 
   async open(): Promise<void> {
     await this.db.open();
+
+    // Schema version check — detect and handle upgrades
+    try {
+      const storedVersion = await this.db.get(`${NS.META}schema_version`);
+      const ver = parseInt(storedVersion, 10);
+      if (ver < SCHEMA_VERSION) {
+        console.log(`[Store] Upgrading schema from v${ver} to v${SCHEMA_VERSION}`);
+        await this.db.put(`${NS.META}schema_version`, String(SCHEMA_VERSION));
+      }
+    } catch {
+      // No version stored — first run or pre-versioning DB
+      await this.db.put(`${NS.META}schema_version`, String(SCHEMA_VERSION));
+    }
+
     await this.calculateStorageUsage();
-    console.log(`[Store] Opened. Usage: ${formatBytes(this.currentStorageBytes)} / ${formatBytes(this.maxStorageBytes)}`);
+    console.log(`[Store] Opened (schema v${SCHEMA_VERSION}). Usage: ${formatBytes(this.currentStorageBytes)} / ${formatBytes(this.maxStorageBytes)}`);
   }
 
   async close(): Promise<void> {
