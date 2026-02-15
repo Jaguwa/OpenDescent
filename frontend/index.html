@@ -11,20 +11,37 @@
     <!-- ─── Sidebar ─────────────────────────────────────────── -->
     <aside id="sidebar">
       <div id="identity-bar">
-        <div id="my-name" class="editable-name" onclick="showNameModal()" title="Click to change display name">Connecting...</div>
-        <div id="my-id"></div>
-        <div id="connection-status" class="status-dot offline"></div>
+        <div id="identity-left">
+          <canvas id="my-avatar" width="36" height="36" class="sidebar-avatar"></canvas>
+          <div>
+            <div id="my-name" class="editable-name" onclick="openProfile()" title="Click to view profile">Connecting...</div>
+            <div id="my-id"></div>
+          </div>
+        </div>
+        <div id="identity-right">
+          <button id="btn-settings" class="icon-btn-sm" title="Settings" onclick="showSettingsModal()">&#9881;</button>
+          <div id="connection-status" class="status-dot offline"></div>
+        </div>
       </div>
 
       <div id="sidebar-tabs">
-        <button class="tab active" data-tab="chats">Chats</button>
+        <button class="tab active" data-tab="feed">Feed</button>
+        <button class="tab" data-tab="chats">Chats</button>
         <button class="tab" data-tab="contacts">Contacts</button>
         <button class="tab" data-tab="groups">Groups</button>
+        <button class="tab" data-tab="discover">Discover</button>
         <button id="btn-connect-peer" class="tab connect-tab" title="Connect Peer">+</button>
       </div>
 
+      <!-- Feed sidebar (just shows "View Feed" in main area) -->
+      <div id="tab-feed" class="tab-content active">
+        <div class="sidebar-hint">
+          <p class="subtle">Your feed is in the main area.</p>
+        </div>
+      </div>
+
       <!-- Chats list -->
-      <div id="tab-chats" class="tab-content active">
+      <div id="tab-chats" class="tab-content">
         <div id="conversations-list" class="list"></div>
       </div>
 
@@ -38,23 +55,77 @@
         <button id="btn-create-group" class="action-btn">+ New Group</button>
         <div id="groups-list" class="list"></div>
       </div>
+
+      <!-- Discover tab -->
+      <div id="tab-discover" class="tab-content">
+        <div class="discover-search">
+          <input type="text" id="discover-search-input" placeholder="Search peers..." autocomplete="off">
+          <button id="btn-discover-search" class="btn-primary">Search</button>
+        </div>
+        <div id="friend-requests-section" class="hidden">
+          <h4 class="section-title">Friend Requests</h4>
+          <div id="friend-requests-list"></div>
+        </div>
+        <h4 class="section-title">Results</h4>
+        <div id="discover-results" class="list"></div>
+      </div>
     </aside>
 
     <!-- ─── Main Chat Area ──────────────────────────────────── -->
     <main id="chat-area">
       <!-- Empty state -->
-      <div id="empty-state">
+      <div id="empty-state" class="hidden">
         <div class="empty-icon">&#9672;</div>
         <h2>DecentraNet</h2>
         <p>Select a conversation or contact to start chatting.</p>
         <p class="subtle">Peer-to-peer. End-to-end encrypted. No servers.</p>
       </div>
 
+      <!-- Feed View -->
+      <div id="feed-view">
+        <div id="feed-header">
+          <h2>Feed</h2>
+        </div>
+        <!-- Post Composer -->
+        <div id="post-composer">
+          <div id="composer-top">
+            <canvas id="composer-avatar" width="36" height="36" class="sidebar-avatar"></canvas>
+            <textarea id="post-input" placeholder="What's on your mind?" rows="3" maxlength="2000"></textarea>
+          </div>
+          <div id="composer-bottom">
+            <div id="composer-actions">
+              <button class="composer-btn" onclick="triggerPostImage()" title="Image">&#128247;</button>
+              <button class="composer-btn" onclick="triggerPostVideo()" title="Video">&#127909;</button>
+              <button class="composer-btn" onclick="toggleVoicenoteRecorder()" title="Voicenote">&#127908;</button>
+              <button class="composer-btn" onclick="triggerPostAudio()" title="Audio">&#127925;</button>
+            </div>
+            <div id="composer-meta">
+              <span id="char-counter">0/2000</span>
+              <button id="btn-post" class="btn-primary" onclick="createPost()">Post</button>
+            </div>
+          </div>
+          <div id="composer-attachments" class="hidden"></div>
+        </div>
+        <!-- Voicenote Recorder -->
+        <div id="voicenote-recorder" class="hidden">
+          <div class="voicenote-recorder-inner">
+            <button id="btn-vn-record" class="call-btn accept" onclick="toggleVoicenoteRecord()">Record</button>
+            <span id="vn-status">Ready</span>
+            <canvas id="vn-waveform" width="200" height="40"></canvas>
+            <button id="btn-vn-attach" class="btn-primary hidden" onclick="attachVoicenote()">Attach</button>
+            <button id="btn-vn-cancel" class="btn-secondary" onclick="cancelVoicenote()">Cancel</button>
+          </div>
+        </div>
+        <!-- Feed Posts -->
+        <div id="feed-posts"></div>
+        <div id="feed-loading" class="hidden"><span class="subtle">Loading...</span></div>
+      </div>
+
       <!-- Active chat -->
       <div id="active-chat" class="hidden">
         <div id="chat-header">
           <div id="chat-peer-info">
-            <span id="chat-peer-name"></span>
+            <span id="chat-peer-name" class="clickable-name"></span>
             <span id="chat-peer-status" class="subtle"></span>
           </div>
           <div id="chat-actions">
@@ -68,10 +139,29 @@
           <div id="messages"></div>
         </div>
 
+        <div id="chat-vn-recorder" class="hidden">
+          <div class="voicenote-recorder-inner">
+            <button id="btn-chat-vn-record" class="call-btn accept" onclick="toggleChatVnRecord()">Record</button>
+            <span id="chat-vn-status">Ready</span>
+            <canvas id="chat-vn-waveform" width="200" height="40"></canvas>
+            <button id="btn-chat-vn-send" class="btn-primary hidden" onclick="sendChatVoicenote()">Send</button>
+            <button class="btn-secondary" onclick="cancelChatVn()">Cancel</button>
+          </div>
+        </div>
         <div id="input-area">
+          <button id="btn-chat-mic" class="composer-btn" onclick="toggleChatVnRecorder()" title="Voicenote">&#127908;</button>
           <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
           <button id="btn-send">Send</button>
         </div>
+      </div>
+
+      <!-- Profile View -->
+      <div id="profile-view" class="hidden">
+        <div id="profile-header">
+          <button class="btn-secondary" onclick="closeProfile()">Back</button>
+          <button id="btn-edit-profile" class="btn-primary hidden" onclick="showProfileEditModal()">Edit Profile</button>
+        </div>
+        <div id="profile-bento"></div>
       </div>
     </main>
 
@@ -106,6 +196,151 @@
         <div class="modal-actions">
           <button id="btn-cancel-name" class="btn-secondary">Cancel</button>
           <button id="btn-save-name" class="btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Settings Modal (Phase 1) ──────────────────────────── -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content settings-modal-content">
+        <h3>Settings</h3>
+
+        <div class="settings-section">
+          <h4>Theme</h4>
+          <div id="theme-presets" class="theme-grid"></div>
+        </div>
+
+        <div class="settings-section">
+          <h4>Custom Colors</h4>
+          <div class="settings-row">
+            <label>Accent: <input type="color" id="setting-accent" value="#58a6ff"></label>
+            <label>Sent Bubble: <input type="color" id="setting-msg-sent" value="#1a3a5c"></label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>Background</h4>
+          <div class="settings-row">
+            <select id="setting-bg-mode">
+              <option value="solid">Solid</option>
+              <option value="gradient">Gradient</option>
+              <option value="pattern">Pattern</option>
+            </select>
+            <select id="setting-bg-pattern" class="hidden">
+              <option value="dots">Dots</option>
+              <option value="grid">Grid</option>
+              <option value="diagonal">Diagonal</option>
+              <option value="circuit">Circuit</option>
+              <option value="waves">Waves</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>Font Size: <span id="font-size-val">14px</span></h4>
+          <input type="range" id="setting-font-size" min="12" max="20" value="14" class="settings-slider">
+        </div>
+
+        <div class="settings-section">
+          <h4>Border Radius: <span id="radius-val">8px</span></h4>
+          <input type="range" id="setting-radius" min="0" max="16" value="8" class="settings-slider">
+        </div>
+
+        <div class="settings-section">
+          <h4>Bubble Style</h4>
+          <div id="bubble-styles" class="bubble-style-grid">
+            <button class="bubble-option active" data-style="modern">Modern</button>
+            <button class="bubble-option" data-style="classic">Classic</button>
+            <button class="bubble-option" data-style="minimal">Minimal</button>
+            <button class="bubble-option" data-style="rounded">Rounded</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>Discoverability</h4>
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-discoverable" checked>
+            Allow others to find me via search
+          </label>
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px">
+          <button id="btn-cancel-settings" class="btn-secondary">Cancel</button>
+          <button id="btn-save-settings" class="btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Profile Edit Modal (Phase 2) ──────────────────────── -->
+    <div id="profile-edit-modal" class="modal hidden">
+      <div class="modal-content profile-edit-content">
+        <h3>Edit Profile</h3>
+
+        <div class="settings-section">
+          <h4>Tagline</h4>
+          <input type="text" id="edit-tagline" placeholder="One-liner about you..." maxlength="80">
+        </div>
+
+        <div class="settings-section">
+          <h4>Vibe Card</h4>
+          <div class="settings-row">
+            <input type="text" id="edit-vibe-emoji" placeholder="Emoji" maxlength="4" style="width:60px">
+            <input type="text" id="edit-vibe-text" placeholder="Your vibe..." maxlength="60">
+          </div>
+          <div class="settings-row">
+            <label>Start: <input type="color" id="edit-vibe-grad-start" value="#ff6b6b"></label>
+            <label>End: <input type="color" id="edit-vibe-grad-end" value="#4ecdc4"></label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>About</h4>
+          <textarea id="edit-about-text" placeholder="Tell people about yourself..." rows="3" maxlength="500"></textarea>
+          <select id="edit-about-font">
+            <option value="sans">Sans-serif</option>
+            <option value="serif">Serif</option>
+            <option value="mono">Monospace</option>
+            <option value="handwritten">Handwritten</option>
+          </select>
+        </div>
+
+        <div class="settings-section">
+          <h4>Now (Status)</h4>
+          <input type="text" id="edit-now-text" placeholder="What are you doing right now?" maxlength="100">
+        </div>
+
+        <div class="settings-section">
+          <h4>Music</h4>
+          <div class="settings-row">
+            <input type="text" id="edit-music-emoji" placeholder="&#127911;" maxlength="4" style="width:60px">
+            <input type="text" id="edit-music-title" placeholder="Song title" maxlength="60">
+            <input type="text" id="edit-music-artist" placeholder="Artist" maxlength="40">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>Cards Visibility</h4>
+          <div id="card-toggles"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px">
+          <button id="btn-cancel-profile-edit" class="btn-secondary">Cancel</button>
+          <button id="btn-save-profile" class="btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Comments Modal (Phase 4) ──────────────────────────── -->
+    <div id="comments-modal" class="modal hidden">
+      <div class="modal-content comments-modal-content">
+        <h3>Comments</h3>
+        <div id="comments-list"></div>
+        <div class="comment-input-row">
+          <input type="text" id="comment-input" placeholder="Write a comment..." maxlength="500">
+          <button id="btn-submit-comment" class="btn-primary">Post</button>
+        </div>
+        <div class="modal-actions" style="margin-top:12px">
+          <button id="btn-close-comments" class="btn-secondary">Close</button>
         </div>
       </div>
     </div>
@@ -221,8 +456,11 @@
     <div id="toast-container"></div>
   </div>
 
-  <!-- Hidden file input -->
+  <!-- Hidden file inputs -->
   <input type="file" id="file-input" class="hidden">
+  <input type="file" id="post-image-input" class="hidden" accept="image/*">
+  <input type="file" id="post-video-input" class="hidden" accept="video/*">
+  <input type="file" id="post-audio-input" class="hidden" accept="audio/*">
 
   <script src="app.js"></script>
 </body>

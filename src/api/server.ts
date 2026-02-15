@@ -13,12 +13,13 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
-import type { Message, PeerId, ContentType } from '../types/index.js';
+import type { Message, PeerId, ContentType, ThemePreferences, UserProfile, FriendRequest, Post } from '../types/index.js';
 import type { DecentraNode } from '../network/node.js';
 import type { LocalStore } from '../storage/store.js';
 import type { MessagingService } from '../messaging/delivery.js';
 import type { GroupManager, StoredGroup } from '../messaging/groups.js';
 import type { ContentManager, SharedFileInfo } from '../content/sharing.js';
+import type { PostService } from '../content/posts.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ export interface APIServerDeps {
   messaging: MessagingService;
   groups: GroupManager;
   content: ContentManager;
+  posts?: PostService;
   /** Override frontend static files directory (default: <cwd>/frontend) */
   frontendDir?: string;
   /** Override temp directory for file shares/downloads (default: cwd) */
@@ -131,7 +133,7 @@ export class APIServer {
     const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
 
     const securityHeaders: Record<string, string> = {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* wss://localhost:*; img-src 'self' data: blob:;",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* wss://localhost:*; img-src 'self' data: blob:; media-src 'self' blob: data:;",
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
     };
@@ -465,6 +467,259 @@ export class APIServer {
           });
         }
 
+        // ─── Phase 1: Theme System ──────────────────────────────
+
+        case 'get_theme': {
+          const prefs = await this.deps.store.getThemePrefs();
+          return this.ok(id, prefs);
+        }
+
+        case 'set_theme': {
+          const prefs: ThemePreferences = data;
+          await this.deps.store.setThemePrefs(prefs);
+          return this.ok(id, { saved: true });
+        }
+
+        // ─── Phase 2: Profile System ────────────────────────────
+
+        case 'get_profile': {
+          const targetId = data?.peerId || this.deps.node.getPeerId();
+          const profile = await this.deps.store.getUserProfile(targetId);
+          const peerProfile = this.deps.node.getKnownPeer(targetId);
+          const friends = await this.deps.store.getFriends();
+          const postCount = await this.deps.store.getPostCount(targetId);
+          return this.ok(id, {
+            profile,
+            displayName: peerProfile?.displayName || targetId.slice(0, 12),
+            peerId: targetId,
+            friendCount: friends.length,
+            postCount,
+            isSelf: targetId === this.deps.node.getPeerId(),
+          });
+        }
+
+        case 'update_profile': {
+          const profile: UserProfile = {
+            ...data,
+            peerId: this.deps.node.getPeerId(),
+            version: (data.version || 0) + 1,
+            updatedAt: Date.now(),
+            signature: '',
+          };
+          await this.deps.store.storeUserProfile(profile);
+          // Broadcast to connected peers
+          const { PROTOCOLS: P } = await import('../network/node.js');
+          const profileData = new TextEncoder().encode(JSON.stringify(profile));
+          await this.deps.node.broadcastToAll(P.PROFILE_UPDATE, profileData);
+          return this.ok(id, { saved: true });
+        }
+
+        case 'get_peer_stats': {
+          const statsId = data?.peerId || this.deps.node.getPeerId();
+          const friends = await this.deps.store.getFriends();
+          const postCount = await this.deps.store.getPostCount(statsId);
+          const convos = await this.deps.store.getConversations();
+          return this.ok(id, {
+            friendCount: friends.length,
+            postCount,
+            conversationCount: convos.length,
+          });
+        }
+
+        // ─── Phase 3: Discovery & Friend Requests ───────────────
+
+        case 'search_peers': {
+          const { searchTerm, maxResults } = data || {};
+          const myId = this.deps.node.getPeerId();
+          const allPeers = this.deps.node.getAllKnownPeers();
+          const connectedIds = new Set(
+            this.deps.node.getConnectedPeers().filter(p => p.decentraId).map(p => p.decentraId)
+          );
+
+          // Local search
+          const term = (searchTerm || '').toLowerCase();
+          let results = allPeers
+            .filter(p => p.peerId !== myId)
+            .filter(p => {
+              if (!term) return true;
+              return (p.displayName || '').toLowerCase().includes(term) ||
+                     p.peerId.toLowerCase().includes(term);
+            })
+            .map(p => ({
+              peerId: p.peerId,
+              displayName: p.displayName || p.peerId.slice(0, 12),
+              isOnline: connectedIds.has(p.peerId),
+              hopDistance: 1,
+            }));
+
+          // Also query connected peers
+          const { PROTOCOLS: SP } = await import('../network/node.js');
+          const query = JSON.stringify({ searchTerm: term, maxResults: maxResults || 20 });
+          const queryData = new TextEncoder().encode(query);
+          const seenIds = new Set(results.map(r => r.peerId));
+
+          for (const peer of this.deps.node.getConnectedPeers()) {
+            if (!peer.decentraId) continue;
+            try {
+              const response = await this.deps.node.sendToPeer(peer.decentraId, SP.PEER_SEARCH, queryData);
+              if (response) {
+                const text = new TextDecoder().decode(response);
+                const remoteResults = JSON.parse(text);
+                for (const r of remoteResults) {
+                  if (!seenIds.has(r.peerId) && r.peerId !== myId) {
+                    seenIds.add(r.peerId);
+                    results.push({ ...r, hopDistance: (r.hopDistance || 1) + 1 });
+                  }
+                }
+              }
+            } catch {}
+          }
+
+          return this.ok(id, results.slice(0, maxResults || 20));
+        }
+
+        case 'send_friend_request': {
+          const { peerId: frPeerId, message: frMsg } = data;
+          const myProfile = this.deps.node.getIdentity();
+          const friendReq: FriendRequest = {
+            requestId: crypto.randomUUID(),
+            from: this.deps.node.getPeerId(),
+            to: frPeerId,
+            fromName: myProfile.displayName || this.deps.node.getPeerId().slice(0, 12),
+            message: frMsg,
+            timestamp: Date.now(),
+            status: 'pending',
+            signature: '',
+          };
+          await this.deps.store.storeFriendRequest(friendReq);
+
+          // Send to target peer
+          const { PROTOCOLS: FP } = await import('../network/node.js');
+          const frData = new TextEncoder().encode(JSON.stringify(friendReq));
+          await this.deps.node.sendToPeer(frPeerId, FP.FRIEND_REQUEST, frData);
+          return this.ok(id, { requestId: friendReq.requestId });
+        }
+
+        case 'get_friend_requests': {
+          const requests = await this.deps.store.getPendingFriendRequests();
+          return this.ok(id, requests);
+        }
+
+        case 'respond_friend_request': {
+          const { requestId: rId, accept: rAccept } = data;
+          const req = await this.deps.store.getFriendRequest(rId);
+          if (!req) return this.err(id, 'Request not found');
+          req.status = rAccept ? 'accepted' : 'rejected';
+          await this.deps.store.storeFriendRequest(req);
+          if (rAccept) {
+            await this.deps.store.addFriend(req.from);
+          }
+          // Notify the requester
+          const { PROTOCOLS: RP } = await import('../network/node.js');
+          const responseData = new TextEncoder().encode(JSON.stringify({
+            type: 'response',
+            requestId: rId,
+            accepted: rAccept,
+          }));
+          await this.deps.node.sendToPeer(req.from, RP.FRIEND_REQUEST, responseData);
+          return this.ok(id, { accepted: rAccept });
+        }
+
+        case 'get_friends': {
+          const friendIds = await this.deps.store.getFriends();
+          const connectedIds2 = new Set(
+            this.deps.node.getConnectedPeers().filter(p => p.decentraId).map(p => p.decentraId)
+          );
+          const friendList = friendIds.map(fId => {
+            const profile = this.deps.node.getKnownPeer(fId);
+            return {
+              peerId: fId,
+              displayName: profile?.displayName || fId.slice(0, 12),
+              isOnline: connectedIds2.has(fId),
+            };
+          });
+          return this.ok(id, friendList);
+        }
+
+        case 'set_discoverable': {
+          await this.deps.store.setMeta('discoverable', data.discoverable ? 'true' : 'false');
+          return this.ok(id, { discoverable: data.discoverable });
+        }
+
+        // ─── Phase 4: Posts & Timeline ──────────────────────────
+
+        case 'create_post': {
+          if (!this.deps.posts) return this.err(id, 'Posts not available');
+          const post = await this.deps.posts.createPost(data.content, data.attachments || []);
+          return this.ok(id, post);
+        }
+
+        case 'get_timeline': {
+          const limit = data?.limit || 50;
+          const before = data?.before;
+          const posts = await this.deps.store.getTimeline(limit, before);
+          // Enrich with like status
+          const myId2 = this.deps.node.getPeerId();
+          for (const post of posts) {
+            const reaction = await this.deps.store.getReaction(post.postId, myId2);
+            post.liked = !!reaction;
+          }
+          return this.ok(id, posts);
+        }
+
+        case 'like_post': {
+          if (!this.deps.posts) return this.err(id, 'Posts not available');
+          await this.deps.posts.likePost(data.postId);
+          return this.ok(id, { liked: true });
+        }
+
+        case 'unlike_post': {
+          if (!this.deps.posts) return this.err(id, 'Posts not available');
+          await this.deps.posts.unlikePost(data.postId);
+          return this.ok(id, { liked: false });
+        }
+
+        case 'comment_post': {
+          if (!this.deps.posts) return this.err(id, 'Posts not available');
+          const comment = await this.deps.posts.commentOnPost(data.postId, data.content);
+          return this.ok(id, comment);
+        }
+
+        case 'get_comments': {
+          const comments = await this.deps.store.getPostComments(data.postId);
+          return this.ok(id, comments);
+        }
+
+        case 'upload_media': {
+          // For large files (>500KB): write to temp, shard via ContentManager
+          if (!this.deps.content) return this.err(id, 'Content manager not available');
+          const { base64Data, fileName, mimeType } = data;
+          const buf = Buffer.from(base64Data.replace(/^data:[^;]+;base64,/, ''), 'base64');
+          const tempPath = path.join(this.tempDir, `upload_${crypto.randomUUID()}_${fileName}`);
+          fs.writeFileSync(tempPath, buf);
+          try {
+            const fileInfo = await this.deps.content.shareFile(tempPath);
+            fs.unlinkSync(tempPath);
+            return this.ok(id, { contentId: fileInfo.contentId, fileInfo });
+          } catch (e: any) {
+            try { fs.unlinkSync(tempPath); } catch {}
+            return this.err(id, e.message);
+          }
+        }
+
+        case 'download_media': {
+          // Reassemble shards for large files
+          if (!this.deps.content) return this.err(id, 'Content manager not available');
+          const fileInfo2: SharedFileInfo = data.fileInfo;
+          const outDir = path.join(this.tempDir, 'downloads');
+          if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+          const outPath = await this.deps.content.downloadFile(fileInfo2, outDir);
+          const fileData = fs.readFileSync(outPath);
+          const dataUrl = `data:${data.mimeType || 'application/octet-stream'};base64,${fileData.toString('base64')}`;
+          try { fs.unlinkSync(outPath); } catch {}
+          return this.ok(id, { dataUrl });
+        }
+
         default:
           return this.err(id, `Unknown action: ${action}`);
       }
@@ -575,6 +830,24 @@ export class APIServer {
         });
       }
     });
+
+    // Post events (Phase 4)
+    if (this.deps.posts) {
+      this.deps.posts.onPost((post) => {
+        this.broadcast({
+          type: 'event',
+          event: 'new_post',
+          data: post,
+        });
+      });
+      this.deps.posts.onInteraction((data) => {
+        this.broadcast({
+          type: 'event',
+          event: 'post_interaction',
+          data,
+        });
+      });
+    }
 
     // Call signaling — relay from libp2p to browser
     this.deps.node.on('call:incoming', (event) => {

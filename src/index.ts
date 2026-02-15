@@ -18,6 +18,7 @@ import { MessagingService } from './messaging/delivery.js';
 import { CallManager } from './media/webrtc.js';
 import { GroupManager } from './messaging/groups.js';
 import { ContentManager, type SharedFileInfo } from './content/sharing.js';
+import { PostService } from './content/posts.js';
 import { APIServer } from './api/server.js';
 import type { NodeConfig, Message, PeerProfile, ContentType } from './types/index.js';
 
@@ -739,10 +740,69 @@ Options:
   const calls = new CallManager(node);
   const groups = new GroupManager(node, store);
   const content = new ContentManager(node, store);
+  const posts = new PostService(node, store);
 
   // Wire group message handler into the messaging layer
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
   await groups.loadGroups();
+
+  // Wire profile update handler (Phase 2)
+  node.setProfileUpdateHandler(async (peerId, data) => {
+    try {
+      const profile = JSON.parse(data);
+      await store.storeUserProfile(profile);
+    } catch {}
+  });
+
+  // Wire peer search handler (Phase 3)
+  node.setPeerSearchHandler(async (queryStr) => {
+    try {
+      const { searchTerm, maxResults } = JSON.parse(queryStr);
+      const term = (searchTerm || '').toLowerCase();
+      const discoverable = await store.getMeta('discoverable');
+      if (discoverable === 'false') return '[]';
+
+      const allPeers = node.getAllKnownPeers();
+      const myId = node.getPeerId();
+      const connectedIds = new Set(node.getConnectedPeers().filter(p => p.decentraId).map(p => p.decentraId));
+
+      const results = allPeers
+        .filter(p => p.peerId !== myId)
+        .filter(p => !term || (p.displayName || '').toLowerCase().includes(term) || p.peerId.includes(term))
+        .slice(0, maxResults || 20)
+        .map(p => ({
+          peerId: p.peerId,
+          displayName: p.displayName || p.peerId.slice(0, 12),
+          isOnline: connectedIds.has(p.peerId),
+          hopDistance: 1,
+        }));
+      return JSON.stringify(results);
+    } catch {
+      return '[]';
+    }
+  });
+
+  // Wire friend request handler (Phase 3)
+  node.setFriendRequestHandler(async (data) => {
+    try {
+      const msg = JSON.parse(data);
+      if (msg.type === 'response') {
+        // Response to our outbound request
+        const req = await store.getFriendRequest(msg.requestId);
+        if (req) {
+          req.status = msg.accepted ? 'accepted' : 'rejected';
+          await store.storeFriendRequest(req);
+          if (msg.accepted) await store.addFriend(req.to);
+        }
+        return 'OK';
+      }
+      // Incoming friend request
+      await store.storeFriendRequest(msg);
+      return 'RECEIVED';
+    } catch {
+      return 'ERROR';
+    }
+  });
 
   // Wire account bundle handlers: store/retrieve bundles for other peers
   node.setBundleHandlers(
@@ -830,6 +890,7 @@ Options:
     messaging,
     groups,
     content,
+    posts,
   });
 
   // Periodic cleanup of expired pending messages (hourly)

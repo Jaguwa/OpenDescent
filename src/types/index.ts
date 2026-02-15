@@ -250,6 +250,203 @@ export const DEFAULT_CONFIG: Partial<NodeConfig> = {
   messageRetentionSeconds: 7 * 24 * 60 * 60, // 7 days
 };
 
+// ─── Theme System (Phase 1: Artify) ─────────────────────────────────────────
+
+/** All CSS custom property values as camelCase fields */
+export interface ThemeVars {
+  bgPrimary: string;
+  bgSecondary: string;
+  bgTertiary: string;
+  bgHover: string;
+  bgActive: string;
+  border: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  accent: string;
+  accentHover: string;
+  green: string;
+  red: string;
+  orange: string;
+  msgSent: string;
+  msgReceived: string;
+  radius: string;
+  radiusLg: string;
+}
+
+/** A named theme preset */
+export interface ThemePreset {
+  id: string;
+  name: string;
+  vars: ThemeVars;
+}
+
+/** Background display mode */
+export interface BackgroundConfig {
+  mode: 'solid' | 'gradient' | 'pattern';
+  colors: string[];
+  angle?: number;
+  patternType?: 'dots' | 'grid' | 'diagonal' | 'circuit' | 'waves';
+}
+
+/** Chat bubble display style */
+export type BubbleStyle = 'modern' | 'classic' | 'minimal' | 'rounded';
+
+/** User's complete theme preferences */
+export interface ThemePreferences {
+  presetId: string;
+  customOverrides?: Partial<ThemeVars>;
+  background?: BackgroundConfig;
+  fontSize?: number;
+  bubbleStyle?: BubbleStyle;
+  fontFamily?: string;
+}
+
+// ─── Profile System (Phase 2: The Canvas) ───────────────────────────────────
+
+/** Types of profile cards in the bento grid */
+export type ProfileCardType = 'identity' | 'vibe' | 'about' | 'now' | 'stats' | 'pinned' | 'music' | 'connections';
+
+/** Card size in the bento grid */
+export type ProfileCardSize = 'small' | 'medium' | 'large';
+
+/** A single card configuration */
+export interface ProfileCard {
+  type: ProfileCardType;
+  enabled: boolean;
+  order: number;
+  size: ProfileCardSize;
+}
+
+/** Card-specific data */
+export interface VibeCardData {
+  emoji: string;
+  text: string;
+  gradientStart: string;
+  gradientEnd: string;
+}
+
+export interface AboutCardData {
+  text: string;
+  fontStyle: 'sans' | 'serif' | 'mono' | 'handwritten';
+}
+
+export interface NowCardData {
+  text: string;
+  updatedAt: number;
+}
+
+export interface MusicCardData {
+  title: string;
+  artist: string;
+  emoji: string;
+}
+
+/** A user's complete profile */
+export interface UserProfile {
+  peerId: PeerId;
+  cards: ProfileCard[];
+  cardData: {
+    vibe?: VibeCardData;
+    about?: AboutCardData;
+    now?: NowCardData;
+    music?: MusicCardData;
+    tagline?: string;
+    pinnedPostId?: string;
+  };
+  version: number;
+  updatedAt: number;
+  signature: string;
+}
+
+// ─── Discovery & Friend Requests (Phase 3) ──────────────────────────────────
+
+/** Friend request between peers */
+export interface FriendRequest {
+  requestId: string;
+  from: PeerId;
+  to: PeerId;
+  fromName: string;
+  message?: string;
+  timestamp: number;
+  status: 'pending' | 'accepted' | 'rejected';
+  signature: string;
+}
+
+/** Query for searching peers across the network */
+export interface PeerSearchQuery {
+  queryId: string;
+  searchTerm: string;
+  interests?: string[];
+  maxResults: number;
+  hopCount: number;
+  maxHops: number;
+  origin: PeerId;
+}
+
+/** A peer found via search */
+export interface DiscoveredPeer {
+  peerId: PeerId;
+  displayName: string;
+  bio?: string;
+  interests?: string[];
+  isOnline: boolean;
+  hopDistance: number;
+}
+
+// ─── Posts & Timeline (Phase 4) ──────────────────────────────────────────────
+
+/** Media attached to a post */
+export interface MediaAttachment {
+  type: 'image' | 'video' | 'voicenote' | 'audio';
+  contentId: string;
+  mimeType: string;
+  thumbnail?: string;
+  duration?: number;
+  fileName?: string;
+  fileSize?: number;
+  /** Inline base64 data URL for small media (<500KB: voicenotes, images, audio) */
+  data?: string;
+}
+
+/** A post in the timeline */
+export interface Post {
+  postId: string;
+  authorId: PeerId;
+  authorName?: string;
+  content: string;
+  mediaAttachments: MediaAttachment[];
+  timestamp: number;
+  signature: string;
+  parentPostId?: string;
+  likeCount: number;
+  commentCount: number;
+  liked?: boolean;
+  hopCount: number;
+  maxHops: number;
+}
+
+/** A reaction to a post */
+export interface PostReaction {
+  reactionId: string;
+  postId: string;
+  authorId: PeerId;
+  type: 'like';
+  timestamp: number;
+  signature: string;
+}
+
+/** A comment on a post */
+export interface PostComment {
+  commentId: string;
+  postId: string;
+  authorId: PeerId;
+  authorName?: string;
+  content: string;
+  timestamp: number;
+  signature: string;
+}
+
 // ─── Account Recovery ────────────────────────────────────────────────────────
 
 /** Account bundle distributed to network peers for recovery */
@@ -258,7 +455,7 @@ export interface AccountBundle {
   peerId: PeerId;
   contacts: PeerId[];
   groups: { groupId: string; name: string; groupKey: string; members: PeerId[] }[];
-  settings: { displayName?: string };
+  settings: { displayName?: string; themePrefs?: ThemePreferences };
   updatedAt: number;
   signature: Uint8Array;
 }

@@ -46,6 +46,11 @@ export const PROTOCOLS = {
   PEER_EXCHANGE: `${PROTOCOL_PREFIX}/peer-exchange/1.0.0`,
   ACCOUNT_BUNDLE: `${PROTOCOL_PREFIX}/account-bundle/1.0.0`,
   HISTORY_SYNC: `${PROTOCOL_PREFIX}/history-sync/1.0.0`,
+  PROFILE_UPDATE: `${PROTOCOL_PREFIX}/profile-update/1.0.0`,
+  PEER_SEARCH: `${PROTOCOL_PREFIX}/peer-search/1.0.0`,
+  FRIEND_REQUEST: `${PROTOCOL_PREFIX}/friend-request/1.0.0`,
+  POST_BROADCAST: `${PROTOCOL_PREFIX}/post-broadcast/1.0.0`,
+  POST_INTERACTION: `${PROTOCOL_PREFIX}/post-interaction/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -66,6 +71,11 @@ export class DecentraNode {
   private bundleRetrieveHandler?: (peerId: string) => Promise<string | null>;
   private historySyncHandler?: (requesterId: string, since: number) => Promise<Uint8Array | null>;
   private tofuHandler?: (peerId: string, publicKey: Uint8Array) => Promise<boolean>;
+  private profileUpdateHandler?: (peerId: string, data: string) => Promise<void>;
+  private peerSearchHandler?: (query: string) => Promise<string>;
+  private friendRequestHandler?: (data: string) => Promise<string>;
+  private postBroadcastHandler?: (data: string) => Promise<void>;
+  private postInteractionHandler?: (data: string) => Promise<string>;
   private passphrase: string;
 
   // Rate limiting: 100 messages per 60-second window per peer
@@ -317,6 +327,41 @@ export class DecentraNode {
    */
   setTofuHandler(handler: (peerId: string, publicKey: Uint8Array) => Promise<boolean>): void {
     this.tofuHandler = handler;
+  }
+
+  /** Register handler for profile updates (Phase 2) */
+  setProfileUpdateHandler(handler: (peerId: string, data: string) => Promise<void>): void {
+    this.profileUpdateHandler = handler;
+  }
+
+  /** Register handler for peer search queries (Phase 3) */
+  setPeerSearchHandler(handler: (query: string) => Promise<string>): void {
+    this.peerSearchHandler = handler;
+  }
+
+  /** Register handler for friend requests (Phase 3) */
+  setFriendRequestHandler(handler: (data: string) => Promise<string>): void {
+    this.friendRequestHandler = handler;
+  }
+
+  /** Register handler for post broadcasts (Phase 4) */
+  setPostBroadcastHandler(handler: (data: string) => Promise<void>): void {
+    this.postBroadcastHandler = handler;
+  }
+
+  /** Register handler for post interactions (Phase 4) */
+  setPostInteractionHandler(handler: (data: string) => Promise<string>): void {
+    this.postInteractionHandler = handler;
+  }
+
+  /** Broadcast data to all connected peers on a given protocol */
+  async broadcastToAll(protocol: string, data: Uint8Array): Promise<void> {
+    const peers = this.getConnectedPeers();
+    for (const peer of peers) {
+      if (peer.decentraId) {
+        this.sendToPeer(peer.decentraId, protocol, data).catch(() => {});
+      }
+    }
   }
 
   /** Find a peer by display name (partial match, prefers connected peers) */
@@ -727,6 +772,89 @@ export class DecentraNode {
         }
       } catch (error) {
         console.error(`[Protocol] Error handling history sync:`, error);
+      }
+    });
+
+    // Profile update (Phase 2)
+    await this.node.handle(PROTOCOLS.PROFILE_UPDATE, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        const libp2pId = connection.remotePeer.toString();
+        const decentraId = this.libp2pToDecentra.get(libp2pId);
+        if (this.profileUpdateHandler && decentraId) {
+          await this.profileUpdateHandler(decentraId, text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('OK'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling profile update:`, error);
+      }
+    });
+
+    // Peer search (Phase 3)
+    await this.node.handle(PROTOCOLS.PEER_SEARCH, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const query = new TextDecoder().decode(data);
+        if (this.peerSearchHandler) {
+          const results = await this.peerSearchHandler(query);
+          await writeToSink(stream, new TextEncoder().encode(results));
+        } else {
+          await writeToSink(stream, new TextEncoder().encode('[]'));
+        }
+      } catch (error) {
+        console.error(`[Protocol] Error handling peer search:`, error);
+      }
+    });
+
+    // Friend request (Phase 3)
+    await this.node.handle(PROTOCOLS.FRIEND_REQUEST, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.friendRequestHandler) {
+          const response = await this.friendRequestHandler(text);
+          await writeToSink(stream, new TextEncoder().encode(response));
+        } else {
+          await writeToSink(stream, new TextEncoder().encode('UNSUPPORTED'));
+        }
+      } catch (error) {
+        console.error(`[Protocol] Error handling friend request:`, error);
+      }
+    });
+
+    // Post broadcast (Phase 4)
+    await this.node.handle(PROTOCOLS.POST_BROADCAST, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.postBroadcastHandler) {
+          await this.postBroadcastHandler(text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('OK'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling post broadcast:`, error);
+      }
+    });
+
+    // Post interaction (Phase 4)
+    await this.node.handle(PROTOCOLS.POST_INTERACTION, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.postInteractionHandler) {
+          const response = await this.postInteractionHandler(text);
+          await writeToSink(stream, new TextEncoder().encode(response));
+        } else {
+          await writeToSink(stream, new TextEncoder().encode('UNSUPPORTED'));
+        }
+      } catch (error) {
+        console.error(`[Protocol] Error handling post interaction:`, error);
       }
     });
 

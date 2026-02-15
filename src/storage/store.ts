@@ -12,7 +12,7 @@ import { Level } from 'level';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey } from '../types/index.js';
+import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment } from '../types/index.js';
 
 /** Decrypted message for conversation history */
 export interface StoredMessage {
@@ -39,6 +39,13 @@ const NS = {
   META: 'meta:',
   BUNDLE: 'bundle:',
   TOFU: 'tofu:',
+  PROFILE: 'profile:',
+  FRIEND: 'friend:',
+  FRIEND_REQ: 'friendreq:',
+  POST: 'post:',
+  POST_IDX: 'postidx:',
+  REACTION: 'reaction:',
+  COMMENT: 'comment:',
 } as const;
 
 export class LocalStore {
@@ -406,12 +413,18 @@ export class LocalStore {
       displayName = (await this.db.get(NS.META + 'displayName')) || undefined;
     } catch {}
 
+    let themePrefs: ThemePreferences | undefined;
+    try {
+      const tp = await this.db.get(NS.META + 'themePrefs');
+      if (tp) themePrefs = JSON.parse(tp);
+    } catch {}
+
     const bundle: AccountBundle = {
       version: 1,
       peerId,
       contacts,
       groups,
-      settings: { displayName },
+      settings: { displayName, themePrefs },
       updatedAt: Date.now(),
       signature: new Uint8Array(0),
     };
@@ -431,6 +444,9 @@ export class LocalStore {
     // Restore settings
     if (bundle.settings.displayName) {
       await this.db.put(NS.META + 'displayName', bundle.settings.displayName);
+    }
+    if (bundle.settings.themePrefs) {
+      await this.db.put(NS.META + 'themePrefs', JSON.stringify(bundle.settings.themePrefs));
     }
 
     // Restore groups
@@ -497,6 +513,163 @@ export class LocalStore {
 
   async setMeta(key: string, value: string): Promise<void> {
     await this.db.put(NS.META + key, value);
+  }
+
+  // ─── Theme Preferences (Phase 1) ────────────────────────────────────────
+
+  async getThemePrefs(): Promise<ThemePreferences | null> {
+    try {
+      const val = await this.db.get(NS.META + 'themePrefs');
+      return JSON.parse(val);
+    } catch {
+      return null;
+    }
+  }
+
+  async setThemePrefs(prefs: ThemePreferences): Promise<void> {
+    await this.db.put(NS.META + 'themePrefs', JSON.stringify(prefs));
+  }
+
+  // ─── User Profile (Phase 2) ───────────────────────────────────────────
+
+  async storeUserProfile(profile: UserProfile): Promise<void> {
+    await this.db.put(NS.PROFILE + profile.peerId, JSON.stringify(profile));
+  }
+
+  async getUserProfile(peerId: PeerId): Promise<UserProfile | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.PROFILE + peerId));
+    } catch {
+      return null;
+    }
+  }
+
+  // ─── Friend Requests & Friends (Phase 3) ──────────────────────────────
+
+  async storeFriendRequest(req: FriendRequest): Promise<void> {
+    await this.db.put(NS.FRIEND_REQ + req.requestId, JSON.stringify(req));
+  }
+
+  async getFriendRequest(requestId: string): Promise<FriendRequest | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.FRIEND_REQ + requestId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getPendingFriendRequests(): Promise<FriendRequest[]> {
+    const requests: FriendRequest[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.FRIEND_REQ, lt: NS.FRIEND_REQ + '\xFF' })) {
+      const req = JSON.parse(value) as FriendRequest;
+      if (req.status === 'pending') requests.push(req);
+    }
+    return requests;
+  }
+
+  async addFriend(peerId: PeerId): Promise<void> {
+    await this.db.put(NS.FRIEND + peerId, JSON.stringify({ peerId, addedAt: Date.now() }));
+  }
+
+  async removeFriend(peerId: PeerId): Promise<void> {
+    try { await this.db.del(NS.FRIEND + peerId); } catch {}
+  }
+
+  async isFriend(peerId: PeerId): Promise<boolean> {
+    try { await this.db.get(NS.FRIEND + peerId); return true; } catch { return false; }
+  }
+
+  async getFriends(): Promise<PeerId[]> {
+    const friends: PeerId[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.FRIEND, lt: NS.FRIEND + '\xFF' })) {
+      const data = JSON.parse(value);
+      friends.push(data.peerId);
+    }
+    return friends;
+  }
+
+  // ─── Posts, Reactions, Comments (Phase 4) ──────────────────────────────
+
+  async storePost(post: Post): Promise<void> {
+    await this.db.put(NS.POST + post.postId, JSON.stringify(post));
+    // Timestamp index for chronological feed
+    const tsKey = post.timestamp.toString().padStart(15, '0');
+    await this.db.put(NS.POST_IDX + tsKey + ':' + post.postId, post.postId);
+  }
+
+  async getPost(postId: string): Promise<Post | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.POST + postId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getTimeline(limit: number = 50, before?: number): Promise<Post[]> {
+    const posts: Post[] = [];
+    const lt = before
+      ? NS.POST_IDX + before.toString().padStart(15, '0') + ':'
+      : NS.POST_IDX + '\xFF';
+
+    for await (const [, postId] of this.db.iterator({ gte: NS.POST_IDX, lt, reverse: true, limit })) {
+      try {
+        const post = JSON.parse(await this.db.get(NS.POST + postId));
+        posts.push(post);
+      } catch {}
+    }
+    return posts;
+  }
+
+  async getPostsByAuthor(authorId: PeerId, limit: number = 50): Promise<Post[]> {
+    const posts: Post[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.POST, lt: NS.POST + '\xFF' })) {
+      const post = JSON.parse(value) as Post;
+      if (post.authorId === authorId) posts.push(post);
+    }
+    return posts.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
+  }
+
+  async getPostCount(authorId?: PeerId): Promise<number> {
+    let count = 0;
+    for await (const [, value] of this.db.iterator({ gte: NS.POST, lt: NS.POST + '\xFF' })) {
+      if (authorId) {
+        const post = JSON.parse(value) as Post;
+        if (post.authorId === authorId) count++;
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  async storeReaction(reaction: PostReaction): Promise<void> {
+    await this.db.put(NS.REACTION + reaction.postId + ':' + reaction.authorId, JSON.stringify(reaction));
+  }
+
+  async getReaction(postId: string, authorId: PeerId): Promise<PostReaction | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.REACTION + postId + ':' + authorId));
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteReaction(postId: string, authorId: PeerId): Promise<void> {
+    try { await this.db.del(NS.REACTION + postId + ':' + authorId); } catch {}
+  }
+
+  async storeComment(comment: PostComment): Promise<void> {
+    const tsKey = comment.timestamp.toString().padStart(15, '0');
+    await this.db.put(NS.COMMENT + comment.postId + ':' + tsKey + ':' + comment.commentId, JSON.stringify(comment));
+  }
+
+  async getPostComments(postId: string): Promise<PostComment[]> {
+    const prefix = NS.COMMENT + postId + ':';
+    const comments: PostComment[] = [];
+    for await (const [, value] of this.db.iterator({ gte: prefix, lt: prefix + '\xFF' })) {
+      comments.push(JSON.parse(value));
+    }
+    return comments;
   }
 
   // ─── Stats ─────────────────────────────────────────────────────────────

@@ -77,6 +77,9 @@ async function startApp() {
   const { ContentManager } = await import(
     /* webpackIgnore: true */ '../dist/content/sharing.js'
   );
+  const { PostService } = await import(
+    /* webpackIgnore: true */ '../dist/content/posts.js'
+  );
   const { APIServer } = await import(
     /* webpackIgnore: true */ '../dist/api/server.js'
   );
@@ -122,10 +125,50 @@ async function startApp() {
   const messaging = new MessagingService(backendNode, backendStore);
   const groups = new GroupManager(backendNode, backendStore);
   const content = new ContentManager(backendNode, backendStore);
+  const posts = new PostService(backendNode, backendStore);
 
   // Wire group message handler
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
   await groups.loadGroups();
+
+  // Wire profile update handler (Phase 2)
+  backendNode.setProfileUpdateHandler(async (peerId, data) => {
+    try {
+      const profile = JSON.parse(data);
+      await backendStore.storeUserProfile(profile);
+    } catch {}
+  });
+
+  // Wire peer search handler (Phase 3)
+  backendNode.setPeerSearchHandler(async (queryStr) => {
+    try {
+      const { searchTerm, maxResults } = JSON.parse(queryStr);
+      const term = (searchTerm || '').toLowerCase();
+      const allPeers = backendNode.getAllKnownPeers();
+      const myId = backendNode.getPeerId();
+      const connectedIds = new Set(backendNode.getConnectedPeers().filter(p => p.decentraId).map(p => p.decentraId));
+      const results = allPeers
+        .filter(p => p.peerId !== myId)
+        .filter(p => !term || (p.displayName || '').toLowerCase().includes(term))
+        .slice(0, maxResults || 20)
+        .map(p => ({ peerId: p.peerId, displayName: p.displayName || p.peerId.slice(0, 12), isOnline: connectedIds.has(p.peerId), hopDistance: 1 }));
+      return JSON.stringify(results);
+    } catch { return '[]'; }
+  });
+
+  // Wire friend request handler (Phase 3)
+  backendNode.setFriendRequestHandler(async (data) => {
+    try {
+      const msg = JSON.parse(data);
+      if (msg.type === 'response') {
+        const req = await backendStore.getFriendRequest(msg.requestId);
+        if (req) { req.status = msg.accepted ? 'accepted' : 'rejected'; await backendStore.storeFriendRequest(req); if (msg.accepted) await backendStore.addFriend(req.to); }
+        return 'OK';
+      }
+      await backendStore.storeFriendRequest(msg);
+      return 'RECEIVED';
+    } catch { return 'ERROR'; }
+  });
 
   // Wire account bundle handlers
   backendNode.setBundleHandlers(
@@ -203,6 +246,7 @@ async function startApp() {
     messaging,
     groups,
     content,
+    posts,
     frontendDir,
     tempDir,
   });
