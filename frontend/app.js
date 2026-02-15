@@ -41,12 +41,42 @@ function connectWS() {
   state.ws = new WebSocket(wsUrl);
 
   state.ws.onopen = () => {
+    // Authenticate with the server-injected token
+    const token = window.__DECENTRA_TOKEN || '';
+    state.ws.send(JSON.stringify({ type: 'auth', token }));
+  };
+
+  // Wait for auth response before proceeding
+  let authDone = false;
+  const origOnMessage = (event) => {
+    if (!authDone) {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'auth') {
+        if (msg.ok) {
+          authDone = true;
+          state.ws.onmessage = handleWSMessage;
+          onAuthenticated();
+        } else {
+          console.error('WebSocket auth failed');
+          setConnectionStatus('offline');
+        }
+        return;
+      }
+    }
+  };
+  state.ws.onmessage = origOnMessage;
+
+  function onAuthenticated() {
     setConnectionStatus('online');
     send('get_identity').then((data) => {
       state.myPeerId = data.peerId;
       state.myName = data.displayName;
       document.getElementById('my-name').textContent = data.displayName || 'Anonymous';
       document.getElementById('my-id').textContent = data.peerId;
+      // First-run: prompt for display name if it's auto-generated
+      if (data.displayName && /^(Peer-\d+|Desktop-\d+)$/.test(data.displayName)) {
+        showNameModal();
+      }
     });
     refreshAll();
   };
@@ -58,21 +88,21 @@ function connectWS() {
   };
 
   state.ws.onerror = () => {};
+}
 
-  state.ws.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
+function handleWSMessage(event) {
+  const msg = JSON.parse(event.data);
 
-    if (msg.type === 'response' && state.pendingRequests[msg.id]) {
-      const { resolve, reject } = state.pendingRequests[msg.id];
-      delete state.pendingRequests[msg.id];
-      msg.ok ? resolve(msg.data) : reject(new Error(msg.error));
-      return;
-    }
+  if (msg.type === 'response' && state.pendingRequests[msg.id]) {
+    const { resolve, reject } = state.pendingRequests[msg.id];
+    delete state.pendingRequests[msg.id];
+    msg.ok ? resolve(msg.data) : reject(new Error(msg.error));
+    return;
+  }
 
-    if (msg.type === 'event') {
-      handleEvent(msg.event, msg.data);
-    }
-  };
+  if (msg.type === 'event') {
+    handleEvent(msg.event, msg.data);
+  }
 }
 
 function send(action, data) {
@@ -113,6 +143,9 @@ function handleEvent(event, data) {
       break;
     case 'call_signal':
       onCallSignal(data);
+      break;
+    case 'key_changed':
+      onKeyChanged(data);
       break;
   }
 }
@@ -831,7 +864,7 @@ function toggleVideo() {
 // ─── Call UI ────────────────────────────────────────────────────────────────
 
 function showCallUI() {
-  document.getElementById('call-overlay').classList.remove('hidden');
+  document.getElementById('call-panel').classList.remove('hidden');
   document.getElementById('call-peer-name').textContent = state.callPeerName || 'Unknown';
   document.getElementById('call-timer').textContent = '';
 
@@ -854,7 +887,7 @@ function showCallUI() {
 }
 
 function hideCallUI() {
-  document.getElementById('call-overlay').classList.add('hidden');
+  document.getElementById('call-panel').classList.add('hidden');
   document.getElementById('video-container').classList.add('hidden');
   document.getElementById('local-video').srcObject = null;
   document.getElementById('remote-video').srcObject = null;
@@ -924,6 +957,153 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// ─── Display Name ───────────────────────────────────────────────────────────
+
+function showNameModal() {
+  const modal = document.getElementById('name-modal');
+  const input = document.getElementById('name-input');
+  input.value = state.myName || '';
+  modal.classList.remove('hidden');
+  input.focus();
+  input.select();
+}
+
+async function saveName() {
+  const input = document.getElementById('name-input');
+  const name = input.value.trim();
+  if (!name) return;
+
+  try {
+    await send('set_display_name', { name });
+    state.myName = name;
+    document.getElementById('my-name').textContent = name;
+    document.getElementById('name-modal').classList.add('hidden');
+    showToast('Name updated', name);
+  } catch (e) {
+    showToast('Failed to update name', e.message);
+  }
+}
+
+// ─── Mnemonic Setup/Recovery ─────────────────────────────────────────────────
+
+let mnemonicWords = null;
+
+function showMnemonicModal() {
+  document.getElementById('mnemonic-modal').classList.remove('hidden');
+  showMnemonicStep('choose');
+}
+
+function showMnemonicStep(step) {
+  ['choose', 'display', 'verify', 'recover'].forEach(s => {
+    document.getElementById(`mnemonic-step-${s}`).classList.toggle('hidden', s !== step);
+  });
+}
+
+async function mnemonicCreate() {
+  try {
+    const result = await send('setup_mnemonic', { displayName: state.myName });
+    mnemonicWords = result.mnemonic;
+
+    const grid = document.getElementById('mnemonic-words');
+    grid.innerHTML = mnemonicWords.map((word, i) =>
+      `<div class="mnemonic-word"><span class="mnemonic-word-num">${i + 1}.</span> ${escapeHtml(word)}</div>`
+    ).join('');
+
+    showMnemonicStep('display');
+  } catch (e) {
+    showToast('Failed to generate mnemonic', e.message);
+  }
+}
+
+function mnemonicShowVerify() {
+  showMnemonicStep('verify');
+  document.getElementById('verify-word-3').value = '';
+  document.getElementById('verify-word-7').value = '';
+  document.getElementById('verify-word-11').value = '';
+  document.getElementById('verify-error').classList.add('hidden');
+}
+
+async function mnemonicVerify() {
+  const w3 = document.getElementById('verify-word-3').value.trim().toLowerCase();
+  const w7 = document.getElementById('verify-word-7').value.trim().toLowerCase();
+  const w11 = document.getElementById('verify-word-11').value.trim().toLowerCase();
+
+  if (w3 !== mnemonicWords[2] || w7 !== mnemonicWords[6] || w11 !== mnemonicWords[10]) {
+    const errEl = document.getElementById('verify-error');
+    errEl.textContent = 'Words do not match. Please check your backup.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    await send('confirm_mnemonic', { mnemonic: mnemonicWords, displayName: state.myName });
+    document.getElementById('mnemonic-modal').classList.add('hidden');
+    showToast('Identity created!', 'Your seed phrase is your backup key.');
+    mnemonicWords = null;
+  } catch (e) {
+    showToast('Failed to confirm', e.message);
+  }
+}
+
+function mnemonicShowRecover() {
+  showMnemonicStep('recover');
+  const grid = document.getElementById('recover-inputs');
+  grid.innerHTML = Array.from({ length: 12 }, (_, i) =>
+    `<input type="text" id="recover-word-${i}" placeholder="${i + 1}" autocomplete="off">`
+  ).join('');
+  document.getElementById('recover-error').classList.add('hidden');
+}
+
+async function mnemonicRecover() {
+  const words = [];
+  for (let i = 0; i < 12; i++) {
+    const val = document.getElementById(`recover-word-${i}`).value.trim().toLowerCase();
+    if (!val) {
+      const errEl = document.getElementById('recover-error');
+      errEl.textContent = `Word #${i + 1} is empty`;
+      errEl.classList.remove('hidden');
+      return;
+    }
+    words.push(val);
+  }
+
+  try {
+    const result = await send('recover_mnemonic', { mnemonic: words });
+    document.getElementById('mnemonic-modal').classList.add('hidden');
+    showToast('Identity recovered!', `Peer ID: ${result.peerId.slice(0, 16)}...`);
+    if (result.bundleFound) {
+      showToast('Account bundle found!', 'Contacts and groups restored.');
+    }
+  } catch (e) {
+    const errEl = document.getElementById('recover-error');
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  }
+}
+
+// ─── TOFU Key Change Warning ────────────────────────────────────────────────
+
+let tofuPeerId = null;
+
+function onKeyChanged(data) {
+  tofuPeerId = data.peerId;
+  const banner = document.getElementById('tofu-banner');
+  document.getElementById('tofu-peer-name').textContent = data.displayName || data.peerId.slice(0, 12);
+  banner.classList.remove('hidden');
+}
+
+function tofuAccept() {
+  document.getElementById('tofu-banner').classList.add('hidden');
+  showToast('Key accepted', `Accepted new key for ${tofuPeerId?.slice(0, 12)}`);
+  tofuPeerId = null;
+}
+
+function tofuReject() {
+  document.getElementById('tofu-banner').classList.add('hidden');
+  showToast('Key rejected', 'Peer will not be trusted with the new key.');
+  tofuPeerId = null;
+}
+
 // ─── Event Bindings ─────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -965,6 +1145,31 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-cancel-connect').addEventListener('click', () => {
     document.getElementById('connect-modal').classList.add('hidden');
   });
+
+  // Name modal
+  document.getElementById('btn-cancel-name').addEventListener('click', () => {
+    document.getElementById('name-modal').classList.add('hidden');
+  });
+  document.getElementById('btn-save-name').addEventListener('click', saveName);
+  document.getElementById('name-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveName();
+  });
+
+  // Mnemonic setup
+  document.getElementById('btn-mnemonic-create').addEventListener('click', mnemonicCreate);
+  document.getElementById('btn-mnemonic-recover').addEventListener('click', mnemonicShowRecover);
+  document.getElementById('btn-mnemonic-skip').addEventListener('click', () => {
+    document.getElementById('mnemonic-modal').classList.add('hidden');
+  });
+  document.getElementById('btn-mnemonic-confirm').addEventListener('click', mnemonicShowVerify);
+  document.getElementById('btn-mnemonic-back').addEventListener('click', () => showMnemonicStep('display'));
+  document.getElementById('btn-mnemonic-verify').addEventListener('click', mnemonicVerify);
+  document.getElementById('btn-recover-back').addEventListener('click', () => showMnemonicStep('choose'));
+  document.getElementById('btn-recover-submit').addEventListener('click', mnemonicRecover);
+
+  // TOFU
+  document.getElementById('btn-tofu-accept').addEventListener('click', tofuAccept);
+  document.getElementById('btn-tofu-reject').addEventListener('click', tofuReject);
 
   // Connect WebSocket
   connectWS();

@@ -1,20 +1,45 @@
 {
   "name": "decentra-net",
   "version": "0.1.0",
-  "description": "Decentralized P2P social network with encrypted messaging and real-time calls",
+  "description": "DecentraNet",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "electron/main.cjs",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "alice": "node dist/index.js --port 6001 --name Alice --web-port 3000 -d ./data-alice",
     "bob": "node dist/index.js --port 6003 --name Bob --web-port 3001 -d ./data-bob",
     "charlie": "node dist/index.js --port 6005 --name Charlie --web-port 3002 -d ./data-charlie",
+    "start:electron": "electron .",
+    "dist": "electron-builder --win",
     "test:integration": "node dist/test/integration.js",
     "test:multi": "node dist/test/multi-peer.js",
     "test:all": "node dist/test/integration.js && node dist/test/multi-peer.js",
     "dev": "node --loader ts-node/esm src/index.ts",
     "test": "jest"
+  },
+  "build": {
+    "appId": "net.decentra.desktop",
+    "productName": "DecentraNet",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "frontend/**/*",
+      "electron/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "asar": false,
+    "win": {
+      "target": "nsis",
+      "icon": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "@chainsafe/libp2p-noise": "^16.1.0",
@@ -28,6 +53,8 @@
     "@libp2p/tcp": "^10.0.0",
     "@libp2p/websockets": "^9.0.0",
     "level": "^8.0.1",
+    "level-supports": "^4.0.1",
+    "level-transcoder": "^1.0.1",
     "libp2p": "^2.4.0",
     "multiformats": "^13.3.1",
     "uint8arrays": "^5.1.0",
@@ -36,6 +63,8 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/ws": "^8.18.1",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.0"
   }

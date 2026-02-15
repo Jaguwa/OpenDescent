@@ -372,53 +372,50 @@ body {
 
 #btn-send:hover { background: var(--accent-hover); }
 
-/* ─── Call Overlay ─────────────────────────────────────────────────────── */
+/* ─── Call Panel (floating, non-blocking) ─────────────────────────────── */
 
-#call-overlay {
+#call-panel {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  bottom: 20px;
+  right: 20px;
   z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#call-container {
   background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 32px;
+  padding: 16px;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   text-align: center;
-  min-width: 400px;
 }
 
-#call-info {
+#call-panel-header {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 24px;
+  gap: 2px;
+  margin-bottom: 12px;
 }
 
 #call-peer-name {
-  font-size: 1.5em;
+  font-size: 1.1em;
   font-weight: 600;
 }
 
 #call-status {
   color: var(--text-secondary);
+  font-size: 0.85em;
 }
 
 #call-timer {
   color: var(--green);
   font-family: monospace;
-  font-size: 1.1em;
+  font-size: 0.95em;
 }
 
 #video-container {
   position: relative;
   width: 100%;
-  max-width: 640px;
-  margin: 0 auto 20px;
+  margin: 0 auto 12px;
   background: #000;
   border-radius: var(--radius);
   overflow: hidden;
@@ -433,43 +430,56 @@ body {
 
 #local-video {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 160px;
+  bottom: 8px;
+  right: 8px;
+  width: 90px;
   border-radius: var(--radius);
   border: 2px solid var(--border);
 }
 
 #call-controls {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
 }
 
 .call-btn {
-  padding: 12px 24px;
+  padding: 8px 16px;
   border: 1px solid var(--border);
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  border-radius: 24px;
+  border-radius: 20px;
   cursor: pointer;
-  font-size: 0.95em;
+  font-size: 0.85em;
 }
 
 .call-btn:hover { background: var(--bg-hover); }
 .call-btn.end { background: var(--red); border-color: var(--red); color: #fff; }
 .call-btn.end:hover { opacity: 0.9; }
-.call-btn.accept { background: var(--green); border-color: var(--green); color: #fff; font-size: 1.1em; padding: 10px 32px; }
+.call-btn.accept { background: var(--green); border-color: var(--green); color: #fff; }
 .call-btn.accept:hover { opacity: 0.9; }
 .call-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 #incoming-call-controls {
   display: flex;
-  gap: 20px;
+  gap: 12px;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 12px;
 }
-#incoming-call-controls .call-btn.end { padding: 10px 32px; font-size: 1.1em; }
+
+/* ─── Editable Name ───────────────────────────────────────────────────── */
+
+.editable-name {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  transition: background 0.15s;
+}
+
+.editable-name:hover {
+  background: var(--bg-hover);
+}
 
 /* ─── Modal ────────────────────────────────────────────────────────────── */
 
@@ -644,6 +654,129 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ─── Mnemonic Modal ──────────────────────────────────────────────────── */
+
+.mnemonic-modal-content {
+  max-width: 520px;
+}
+
+.mnemonic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.mnemonic-grid .mnemonic-word {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-family: monospace;
+  font-size: 0.9em;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.mnemonic-word-num {
+  color: var(--text-muted);
+  font-size: 0.75em;
+  margin-right: 4px;
+}
+
+.mnemonic-grid-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.mnemonic-grid-inputs input {
+  width: 100%;
+  padding: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 0.85em;
+  text-align: center;
+  outline: none;
+}
+
+.mnemonic-grid-inputs input:focus { border-color: var(--accent); }
+
+.mnemonic-verify-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mnemonic-verify-fields label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.mnemonic-verify-fields input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: monospace;
+  outline: none;
+}
+
+.mnemonic-verify-fields input:focus { border-color: var(--accent); }
+
+/* ─── TOFU Warning Banner ─────────────────────────────────────────────── */
+
+.tofu-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: var(--red);
+  color: #fff;
+  padding: 12px 20px;
+  text-align: center;
+  animation: slideDown 0.3s ease;
+}
+
+.tofu-banner-content {
+  max-width: 700px;
+  margin: 0 auto;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.tofu-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.tofu-actions .btn-primary {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+.tofu-actions .call-btn.end {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
 
 /* ─── Responsive ───────────────────────────────────────────────────────── */
 

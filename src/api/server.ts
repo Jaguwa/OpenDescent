@@ -9,6 +9,7 @@
  */
 
 import * as http from 'http';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -48,6 +49,10 @@ export interface APIServerDeps {
   messaging: MessagingService;
   groups: GroupManager;
   content: ContentManager;
+  /** Override frontend static files directory (default: <cwd>/frontend) */
+  frontendDir?: string;
+  /** Override temp directory for file shares/downloads (default: cwd) */
+  tempDir?: string;
 }
 
 // ─── MIME Types ─────────────────────────────────────────────────────────────
@@ -72,14 +77,19 @@ export class APIServer {
   private wss: WebSocketServer;
   private deps: APIServerDeps;
   private clients: Set<WebSocket> = new Set();
+  private authenticatedClients: Set<WebSocket> = new Set();
+  private authToken: string;
   private frontendDir: string;
+  private tempDir: string;
   private callSignals: Map<string, (signal: any) => void> = new Map();
 
   constructor(port: number, deps: APIServerDeps) {
     this.deps = deps;
+    this.authToken = crypto.randomBytes(32).toString('hex');
 
-    // Resolve frontend directory (relative to project root)
-    this.frontendDir = path.resolve(process.cwd(), 'frontend');
+    // Resolve frontend directory (configurable for Electron, defaults to <cwd>/frontend)
+    this.frontendDir = deps.frontendDir || path.resolve(process.cwd(), 'frontend');
+    this.tempDir = deps.tempDir || process.cwd();
 
     // HTTP server for static files
     this.httpServer = http.createServer((req, res) => {
@@ -120,10 +130,24 @@ export class APIServer {
     const ext = path.extname(filePath);
     const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
 
+    const securityHeaders: Record<string, string> = {
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* wss://localhost:*; img-src 'self' data: blob:;",
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+    };
+
     try {
       if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-        const content = fs.readFileSync(filePath);
-        res.writeHead(200, { 'Content-Type': mimeType });
+        let content: Buffer | string = fs.readFileSync(filePath);
+
+        // Inject auth token into the HTML page
+        if (urlPath === '/index.html') {
+          const html = content.toString('utf8');
+          const tokenScript = `<script>window.__DECENTRA_TOKEN='${this.authToken}';</script>`;
+          content = Buffer.from(html.replace('</head>', `${tokenScript}\n</head>`));
+        }
+
+        res.writeHead(200, { 'Content-Type': mimeType, ...securityHeaders });
         res.end(content);
       } else {
         res.writeHead(404);
@@ -143,9 +167,23 @@ export class APIServer {
 
     ws.on('message', async (raw) => {
       try {
-        const msg: WSRequest = JSON.parse(raw.toString());
+        const msg = JSON.parse(raw.toString());
+
+        // First message must be auth
+        if (!this.authenticatedClients.has(ws)) {
+          if (msg.type === 'auth' && msg.token === this.authToken) {
+            this.authenticatedClients.add(ws);
+            ws.send(JSON.stringify({ type: 'auth', ok: true }));
+            return;
+          } else {
+            ws.send(JSON.stringify({ type: 'auth', ok: false, error: 'Invalid token' }));
+            ws.close(4001, 'Unauthorized');
+            return;
+          }
+        }
+
         if (msg.type === 'request') {
-          const response = await this.handleRequest(msg);
+          const response = await this.handleRequest(msg as WSRequest);
           ws.send(JSON.stringify(response));
         }
       } catch (error: any) {
@@ -160,8 +198,14 @@ export class APIServer {
 
     ws.on('close', () => {
       this.clients.delete(ws);
+      this.authenticatedClients.delete(ws);
       console.log(`[API] Browser disconnected (${this.clients.size} client(s))`);
     });
+  }
+
+  /** Get the auth token (for external integrations like Electron) */
+  getAuthToken(): string {
+    return this.authToken;
   }
 
   // ─── Request Handler ──────────────────────────────────────────────────
@@ -281,7 +325,7 @@ export class APIServer {
           if (!recipientId) return this.err(id, `Unknown recipient: ${to}`);
 
           // Write temp file, share it, clean up
-          const tmpDir = path.join(process.cwd(), '.tmp-shares');
+          const tmpDir = path.join(this.tempDir, '.tmp-shares');
           if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
           const tmpPath = path.join(tmpDir, fileName);
           fs.writeFileSync(tmpPath, Buffer.from(fileData, 'base64'));
@@ -302,7 +346,7 @@ export class APIServer {
 
         case 'download_file': {
           const { fileInfo } = data;
-          const tmpDir = path.join(process.cwd(), '.tmp-downloads');
+          const tmpDir = path.join(this.tempDir, '.tmp-downloads');
           const outputPath = await this.deps.content.downloadFile(fileInfo, tmpDir);
           const fileData = fs.readFileSync(outputPath).toString('base64');
           try { fs.unlinkSync(outputPath); } catch {}
@@ -345,8 +389,77 @@ export class APIServer {
           return this.ok(id, result);
         }
 
+        case 'set_display_name': {
+          const { name } = data;
+          if (!name || typeof name !== 'string') return this.err(id, 'Name is required');
+          const trimmed = name.trim().slice(0, 40);
+          if (!trimmed) return this.err(id, 'Name cannot be empty');
+          this.deps.node.setDisplayName(trimmed);
+          return this.ok(id, { name: trimmed });
+        }
+
         case 'get_storage': {
           return this.ok(id, this.deps.store.getStorageUsage());
+        }
+
+        case 'setup_mnemonic': {
+          const { generateMnemonic, mnemonicToSeed } = await import('../crypto/mnemonic.js');
+          const { generateIdentityFromSeed, publicKeyToPeerId } = await import('../crypto/identity.js');
+          const words = generateMnemonic();
+          const seed = mnemonicToSeed(words);
+          const identity = generateIdentityFromSeed(seed, data?.displayName);
+          const peerId = publicKeyToPeerId(identity.publicKey);
+          return this.ok(id, { mnemonic: words, peerId });
+        }
+
+        case 'confirm_mnemonic': {
+          const { validateMnemonic, mnemonicToSeed } = await import('../crypto/mnemonic.js');
+          const { generateIdentityFromSeed, publicKeyToPeerId, saveIdentity } = await import('../crypto/identity.js');
+          const words: string[] = data.mnemonic;
+          if (!validateMnemonic(words)) return this.err(id, 'Invalid mnemonic');
+          const seed = mnemonicToSeed(words);
+          const identity = generateIdentityFromSeed(seed, data.displayName);
+          const peerId = publicKeyToPeerId(identity.publicKey);
+          return this.ok(id, { peerId, confirmed: true });
+        }
+
+        case 'recover_mnemonic': {
+          const { validateMnemonic, mnemonicToSeed } = await import('../crypto/mnemonic.js');
+          const { generateIdentityFromSeed, publicKeyToPeerId } = await import('../crypto/identity.js');
+          const words: string[] = data.mnemonic;
+          if (!validateMnemonic(words)) return this.err(id, 'Invalid mnemonic');
+          const seed = mnemonicToSeed(words);
+          const identity = generateIdentityFromSeed(seed);
+          const peerId = publicKeyToPeerId(identity.publicKey);
+
+          // Request bundle from connected peers
+          const { PROTOCOLS } = await import('../network/node.js');
+          const request = new TextEncoder().encode(JSON.stringify({
+            action: 'retrieve',
+            peerId,
+          }));
+          const peers = this.deps.node.getConnectedPeers();
+          let bundleFound = false;
+          for (const peer of peers) {
+            if (!peer.decentraId) continue;
+            const response = await this.deps.node.sendToPeer(peer.decentraId, PROTOCOLS.ACCOUNT_BUNDLE, request);
+            if (response) {
+              const text = new TextDecoder().decode(response);
+              if (text !== 'NOT_FOUND' && text !== 'UNSUPPORTED') {
+                bundleFound = true;
+                break;
+              }
+            }
+          }
+
+          return this.ok(id, { peerId, bundleFound });
+        }
+
+        case 'get_account_status': {
+          return this.ok(id, {
+            peerId: this.deps.node.getPeerId(),
+            mode: 'legacy', // Will be updated when mnemonic flow is used
+          });
         }
 
         default:
@@ -445,6 +558,21 @@ export class APIServer {
       }
     });
 
+    // TOFU key change warning
+    this.deps.node.on('peer:key_changed', (event) => {
+      if (event.data) {
+        const data = event.data as any;
+        this.broadcast({
+          type: 'event',
+          event: 'key_changed',
+          data: {
+            peerId: data.peerId,
+            displayName: data.displayName,
+          },
+        });
+      }
+    });
+
     // Call signaling — relay from libp2p to browser
     this.deps.node.on('call:incoming', (event) => {
       if (event.data) {
@@ -482,7 +610,7 @@ export class APIServer {
 
   private broadcast(msg: WSEvent): void {
     const json = JSON.stringify(msg);
-    for (const client of this.clients) {
+    for (const client of this.authenticatedClients) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(json);
       }

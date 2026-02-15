@@ -44,6 +44,8 @@ export const PROTOCOLS = {
   SHARD_RETRIEVE: `${PROTOCOL_PREFIX}/shard-retrieve/1.0.0`,
   CALL_SIGNAL: `${PROTOCOL_PREFIX}/call-signal/1.0.0`,
   PEER_EXCHANGE: `${PROTOCOL_PREFIX}/peer-exchange/1.0.0`,
+  ACCOUNT_BUNDLE: `${PROTOCOL_PREFIX}/account-bundle/1.0.0`,
+  HISTORY_SYNC: `${PROTOCOL_PREFIX}/history-sync/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -60,8 +62,18 @@ export class DecentraNode {
   private decentraToLibp2p: Map<string, string> = new Map();       // decentraId -> libp2pId
   private exchangeInProgress: Set<string> = new Set();              // libp2pIds currently exchanging
   private shardRetrieveHandler?: (shardId: string) => Promise<Uint8Array | null>;
+  private bundleStoreHandler?: (peerId: string, data: string) => Promise<void>;
+  private bundleRetrieveHandler?: (peerId: string) => Promise<string | null>;
+  private historySyncHandler?: (requesterId: string, since: number) => Promise<Uint8Array | null>;
+  private tofuHandler?: (peerId: string, publicKey: Uint8Array) => Promise<boolean>;
+  private passphrase: string;
+
+  // Rate limiting: 100 messages per 60-second window per peer
+  private rateLimiter: Map<string, { count: number; windowStart: number }> = new Map();
+  private rateLimitCleanupTimer?: ReturnType<typeof setInterval>;
 
   constructor(config: NodeConfig, passphrase: string) {
+    this.passphrase = passphrase;
     this.config = config;
 
     try {
@@ -140,6 +152,9 @@ export class DecentraNode {
     await this.registerProtocolHandlers();
     await this.node.start();
 
+    // Clean stale rate limit entries every 5 minutes
+    this.rateLimitCleanupTimer = setInterval(() => this.cleanRateLimiter(), 5 * 60 * 1000);
+
     const addresses = this.node.getMultiaddrs();
     console.log(`[Node] Listening on:`);
     addresses.forEach((addr) => console.log(`  ${addr.toString()}`));
@@ -154,6 +169,10 @@ export class DecentraNode {
   }
 
   async stop(): Promise<void> {
+    if (this.rateLimitCleanupTimer) {
+      clearInterval(this.rateLimitCleanupTimer);
+      this.rateLimitCleanupTimer = undefined;
+    }
     if (this.node) {
       console.log(`[Node] Shutting down...`);
       await this.node.stop();
@@ -188,6 +207,11 @@ export class DecentraNode {
 
   getProfile(): PeerProfile {
     return createPeerProfile(this.identity, this.getAddresses());
+  }
+
+  setDisplayName(name: string): void {
+    this.identity.displayName = name;
+    saveIdentity(this.identity, this.config.identityPath, this.passphrase);
   }
 
   // ─── Peer Management ────────────────────────────────────────────────────
@@ -240,9 +264,59 @@ export class DecentraNode {
     return this.libp2pToDecentra.get(libp2pId);
   }
 
+  /** Check if a peer has exceeded the rate limit (100 msg / 60s) */
+  private isRateLimited(peerId: string): boolean {
+    const now = Date.now();
+    const entry = this.rateLimiter.get(peerId);
+
+    if (!entry || now - entry.windowStart > 60_000) {
+      this.rateLimiter.set(peerId, { count: 1, windowStart: now });
+      return false;
+    }
+
+    entry.count++;
+    if (entry.count > 100) {
+      console.warn(`[RateLimit] Peer ${peerId} exceeded 100 msg/60s — dropping message`);
+      return true;
+    }
+    return false;
+  }
+
+  /** Remove stale rate limit entries older than 2 minutes */
+  private cleanRateLimiter(): void {
+    const cutoff = Date.now() - 120_000;
+    for (const [peerId, entry] of this.rateLimiter) {
+      if (entry.windowStart < cutoff) {
+        this.rateLimiter.delete(peerId);
+      }
+    }
+  }
+
   /** Register a handler to serve shard retrieve requests */
   setShardRetrieveHandler(handler: (shardId: string) => Promise<Uint8Array | null>): void {
     this.shardRetrieveHandler = handler;
+  }
+
+  /** Register handlers for account bundle store/retrieve */
+  setBundleHandlers(
+    store: (peerId: string, data: string) => Promise<void>,
+    retrieve: (peerId: string) => Promise<string | null>,
+  ): void {
+    this.bundleStoreHandler = store;
+    this.bundleRetrieveHandler = retrieve;
+  }
+
+  /** Register a handler for history sync requests */
+  setHistorySyncHandler(handler: (requesterId: string, since: number) => Promise<Uint8Array | null>): void {
+    this.historySyncHandler = handler;
+  }
+
+  /**
+   * Register a TOFU handler. Called during profile exchange.
+   * Returns true if the key is trusted (first-seen or matches pin), false if changed.
+   */
+  setTofuHandler(handler: (peerId: string, publicKey: Uint8Array) => Promise<boolean>): void {
+    this.tofuHandler = handler;
   }
 
   /** Find a peer by display name (partial match, prefers connected peers) */
@@ -427,6 +501,17 @@ export class DecentraNode {
         const theirProfile = deserializeProfile(theirProfileData);
 
         if (verifyPeerProfile(theirProfile)) {
+          // TOFU check
+          if (this.tofuHandler) {
+            const trusted = await this.tofuHandler(theirProfile.peerId, theirProfile.publicKey);
+            if (!trusted) {
+              console.warn(`[TOFU] Key change detected for ${theirProfile.peerId}! Peer not auto-accepted.`);
+              this.emit('peer:key_changed', {
+                peerId: theirProfile.peerId,
+                displayName: theirProfile.displayName,
+              }, theirProfile.peerId);
+            }
+          }
           this.registerKnownPeer(theirProfile, libp2pId);
           const name = theirProfile.displayName || theirProfile.peerId.slice(0, 12);
           console.log(`[Exchange] Received profile from ${name} (${theirProfile.peerId})`);
@@ -506,6 +591,17 @@ export class DecentraNode {
         const theirProfile = deserializeProfile(theirProfileData);
 
         if (verifyPeerProfile(theirProfile)) {
+          // TOFU check
+          if (this.tofuHandler) {
+            const trusted = await this.tofuHandler(theirProfile.peerId, theirProfile.publicKey);
+            if (!trusted) {
+              console.warn(`[TOFU] Key change detected for ${theirProfile.peerId}!`);
+              this.emit('peer:key_changed', {
+                peerId: theirProfile.peerId,
+                displayName: theirProfile.displayName,
+              }, theirProfile.peerId);
+            }
+          }
           this.registerKnownPeer(theirProfile, libp2pId);
           const name = theirProfile.displayName || theirProfile.peerId.slice(0, 12);
           console.log(`[Exchange] Received profile from ${name} (${theirProfile.peerId})`);
@@ -526,6 +622,7 @@ export class DecentraNode {
     // Message delivery
     await this.node.handle(PROTOCOLS.MESSAGE, async ({ stream, connection }) => {
       const libp2pId = connection.remotePeer.toString();
+      if (this.isRateLimited(libp2pId)) { try { await stream.close(); } catch {} return; }
       const decentraId = this.libp2pToDecentra.get(libp2pId);
       try {
         const data = await readFromSource(stream.source);
@@ -538,6 +635,7 @@ export class DecentraNode {
 
     // Shard storage
     await this.node.handle(PROTOCOLS.SHARD_STORE, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
       try {
         const data = await readFromSource(stream.source);
         this.emit('shard:stored', data, connection.remotePeer.toString());
@@ -550,6 +648,7 @@ export class DecentraNode {
 
     // Shard retrieval — looks up shard via the registered handler
     await this.node.handle(PROTOCOLS.SHARD_RETRIEVE, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
       try {
         const data = await readFromSource(stream.source);
         const shardId = new TextDecoder().decode(data);
@@ -571,6 +670,7 @@ export class DecentraNode {
 
     // Call signaling
     await this.node.handle(PROTOCOLS.CALL_SIGNAL, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
       try {
         const data = await readFromSource(stream.source);
         const signal = JSON.parse(new TextDecoder().decode(data));
@@ -578,6 +678,55 @@ export class DecentraNode {
         await writeToSink(stream, new TextEncoder().encode('SIGNAL_RECEIVED'));
       } catch (error) {
         console.error(`[Protocol] Error handling call signal:`, error);
+      }
+    });
+
+    // Account bundle storage/retrieval
+    await this.node.handle(PROTOCOLS.ACCOUNT_BUNDLE, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const request = JSON.parse(new TextDecoder().decode(data));
+
+        if (request.action === 'store' && this.bundleStoreHandler) {
+          await this.bundleStoreHandler(request.peerId, request.data);
+          await writeToSink(stream, new TextEncoder().encode('STORED'));
+        } else if (request.action === 'retrieve' && this.bundleRetrieveHandler) {
+          const bundle = await this.bundleRetrieveHandler(request.peerId);
+          if (bundle) {
+            await writeToSink(stream, new TextEncoder().encode(bundle));
+          } else {
+            await writeToSink(stream, new TextEncoder().encode('NOT_FOUND'));
+          }
+        } else {
+          await writeToSink(stream, new TextEncoder().encode('UNSUPPORTED'));
+        }
+      } catch (error) {
+        console.error(`[Protocol] Error handling account bundle:`, error);
+      }
+    });
+
+    // History sync — respond to recovery requests from contacts
+    await this.node.handle(PROTOCOLS.HISTORY_SYNC, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const request = JSON.parse(new TextDecoder().decode(data));
+        const libp2pId = connection.remotePeer.toString();
+        const requesterId = this.libp2pToDecentra.get(libp2pId) || request.peerId;
+
+        if (this.historySyncHandler) {
+          const history = await this.historySyncHandler(requesterId, request.since || 0);
+          if (history) {
+            await writeToSink(stream, history);
+          } else {
+            await writeToSink(stream, new TextEncoder().encode('NO_HISTORY'));
+          }
+        } else {
+          await writeToSink(stream, new TextEncoder().encode('UNSUPPORTED'));
+        }
+      } catch (error) {
+        console.error(`[Protocol] Error handling history sync:`, error);
       }
     });
 

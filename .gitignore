@@ -10,4 +10,5 @@ test-data-multi/
 nul
 *.zip
 desktop.ini
+release/
 .claude/

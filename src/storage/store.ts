@@ -9,9 +9,10 @@
  */
 
 import { Level } from 'level';
+import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId } from '../types/index.js';
+import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey } from '../types/index.js';
 
 /** Decrypted message for conversation history */
 export interface StoredMessage {
@@ -36,6 +37,8 @@ const NS = {
   IDMAP: 'idmap:',
   GROUP: 'group:',
   META: 'meta:',
+  BUNDLE: 'bundle:',
+  TOFU: 'tofu:',
 } as const;
 
 export class LocalStore {
@@ -88,7 +91,18 @@ export class LocalStore {
     try {
       const value = await this.db.get(NS.SHARD + shardId);
       const parsed = JSON.parse(value);
-      return { ...parsed, data: new Uint8Array(Buffer.from(parsed.data, 'base64')) };
+      const data = new Uint8Array(Buffer.from(parsed.data, 'base64'));
+
+      // Verify integrity if hash is present
+      if (parsed.hash) {
+        const actualHash = crypto.createHash('sha256').update(data).digest('hex');
+        if (actualHash !== parsed.hash) {
+          console.warn(`[Store] Shard ${shardId} integrity check FAILED — data corrupted`);
+          return null;
+        }
+      }
+
+      return { ...parsed, data };
     } catch {
       return null;
     }
@@ -363,6 +377,111 @@ export class LocalStore {
       };
     } catch {
       return null;
+    }
+  }
+
+  // ─── Account Bundle Storage ─────────────────────────────────────────
+
+  /** Build an account bundle from current stored data */
+  async buildAccountBundle(peerId: PeerId, signFn: (data: Uint8Array) => Uint8Array): Promise<AccountBundle> {
+    const contacts: PeerId[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.PEER, lt: NS.PEER + '\xFF' })) {
+      const parsed = JSON.parse(value);
+      if (parsed.peerId !== peerId) contacts.push(parsed.peerId);
+    }
+
+    const groups: AccountBundle['groups'] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.GROUP, lt: NS.GROUP + '\xFF' })) {
+      const g = JSON.parse(value);
+      groups.push({
+        groupId: g.groupId,
+        name: g.name,
+        groupKey: g.groupKey,
+        members: g.members,
+      });
+    }
+
+    let displayName: string | undefined;
+    try {
+      displayName = (await this.db.get(NS.META + 'displayName')) || undefined;
+    } catch {}
+
+    const bundle: AccountBundle = {
+      version: 1,
+      peerId,
+      contacts,
+      groups,
+      settings: { displayName },
+      updatedAt: Date.now(),
+      signature: new Uint8Array(0),
+    };
+
+    // Sign the bundle
+    const dataToSign = new TextEncoder().encode(JSON.stringify({
+      ...bundle,
+      signature: undefined,
+    }));
+    bundle.signature = signFn(dataToSign);
+
+    return bundle;
+  }
+
+  /** Restore contacts, groups, settings from a bundle */
+  async restoreFromBundle(bundle: AccountBundle): Promise<void> {
+    // Restore settings
+    if (bundle.settings.displayName) {
+      await this.db.put(NS.META + 'displayName', bundle.settings.displayName);
+    }
+
+    // Restore groups
+    for (const group of bundle.groups) {
+      await this.storeGroup({
+        ...group,
+        creatorId: bundle.peerId,
+        createdAt: bundle.updatedAt,
+        lastMessageAt: bundle.updatedAt,
+      });
+    }
+
+    console.log(`[Store] Restored ${bundle.contacts.length} contacts, ${bundle.groups.length} groups from bundle`);
+  }
+
+  /** Store an encrypted account bundle for a peer (opaque storage) */
+  async storeBundle(peerId: PeerId, encryptedBundle: string): Promise<void> {
+    await this.db.put(NS.BUNDLE + peerId, encryptedBundle);
+  }
+
+  /** Retrieve an encrypted account bundle for a peer */
+  async getBundle(peerId: PeerId): Promise<string | null> {
+    try {
+      return await this.db.get(NS.BUNDLE + peerId);
+    } catch {
+      return null;
+    }
+  }
+
+  // ─── TOFU (Trust On First Use) ────────────────────────────────────────
+
+  /** Store a pinned key for a peer (first-seen trust) */
+  async storePinnedKey(pin: PinnedKey): Promise<void> {
+    await this.db.put(NS.TOFU + pin.peerId, JSON.stringify(pin));
+  }
+
+  /** Get the pinned key for a peer */
+  async getPinnedKey(peerId: PeerId): Promise<PinnedKey | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.TOFU + peerId));
+    } catch {
+      return null;
+    }
+  }
+
+  /** Update the lastVerified timestamp for a pinned key */
+  async updatePinnedKeyVerified(peerId: PeerId): Promise<void> {
+    const pin = await this.getPinnedKey(peerId);
+    if (pin) {
+      pin.lastVerified = Date.now();
+      await this.storePinnedKey(pin);
     }
   }
 

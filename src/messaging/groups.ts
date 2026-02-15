@@ -203,6 +203,10 @@ export class GroupManager {
         await this.handleMemberLeave(controlMsg);
         return true;
 
+      case 'group_key_update':
+        await this.handleKeyUpdate(controlMsg);
+        return true;
+
       default:
         return false;
     }
@@ -359,5 +363,119 @@ export class GroupManager {
     const profile = this.node.getKnownPeer(msg.from);
     const name = profile?.displayName || msg.from.slice(0, 12);
     console.log(`[Groups] ${name} left "${group.name}"`);
+
+    // Rotate group key if we are the creator (prevents removed member from reading future messages)
+    if (group.creatorId === this.node.getPeerId()) {
+      await this.rotateGroupKey(group.groupId);
+    }
+  }
+
+  /**
+   * Rotate the group key and distribute the new key to all remaining members.
+   * Called automatically when a member leaves/is removed.
+   */
+  async rotateGroupKey(groupId: string): Promise<void> {
+    const group = this.groups.get(groupId);
+    if (!group) throw new Error(`Unknown group: ${groupId}`);
+
+    const newKey = generateGroupKey();
+    group.groupKey = Buffer.from(newKey).toString('base64');
+    await this.store.storeGroup(group);
+
+    const myId = this.node.getPeerId();
+
+    // Send the new key to all remaining members (encrypted per-member)
+    for (const memberId of group.members) {
+      if (memberId === myId) continue;
+      await this.sendKeyUpdate(memberId, group, newKey);
+    }
+
+    console.log(`[Groups] Rotated key for "${group.name}" — distributed to ${group.members.length - 1} members`);
+  }
+
+  /**
+   * Explicitly remove a member from a group and rotate the key.
+   */
+  async removeMember(groupId: string, memberId: PeerId): Promise<void> {
+    const group = this.groups.get(groupId);
+    if (!group) throw new Error(`Unknown group: ${groupId}`);
+
+    if (!group.members.includes(memberId)) return;
+
+    group.members = group.members.filter((m) => m !== memberId);
+    await this.store.storeGroup(group);
+
+    // Notify the removed member (send a leave message on their behalf)
+    const leaveMsg: GroupControlMessage = {
+      type: 'group_leave',
+      groupId,
+      from: memberId,
+      payload: {},
+      timestamp: Date.now(),
+    };
+    const data = new TextEncoder().encode(JSON.stringify(leaveMsg));
+    await this.node.sendToPeer(memberId, PROTOCOLS.MESSAGE, data);
+
+    const profile = this.node.getKnownPeer(memberId);
+    const name = profile?.displayName || memberId.slice(0, 12);
+    console.log(`[Groups] Removed ${name} from "${group.name}"`);
+
+    await this.rotateGroupKey(groupId);
+  }
+
+  private async sendKeyUpdate(memberId: PeerId, group: StoredGroup, newKey: Uint8Array): Promise<void> {
+    const memberProfile = await this.store.getPeerProfile(memberId)
+      || this.node.getKnownPeer(memberId);
+
+    if (!memberProfile) {
+      console.warn(`[Groups] Cannot send key update to ${memberId}: no profile`);
+      return;
+    }
+
+    const encryptedKey = encryptForPeer(newKey, memberProfile.encryptionPublicKey);
+
+    const controlMsg: GroupControlMessage = {
+      type: 'group_key_update',
+      groupId: group.groupId,
+      from: this.node.getPeerId(),
+      payload: {
+        encryptedGroupKey: {
+          ciphertext: Buffer.from(encryptedKey.ciphertext).toString('base64'),
+          nonce: Buffer.from(encryptedKey.nonce).toString('base64'),
+          ephemeralPublicKey: Buffer.from(encryptedKey.ephemeralPublicKey).toString('base64'),
+          authTag: Buffer.from(encryptedKey.authTag).toString('base64'),
+        },
+      },
+      timestamp: Date.now(),
+    };
+
+    const data = new TextEncoder().encode(JSON.stringify(controlMsg));
+    await this.node.sendToPeer(memberId, PROTOCOLS.MESSAGE, data);
+  }
+
+  private async handleKeyUpdate(msg: GroupControlMessage): Promise<void> {
+    const group = this.groups.get(msg.groupId);
+    if (!group) return;
+
+    const payload = msg.payload as any;
+    const encryptedKey = payload.encryptedGroupKey;
+
+    try {
+      const newKey = decryptFromPeer(
+        {
+          ciphertext: new Uint8Array(Buffer.from(encryptedKey.ciphertext, 'base64')),
+          nonce: new Uint8Array(Buffer.from(encryptedKey.nonce, 'base64')),
+          ephemeralPublicKey: new Uint8Array(Buffer.from(encryptedKey.ephemeralPublicKey, 'base64')),
+          authTag: new Uint8Array(Buffer.from(encryptedKey.authTag, 'base64')),
+        },
+        this.identity.encryptionPrivateKey,
+      );
+
+      group.groupKey = Buffer.from(newKey).toString('base64');
+      await this.store.storeGroup(group);
+      console.log(`[Groups] Updated key for "${group.name}"`);
+    } catch (error) {
+      console.error(`[Groups] Failed to decrypt key update for "${group.name}":`, error);
+    }
   }
 }

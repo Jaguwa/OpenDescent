@@ -9,6 +9,9 @@
 /** Base58-encoded hash of public key — the user's network address */
 export type PeerId = string;
 
+/** How this identity was created */
+export type IdentityMode = 'mnemonic' | 'legacy';
+
 /** A user's complete identity (private, never transmitted) */
 export interface Identity {
   /** Ed25519 public key (shared freely) */
@@ -60,6 +63,8 @@ export interface Shard {
   data: Uint8Array;
   /** Size in bytes */
   size: number;
+  /** SHA-256 hash of shard data for integrity verification */
+  hash?: string;
 }
 
 /** Metadata about stored content (stored in DHT) */
@@ -201,6 +206,7 @@ export type NetworkEventType =
   | 'peer:connected'
   | 'peer:disconnected'
   | 'peer:profile_exchanged'
+  | 'peer:key_changed'
   | 'message:received'
   | 'message:delivered'
   | 'call:incoming'
@@ -243,3 +249,26 @@ export const DEFAULT_CONFIG: Partial<NodeConfig> = {
   enableRelay: true,
   messageRetentionSeconds: 7 * 24 * 60 * 60, // 7 days
 };
+
+// ─── Account Recovery ────────────────────────────────────────────────────────
+
+/** Account bundle distributed to network peers for recovery */
+export interface AccountBundle {
+  version: number;
+  peerId: PeerId;
+  contacts: PeerId[];
+  groups: { groupId: string; name: string; groupKey: string; members: PeerId[] }[];
+  settings: { displayName?: string };
+  updatedAt: number;
+  signature: Uint8Array;
+}
+
+// ─── TOFU (Trust On First Use) ───────────────────────────────────────────────
+
+/** Pinned public key for a peer (first-seen trust model) */
+export interface PinnedKey {
+  peerId: PeerId;
+  publicKeyHash: string;
+  firstSeen: number;
+  lastVerified: number;
+}

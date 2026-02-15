@@ -15,6 +15,56 @@ import * as path from 'path';
 import type { Identity, PeerProfile } from '../types/index.js';
 
 /**
+ * Generate a deterministic identity from a mnemonic seed.
+ * Same seed always produces identical Ed25519 + X25519 keypairs.
+ */
+export function generateIdentityFromSeed(seed: Uint8Array, displayName?: string): Identity {
+  // Derive Ed25519 key material via HKDF
+  const ed25519Raw = Buffer.from(crypto.hkdfSync(
+    'sha256',
+    seed,
+    Buffer.from('decentranet-salt-v1'),
+    Buffer.from('decentranet-ed25519-v1'),
+    32,
+  ));
+
+  // Derive X25519 key material via HKDF
+  const x25519Raw = Buffer.from(crypto.hkdfSync(
+    'sha256',
+    seed,
+    Buffer.from('decentranet-salt-v1'),
+    Buffer.from('decentranet-x25519-v1'),
+    32,
+  ));
+
+  // DER-encode Ed25519 PKCS8 private key: fixed prefix + 32 raw bytes
+  const ed25519Prefix = Buffer.from('302e020100300506032b657004220420', 'hex');
+  const ed25519Der = Buffer.concat([ed25519Prefix, ed25519Raw]);
+
+  // DER-encode X25519 PKCS8 private key: fixed prefix + 32 raw bytes
+  const x25519Prefix = Buffer.from('302e020100300506032b656e04220420', 'hex');
+  const x25519Der = Buffer.concat([x25519Prefix, x25519Raw]);
+
+  // Derive public keys from private keys
+  const ed25519PrivKey = crypto.createPrivateKey({ key: ed25519Der, format: 'der', type: 'pkcs8' });
+  const ed25519PubKey = crypto.createPublicKey(ed25519PrivKey);
+  const publicKey = ed25519PubKey.export({ type: 'spki', format: 'der' });
+
+  const x25519PrivKey = crypto.createPrivateKey({ key: x25519Der, format: 'der', type: 'pkcs8' });
+  const x25519PubKey = crypto.createPublicKey(x25519PrivKey);
+  const encryptionPublicKey = x25519PubKey.export({ type: 'spki', format: 'der' });
+
+  return {
+    publicKey: new Uint8Array(publicKey),
+    privateKey: new Uint8Array(ed25519Der),
+    encryptionPublicKey: new Uint8Array(encryptionPublicKey),
+    encryptionPrivateKey: new Uint8Array(x25519Der),
+    displayName,
+    createdAt: Date.now(),
+  };
+}
+
+/**
  * Generate a new identity (Ed25519 signing keypair + X25519 encryption keypair).
  */
 export function generateIdentity(displayName?: string): Identity {

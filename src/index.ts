@@ -9,6 +9,7 @@
  *   npm run build && node dist/index.js --port 6002 --name "Bob" --bootstrap /ip4/127.0.0.1/tcp/6001
  */
 
+import * as crypto from 'crypto';
 import * as path from 'path';
 import * as readline from 'readline';
 import { DecentraNode } from './network/node.js';
@@ -743,6 +744,55 @@ Options:
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
   await groups.loadGroups();
 
+  // Wire account bundle handlers: store/retrieve bundles for other peers
+  node.setBundleHandlers(
+    async (peerId: string, data: string) => {
+      await store.storeBundle(peerId, data);
+    },
+    async (peerId: string) => {
+      return store.getBundle(peerId);
+    },
+  );
+
+  // Wire history sync: respond to recovery requests from contacts
+  node.setHistorySyncHandler(async (requesterId: string, since: number) => {
+    const myId = node.getPeerId();
+    const convoId = [myId, requesterId].sort().join(':');
+    const messages = await store.getConversationHistory(convoId, 1000);
+    const filtered = messages.filter(m => m.timestamp > since);
+    if (filtered.length === 0) return null;
+    return new TextEncoder().encode(JSON.stringify(filtered));
+  });
+
+  // Wire TOFU (Trust On First Use) — pin public keys on first encounter
+  node.setTofuHandler(async (peerId: string, publicKey: Uint8Array) => {
+    const pubKeyHash = crypto.createHash('sha256').update(publicKey).digest('hex');
+    const existing = await store.getPinnedKey(peerId);
+
+    if (!existing) {
+      // First time seeing this peer — pin their key
+      await store.storePinnedKey({
+        peerId,
+        publicKeyHash: pubKeyHash,
+        firstSeen: Date.now(),
+        lastVerified: Date.now(),
+      });
+      return true; // trusted (first-seen)
+    }
+
+    if (existing.publicKeyHash === pubKeyHash) {
+      // Key matches the pin — update verification timestamp
+      await store.updatePinnedKeyVerified(peerId);
+      return true;
+    }
+
+    // KEY CHANGED — do not auto-accept
+    console.warn(`[TOFU] Key change detected for ${peerId}!`);
+    console.warn(`  Pinned:   ${existing.publicKeyHash.slice(0, 16)}...`);
+    console.warn(`  Received: ${pubKeyHash.slice(0, 16)}...`);
+    return false;
+  });
+
   // Wire shard retrieval: when a peer requests a shard, look it up in our store
   node.setShardRetrieveHandler(async (shardId: string) => {
     const shard = await store.getShard(shardId);
@@ -781,6 +831,34 @@ Options:
     groups,
     content,
   });
+
+  // Periodic cleanup of expired pending messages (hourly)
+  setInterval(() => store.cleanExpiredMessages(config.messageRetentionSeconds), 60 * 60 * 1000);
+
+  // Periodic account bundle auto-save and distribution (every 5 minutes)
+  const { sign: signData } = await import('./crypto/identity.js');
+  setInterval(async () => {
+    try {
+      const bundle = await store.buildAccountBundle(node.getPeerId(), (data) => signData(data, node.getIdentity().privateKey));
+      const serialized = JSON.stringify({
+        ...bundle,
+        signature: Buffer.from(bundle.signature).toString('base64'),
+      });
+
+      // Distribute to connected peers
+      const { PROTOCOLS: P } = await import('./network/node.js');
+      const request = new TextEncoder().encode(JSON.stringify({
+        action: 'store',
+        peerId: node.getPeerId(),
+        data: serialized,
+      }));
+      for (const peer of node.getConnectedPeers()) {
+        if (peer.decentraId) {
+          node.sendToPeer(peer.decentraId, P.ACCOUNT_BUNDLE, request).catch(() => {});
+        }
+      }
+    } catch {}
+  }, 5 * 60 * 1000);
 
   // Connect to a peer via invite code if provided on CLI
   if (args.connect) {

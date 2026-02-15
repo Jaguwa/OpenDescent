@@ -11,7 +11,7 @@
     <!-- ─── Sidebar ─────────────────────────────────────────── -->
     <aside id="sidebar">
       <div id="identity-bar">
-        <div id="my-name">Connecting...</div>
+        <div id="my-name" class="editable-name" onclick="showNameModal()" title="Click to change display name">Connecting...</div>
         <div id="my-id"></div>
         <div id="connection-status" class="status-dot offline"></div>
       </div>
@@ -75,26 +75,37 @@
       </div>
     </main>
 
-    <!-- ─── Call Overlay ────────────────────────────────────── -->
-    <div id="call-overlay" class="hidden">
-      <div id="call-container">
-        <div id="call-info">
-          <span id="call-peer-name"></span>
-          <span id="call-status">Connecting...</span>
-          <span id="call-timer"></span>
-        </div>
-        <div id="video-container" class="hidden">
-          <video id="remote-video" autoplay playsinline></video>
-          <video id="local-video" autoplay playsinline muted></video>
-        </div>
-        <div id="call-controls">
-          <button id="btn-toggle-mute" class="call-btn">Mute</button>
-          <button id="btn-toggle-video" class="call-btn hidden">Camera</button>
-          <button id="btn-end-call" class="call-btn end">End</button>
-        </div>
-        <div id="incoming-call-controls" class="hidden">
-          <button id="btn-accept-call" class="call-btn accept">Accept</button>
-          <button id="btn-reject-call" class="call-btn end">Reject</button>
+    <!-- ─── Call Panel (floating, non-blocking) ────────────── -->
+    <div id="call-panel" class="hidden">
+      <div id="call-panel-header">
+        <span id="call-peer-name"></span>
+        <span id="call-status">Connecting...</span>
+        <span id="call-timer"></span>
+      </div>
+      <div id="video-container" class="hidden">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video" autoplay playsinline muted></video>
+      </div>
+      <div id="call-controls">
+        <button id="btn-toggle-mute" class="call-btn">Mute</button>
+        <button id="btn-toggle-video" class="call-btn hidden">Camera</button>
+        <button id="btn-end-call" class="call-btn end">End</button>
+      </div>
+      <div id="incoming-call-controls" class="hidden">
+        <button id="btn-accept-call" class="call-btn accept">Accept</button>
+        <button id="btn-reject-call" class="call-btn end">Reject</button>
+      </div>
+    </div>
+
+    <!-- ─── Display Name Modal ───────────────────────────────── -->
+    <div id="name-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Set Display Name</h3>
+        <p class="subtle" style="margin-bottom:12px">This is the name other peers will see.</p>
+        <input type="text" id="name-input" placeholder="Enter your name..." maxlength="40">
+        <div class="modal-actions">
+          <button id="btn-cancel-name" class="btn-secondary">Cancel</button>
+          <button id="btn-save-name" class="btn-primary">Save</button>
         </div>
       </div>
     </div>
@@ -136,6 +147,72 @@
 
         <div class="modal-actions" style="margin-top:16px">
           <button id="btn-cancel-connect" class="btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Mnemonic Setup Modal ──────────────────────────────── -->
+    <div id="mnemonic-modal" class="modal hidden">
+      <div class="modal-content mnemonic-modal-content">
+        <h3 id="mnemonic-title">Welcome to DecentraNet</h3>
+
+        <!-- Step 1: Choose Create or Recover -->
+        <div id="mnemonic-step-choose">
+          <p class="subtle" style="margin-bottom:16px">Your identity is your key. No servers, no passwords.</p>
+          <button id="btn-mnemonic-create" class="btn-primary" style="width:100%;margin-bottom:8px">Create New Identity</button>
+          <button id="btn-mnemonic-recover" class="btn-secondary" style="width:100%">Recover Existing Identity</button>
+          <div class="modal-actions" style="margin-top:12px">
+            <button id="btn-mnemonic-skip" class="btn-secondary">Skip (Legacy Mode)</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Display seed phrase -->
+        <div id="mnemonic-step-display" class="hidden">
+          <p class="subtle" style="margin-bottom:8px">Write down these 12 words in order. They are your recovery key.</p>
+          <div id="mnemonic-words" class="mnemonic-grid"></div>
+          <p class="subtle" style="margin-top:12px;color:var(--orange)">Never share these words. Anyone with them controls your identity.</p>
+          <div class="modal-actions" style="margin-top:16px">
+            <button id="btn-mnemonic-confirm" class="btn-primary">I've Written Them Down</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Verify (enter words 3, 7, 11) -->
+        <div id="mnemonic-step-verify" class="hidden">
+          <p class="subtle" style="margin-bottom:12px">Confirm your seed phrase by entering these words:</p>
+          <div class="mnemonic-verify-fields">
+            <label>Word #3: <input type="text" id="verify-word-3" autocomplete="off"></label>
+            <label>Word #7: <input type="text" id="verify-word-7" autocomplete="off"></label>
+            <label>Word #11: <input type="text" id="verify-word-11" autocomplete="off"></label>
+          </div>
+          <div id="verify-error" class="hidden" style="color:var(--red);margin-top:8px;font-size:0.9em"></div>
+          <div class="modal-actions" style="margin-top:16px">
+            <button id="btn-mnemonic-back" class="btn-secondary">Back</button>
+            <button id="btn-mnemonic-verify" class="btn-primary">Verify &amp; Create</button>
+          </div>
+        </div>
+
+        <!-- Recover: Enter 12 words -->
+        <div id="mnemonic-step-recover" class="hidden">
+          <p class="subtle" style="margin-bottom:12px">Enter your 12-word recovery phrase:</p>
+          <div id="recover-inputs" class="mnemonic-grid-inputs"></div>
+          <div id="recover-error" class="hidden" style="color:var(--red);margin-top:8px;font-size:0.9em"></div>
+          <div class="modal-actions" style="margin-top:16px">
+            <button id="btn-recover-back" class="btn-secondary">Back</button>
+            <button id="btn-recover-submit" class="btn-primary">Recover Identity</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TOFU Key Change Warning Banner ──────────────────── -->
+    <div id="tofu-banner" class="tofu-banner hidden">
+      <div class="tofu-banner-content">
+        <strong>Identity Warning:</strong>
+        <span id="tofu-peer-name"></span>'s identity key has changed.
+        This could indicate an attack or that they recreated their identity.
+        <div class="tofu-actions">
+          <button id="btn-tofu-accept" class="btn-primary">Accept New Key</button>
+          <button id="btn-tofu-reject" class="call-btn end">Reject</button>
         </div>
       </div>
     </div>

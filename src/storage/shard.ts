@@ -60,6 +60,7 @@ export function shardContent(
     const start = i * shardSize;
     const shardData = paddedData.slice(start, start + shardSize);
 
+    const shardHash = crypto.createHash('sha256').update(shardData).digest('hex');
     shards.push({
       shardId: `${contentId}-${i}`,
       contentId,
@@ -68,6 +69,7 @@ export function shardContent(
       requiredShards: config.dataShards,
       data: shardData,
       size: shardData.length,
+      hash: shardHash,
     });
   }
 
@@ -85,6 +87,7 @@ export function shardContent(
       }
     }
 
+    const parityHash = crypto.createHash('sha256').update(parityData).digest('hex');
     shards.push({
       shardId: `${contentId}-p${p}`,
       contentId,
@@ -93,6 +96,7 @@ export function shardContent(
       requiredShards: config.dataShards,
       data: parityData,
       size: parityData.length,
+      hash: parityHash,
     });
   }
 

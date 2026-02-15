@@ -13,9 +13,12 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 import { DecentraNode } from '../network/node.js';
 import { LocalStore } from '../storage/store.js';
 import { MessagingService } from '../messaging/delivery.js';
+import { generateMnemonic, validateMnemonic, mnemonicToSeed } from '../crypto/mnemonic.js';
+import { generateIdentityFromSeed, publicKeyToPeerId } from '../crypto/identity.js';
 import type { NodeConfig, Message } from '../types/index.js';
 
 const TEST_DIR = './test-data';
@@ -174,8 +177,78 @@ async function run() {
   const aliceHistory = await aliceStore.getConversationHistory(aliceConvoId);
   assert(aliceHistory.length >= 1, `Alice has ${aliceHistory.length} message(s) in history`);
 
-  // ─── Step 7: Shutdown ───────────────────────────────────────────────────
-  console.log('\n7. Shutting down...');
+  // ─── Step 7: Mnemonic + Deterministic Key Derivation ───────────────────
+  console.log('\n7. Testing mnemonic generation and deterministic key derivation...');
+
+  // 7a. Generate mnemonic and validate
+  const mnemonic = generateMnemonic();
+  assert(mnemonic.length === 12, 'Mnemonic has 12 words');
+  assert(validateMnemonic(mnemonic), 'Generated mnemonic passes validation');
+
+  // 7b. Invalid mnemonic fails validation
+  const badMnemonic = [...mnemonic];
+  badMnemonic[0] = 'zzzznotaword';
+  assert(!validateMnemonic(badMnemonic), 'Invalid mnemonic fails validation');
+
+  // 7c. Deterministic keys — same mnemonic produces same identity
+  const seed1 = mnemonicToSeed(mnemonic);
+  const seed2 = mnemonicToSeed(mnemonic);
+  assert(Buffer.from(seed1).equals(Buffer.from(seed2)), 'Same mnemonic produces same seed');
+
+  const identity1 = generateIdentityFromSeed(seed1, 'TestUser');
+  const identity2 = generateIdentityFromSeed(seed2, 'TestUser');
+  const pid1 = publicKeyToPeerId(identity1.publicKey);
+  const pid2 = publicKeyToPeerId(identity2.publicKey);
+  assert(pid1 === pid2, 'Same seed produces same PeerId');
+  assert(
+    Buffer.from(identity1.publicKey).equals(Buffer.from(identity2.publicKey)),
+    'Same seed produces same public key'
+  );
+
+  // 7d. Different mnemonic produces different identity
+  const mnemonic2 = generateMnemonic();
+  const seed3 = mnemonicToSeed(mnemonic2);
+  const identity3 = generateIdentityFromSeed(seed3, 'OtherUser');
+  const pid3 = publicKeyToPeerId(identity3.publicKey);
+  assert(pid1 !== pid3, 'Different mnemonic produces different PeerId');
+
+  // ─── Step 8: TOFU Key Pinning ───────────────────────────────────────────
+  console.log('\n8. Testing TOFU key pinning...');
+
+  const testPeerId = 'test-tofu-peer-id';
+  const testPubKey = crypto.randomBytes(32);
+  const testPubKeyHash = crypto.createHash('sha256').update(testPubKey).digest('hex');
+
+  await aliceStore.storePinnedKey({
+    peerId: testPeerId,
+    publicKeyHash: testPubKeyHash,
+    firstSeen: Date.now(),
+    lastVerified: Date.now(),
+  });
+
+  const pinned = await aliceStore.getPinnedKey(testPeerId);
+  assert(pinned !== null, 'Pinned key stored and retrieved');
+  assert(pinned!.publicKeyHash === testPubKeyHash, 'Pinned key hash matches');
+
+  // Verify no pin for unknown peer
+  const noPinned = await aliceStore.getPinnedKey('unknown-peer');
+  assert(noPinned === null, 'No pinned key for unknown peer');
+
+  // ─── Step 9: Account Bundle ─────────────────────────────────────────────
+  console.log('\n9. Testing account bundle build...');
+
+  const { sign } = await import('../crypto/identity.js');
+  const aliceIdentity = aliceNode.getIdentity();
+  const bundle = await aliceStore.buildAccountBundle(
+    aliceNode.getPeerId(),
+    (data: Uint8Array) => sign(data, aliceIdentity.privateKey)
+  );
+  assert(bundle.peerId === aliceNode.getPeerId(), 'Bundle has correct peerId');
+  assert(bundle.version === 1, 'Bundle version is 1');
+  assert(bundle.signature.length > 0, 'Bundle is signed');
+
+  // ─── Step 10: Shutdown ──────────────────────────────────────────────────
+  console.log('\n10. Shutting down...');
 
   await aliceNode.stop();
   await bobNode.stop();

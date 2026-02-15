@@ -14,11 +14,13 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 import { DecentraNode } from '../network/node.js';
 import { LocalStore } from '../storage/store.js';
 import { MessagingService } from '../messaging/delivery.js';
 import { GroupManager } from '../messaging/groups.js';
 import { ContentManager, type SharedFileInfo } from '../content/sharing.js';
+import { shardContent } from '../storage/shard.js';
 import type { NodeConfig, Message } from '../types/index.js';
 
 const TEST_DIR = './test-data-multi';
@@ -275,8 +277,72 @@ async function run() {
     assert((charlieDM as Message).from === bobNode.getPeerId(), 'DM sender is Bob');
   }
 
-  // ─── Step 9: Shutdown ─────────────────────────────────────────────────
-  console.log('\n9. Shutting down all nodes...');
+  // ─── Step 9: Group Key Rotation ──────────────────────────────────────
+  console.log('\n9. Testing group key rotation on member removal...');
+
+  // Get current group key for Bob before rotation
+  const groupBeforeRotation = bobGroups.findGroup(groupId);
+  const keyBefore = groupBeforeRotation ? groupBeforeRotation.groupKey : '';
+  assert(keyBefore.length > 0, 'Bob has a group key before rotation');
+
+  // Alice removes Charlie from the group
+  await aliceGroups.removeMember(groupId, charlieNode.getPeerId());
+  await sleep(2000);
+
+  // Verify the group key was rotated for Bob
+  const groupAfterRotation = bobGroups.findGroup(groupId);
+  const keyAfter = groupAfterRotation ? groupAfterRotation.groupKey : '';
+  assert(keyAfter.length > 0, 'Bob has a group key after rotation');
+  assert(keyBefore !== keyAfter, 'Group key was rotated (different from before)');
+
+  // Verify Charlie was removed from the group (Alice's view)
+  const aliceGroupAfter = aliceGroups.findGroup(groupId);
+  assert(
+    aliceGroupAfter !== undefined && !aliceGroupAfter.members.includes(charlieNode.getPeerId()),
+    'Charlie removed from group member list'
+  );
+
+  // Alice can still send messages to the group with new key
+  let bobGroupMsg2: Message | null = null;
+  bobGroups.onGroupMessage((gid, name, msg) => {
+    if (gid === groupId) bobGroupMsg2 = msg;
+  });
+
+  await aliceGroups.sendGroupMessage(groupId, 'Post-rotation message');
+  await sleep(2000);
+
+  assert(bobGroupMsg2 !== null, 'Bob received post-rotation group message');
+  if (bobGroupMsg2) {
+    assert(
+      (bobGroupMsg2 as Message).body === 'Post-rotation message',
+      'Bob decrypted post-rotation message correctly'
+    );
+  }
+
+  // ─── Step 10: Shard Integrity Verification ─────────────────────────────
+  console.log('\n10. Testing shard integrity verification...');
+
+  // Create a small test payload and shard it
+  const testPayload = Buffer.from('Shard integrity test data for DecentraNet verification');
+  const shards = shardContent(testPayload, { dataShards: 3, parityShards: 1 });
+  assert(shards.length === 4, 'Created 4 shards (3 data + 1 parity)');
+
+  // Verify all shards have hash fields
+  const allShardsHaveHash = shards.every(s => typeof s.hash === 'string' && s.hash.length === 64);
+  assert(allShardsHaveHash, 'All shards have SHA-256 hash (64 hex chars)');
+
+  // Verify hash correctness
+  const shard0Hash = crypto.createHash('sha256').update(shards[0].data).digest('hex');
+  assert(shard0Hash === shards[0].hash, 'Shard hash matches SHA-256 of data');
+
+  // Store a shard and verify integrity on retrieval
+  await aliceStore.storeShard(shards[0]);
+  const retrievedShard = await aliceStore.getShard(shards[0].shardId);
+  assert(retrievedShard !== null, 'Stored shard retrieved successfully');
+  assert(retrievedShard!.hash === shards[0].hash, 'Retrieved shard hash matches original');
+
+  // ─── Step 11: Shutdown ─────────────────────────────────────────────────
+  console.log('\n11. Shutting down all nodes...');
 
   await aliceNode.stop();
   await bobNode.stop();
