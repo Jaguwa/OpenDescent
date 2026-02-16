@@ -2182,6 +2182,469 @@ body {
 
 .browse-hubs-content { max-width: 550px; }
 
+/* ─── Animated Backgrounds ──────────────────────────────────────────────── */
+
+#bg-animation-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+#app { position: relative; z-index: 1; }
+
+/* Gradient Drift */
+.bg-anim-drift {
+  background: linear-gradient(135deg, var(--bg-primary), var(--accent), var(--bg-secondary));
+  background-size: 400% 400%;
+  animation: bgDrift 12s ease infinite;
+  opacity: 0.4;
+}
+@keyframes bgDrift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Aurora */
+.bg-anim-aurora {
+  opacity: 0.35;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 80%, var(--accent), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 20%, var(--green), transparent),
+    radial-gradient(ellipse 50% 60% at 50% 50%, var(--bg-primary), transparent);
+  background-size: 200% 200%;
+  animation: auroraShift 16s ease infinite;
+}
+@keyframes auroraShift {
+  0% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+  33% { background-position: 100% 50%, 0% 50%, 80% 20%; }
+  66% { background-position: 50% 100%, 50% 0%, 20% 80%; }
+  100% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+}
+
+/* Particles (JS creates child spans) */
+.bg-anim-particles .particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  animation: particleFloat 8s ease-in-out infinite;
+}
+@keyframes particleFloat {
+  0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-20px) translateX(30px); opacity: 0; }
+}
+
+/* Mesh Gradient */
+.bg-anim-mesh {
+  opacity: 0.3;
+  background:
+    radial-gradient(circle at 15% 15%, var(--accent), transparent 50%),
+    radial-gradient(circle at 85% 15%, var(--green), transparent 50%),
+    radial-gradient(circle at 85% 85%, var(--orange), transparent 50%),
+    radial-gradient(circle at 15% 85%, var(--red), transparent 50%);
+  background-size: 200% 200%;
+  animation: meshShift 20s ease infinite;
+}
+@keyframes meshShift {
+  0% { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%; }
+  25% { background-position: 50% 0%, 100% 50%, 50% 100%, 0% 50%; }
+  50% { background-position: 100% 0%, 100% 100%, 0% 100%, 0% 0%; }
+  75% { background-position: 50% 100%, 0% 50%, 50% 0%, 100% 50%; }
+  100% { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%; }
+}
+
+/* Fireflies (JS creates child spans) */
+.bg-anim-fireflies .firefly {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px 3px var(--accent);
+  opacity: 0;
+  animation: fireflyGlow 6s ease-in-out infinite;
+}
+@keyframes fireflyGlow {
+  0%, 100% { opacity: 0; transform: translate(0, 0); }
+  20% { opacity: 0.8; }
+  50% { opacity: 0.4; transform: translate(20px, -30px); }
+  80% { opacity: 0.7; }
+}
+
+/* Speed variants */
+.bg-anim-slow * { animation-duration: inherit; }
+.bg-anim-slow.bg-anim-drift { animation-duration: 20s; }
+.bg-anim-slow.bg-anim-aurora { animation-duration: 28s; }
+.bg-anim-slow.bg-anim-mesh { animation-duration: 32s; }
+.bg-anim-slow .particle { animation-duration: 14s; }
+.bg-anim-slow .firefly { animation-duration: 10s; }
+
+.bg-anim-fast.bg-anim-drift { animation-duration: 6s; }
+.bg-anim-fast.bg-anim-aurora { animation-duration: 8s; }
+.bg-anim-fast.bg-anim-mesh { animation-duration: 10s; }
+.bg-anim-fast .particle { animation-duration: 4s; }
+.bg-anim-fast .firefly { animation-duration: 3s; }
+
+/* ─── Animations (General Polish) ──────────────────────────────────────── */
+
+@keyframes messageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-new {
+  animation: messageIn 0.2s ease-out;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-hover) 50%, var(--bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius);
+}
+
+.skeleton-line {
+  height: 14px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-line.short { width: 40%; }
+.skeleton-line.medium { width: 70%; }
+.skeleton-line.long { width: 90%; }
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-card {
+  padding: 16px;
+  margin: 0 24px 16px;
+  border-radius: var(--radius-lg);
+}
+
+@keyframes fadeScaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal:not(.hidden) .modal-content {
+  animation: fadeScaleIn 0.15s ease-out;
+}
+
+@keyframes slideOutRight {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+.toast-dismiss {
+  animation: slideOutRight 0.2s ease-in forwards;
+}
+
+/* Post card hover lift */
+.post-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.post-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border-color: var(--accent);
+}
+
+/* Dead drop card hover */
+.deaddrop-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.deaddrop-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border-color: var(--accent);
+}
+
+/* Empty states */
+.empty-state-rich {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+.empty-state-icon {
+  font-size: 2.5em;
+  margin-bottom: 12px;
+  opacity: 0.5;
+  color: var(--accent);
+  animation: emptyPulse 3s ease-in-out infinite;
+}
+@keyframes emptyPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+.empty-state-text {
+  color: var(--text-secondary);
+  font-size: 0.95em;
+  max-width: 280px;
+}
+.empty-state-text strong {
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 4px;
+  font-size: 1.1em;
+}
+
+/* Toast types */
+.toast.toast-success { border-left: 3px solid var(--green); }
+.toast.toast-error { border-left: 3px solid var(--red); }
+.toast.toast-info { border-left: 3px solid var(--accent); }
+
+/* Online dot pulse */
+.online-dot {
+  animation: onlinePulse 2s ease-in-out infinite;
+}
+@keyframes onlinePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4); }
+  50% { box-shadow: 0 0 0 3px rgba(63, 185, 80, 0); }
+}
+
+/* Theme preview swatch improvements */
+.theme-preset-btn {
+  position: relative;
+  overflow: hidden;
+}
+.theme-preview-swatch {
+  height: 28px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  position: relative;
+}
+.theme-preview-swatch::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.25);
+}
+
+/* Advanced colors editor */
+.color-editor-group {
+  margin-bottom: 12px;
+}
+.color-editor-group h5 {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.color-editor-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.color-editor-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8em;
+  color: var(--text-secondary);
+}
+.color-editor-item input[type="color"] {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Theme import/export buttons */
+.theme-io-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.theme-io-row button {
+  flex: 1;
+}
+
+/* Advanced toggle */
+.advanced-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85em;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.advanced-toggle:hover { color: var(--text-primary); }
+.advanced-toggle .arrow { transition: transform 0.2s; }
+.advanced-toggle.open .arrow { transform: rotate(90deg); }
+
+/* GIF Picker */
+#gif-picker {
+  position: fixed;
+  z-index: 60;
+  width: 380px;
+  max-height: 420px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeScaleIn 0.15s ease-out;
+}
+
+.gif-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gif-picker-header input {
+  flex: 1;
+  padding: 8px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 0.9em;
+  outline: none;
+}
+.gif-picker-header input:focus { border-color: var(--accent); }
+
+.gif-picker-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 4px;
+}
+.gif-picker-close:hover { color: var(--text-primary); }
+
+.gif-categories {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.gif-category-chip {
+  padding: 4px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 0.8em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.gif-category-chip:hover, .gif-category-chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.gif-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 6px;
+  align-content: start;
+}
+
+.gif-item {
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--bg-tertiary);
+  transition: transform 0.15s;
+}
+.gif-item:hover { transform: scale(1.05); }
+.gif-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gif-loading {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+.gif-attribution {
+  padding: 6px 12px;
+  text-align: center;
+  font-size: 0.7em;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+/* GIF in messages */
+.gif-message {
+  max-width: 300px;
+  border-radius: var(--radius-lg);
+  display: block;
+}
+
+/* GIF button in inputs */
+.gif-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.gif-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Staggered feed animation */
+.feed-item-enter {
+  animation: messageIn 0.25s ease-out backwards;
+}
+
 /* ─── Responsive ───────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {

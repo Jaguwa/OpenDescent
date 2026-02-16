@@ -8,6 +8,9 @@
 </head>
 <body>
   <div id="app">
+    <!-- ─── Background Animation Layer ─────────────────────────── -->
+    <div id="bg-animation-layer"></div>
+
     <!-- ─── Hub Strip (leftmost, 56px) ───────────────────────── -->
     <nav id="hub-strip">
       <button id="hub-dm-btn" class="hub-icon hub-dm-icon active" onclick="selectDMMode()" title="Direct Messages">DM</button>
@@ -124,6 +127,7 @@
               <button class="composer-btn" onclick="toggleVoicenoteRecorder()" title="Voicenote">&#127908;</button>
               <button class="composer-btn" onclick="triggerPostAudio()" title="Audio">&#127925;</button>
               <button class="composer-btn" onclick="showCreatePollModal()" title="Create Poll">&#128202;</button>
+              <button class="gif-btn" onclick="showGifPicker('post', this)" title="GIF">GIF</button>
             </div>
             <div id="composer-meta">
               <button id="post-visibility-toggle" class="visibility-toggle" onclick="togglePostVisibility()" title="Toggle visibility">&#127758; Public</button>
@@ -194,6 +198,7 @@
         </div>
         <div id="input-area">
           <button id="btn-chat-mic" class="composer-btn" onclick="toggleChatVnRecorder()" title="Voicenote">&#127908;</button>
+          <button class="gif-btn" onclick="showGifPicker(state.activeHub ? 'hub' : 'chat', this)" title="GIF">GIF</button>
           <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
           <button id="btn-send">Send</button>
         </div>
@@ -264,14 +269,6 @@
         </div>
 
         <div class="settings-section">
-          <h4>Custom Colors</h4>
-          <div class="settings-row">
-            <label>Accent: <input type="color" id="setting-accent" value="#58a6ff"></label>
-            <label>Sent Bubble: <input type="color" id="setting-msg-sent" value="#1a3a5c"></label>
-          </div>
-        </div>
-
-        <div class="settings-section">
           <h4>Background</h4>
           <div class="settings-row">
             <select id="setting-bg-mode">
@@ -287,6 +284,36 @@
               <option value="waves">Waves</option>
             </select>
           </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>Animated Background</h4>
+          <div class="settings-row">
+            <select id="setting-anim-type">
+              <option value="none">None</option>
+              <option value="drift">Gradient Drift</option>
+              <option value="aurora">Aurora</option>
+              <option value="particles">Particles</option>
+              <option value="mesh">Mesh Gradient</option>
+              <option value="fireflies">Fireflies</option>
+            </select>
+            <select id="setting-anim-speed">
+              <option value="slow">Slow</option>
+              <option value="normal" selected>Normal</option>
+              <option value="fast">Fast</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>Font Family</h4>
+          <select id="setting-font-family" style="width:100%">
+            <option value="">System Default</option>
+            <option value="'Segoe UI', 'Avenir', system-ui, sans-serif">Rounded</option>
+            <option value="Georgia, 'Times New Roman', serif">Serif</option>
+            <option value="'Cascadia Code', 'Fira Code', 'Courier New', monospace">Mono</option>
+            <option value="'Gill Sans', 'Optima', 'Calibri', sans-serif">Humanist</option>
+          </select>
         </div>
 
         <div class="settings-section">
@@ -307,6 +334,73 @@
             <button class="bubble-option" data-style="minimal">Minimal</button>
             <button class="bubble-option" data-style="rounded">Rounded</button>
           </div>
+        </div>
+
+        <div class="settings-section">
+          <button class="advanced-toggle" onclick="toggleAdvancedColors()" id="advanced-colors-toggle">
+            <span class="arrow">&#9654;</span> Advanced Colors
+          </button>
+          <div id="advanced-colors-panel" class="hidden">
+            <div class="color-editor-group">
+              <h5>Backgrounds</h5>
+              <div class="color-editor-row">
+                <div class="color-editor-item"><input type="color" id="ce-bgPrimary"> Primary</div>
+                <div class="color-editor-item"><input type="color" id="ce-bgSecondary"> Secondary</div>
+                <div class="color-editor-item"><input type="color" id="ce-bgTertiary"> Tertiary</div>
+                <div class="color-editor-item"><input type="color" id="ce-bgHover"> Hover</div>
+                <div class="color-editor-item"><input type="color" id="ce-bgActive"> Active</div>
+              </div>
+            </div>
+            <div class="color-editor-group">
+              <h5>Text</h5>
+              <div class="color-editor-row">
+                <div class="color-editor-item"><input type="color" id="ce-textPrimary"> Primary</div>
+                <div class="color-editor-item"><input type="color" id="ce-textSecondary"> Secondary</div>
+                <div class="color-editor-item"><input type="color" id="ce-textMuted"> Muted</div>
+              </div>
+            </div>
+            <div class="color-editor-group">
+              <h5>Accent</h5>
+              <div class="color-editor-row">
+                <div class="color-editor-item"><input type="color" id="ce-accent"> Accent</div>
+                <div class="color-editor-item"><input type="color" id="ce-accentHover"> Hover</div>
+              </div>
+            </div>
+            <div class="color-editor-group">
+              <h5>Messages</h5>
+              <div class="color-editor-row">
+                <div class="color-editor-item"><input type="color" id="ce-msgSent"> Sent</div>
+                <div class="color-editor-item"><input type="color" id="ce-msgReceived"> Received</div>
+              </div>
+            </div>
+            <div class="color-editor-group">
+              <h5>Status</h5>
+              <div class="color-editor-row">
+                <div class="color-editor-item"><input type="color" id="ce-green"> Green</div>
+                <div class="color-editor-item"><input type="color" id="ce-red"> Red</div>
+                <div class="color-editor-item"><input type="color" id="ce-orange"> Orange</div>
+              </div>
+            </div>
+            <div class="color-editor-group">
+              <h5>Border</h5>
+              <div class="color-editor-row">
+                <div class="color-editor-item"><input type="color" id="ce-border"> Border</div>
+              </div>
+            </div>
+            <div class="theme-io-row">
+              <button class="btn-secondary" onclick="exportTheme()">Export Theme</button>
+              <button class="btn-secondary" onclick="importTheme()">Import Theme</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>GIF Library</h4>
+          <div class="settings-row">
+            <label style="flex:1">API Key: <input type="text" id="setting-gif-api-key" placeholder="Enter Klipy API key..." style="margin-bottom:0"></label>
+            <button class="btn-primary" onclick="saveGifApiKey()" style="margin-left:4px">Save</button>
+          </div>
+          <p class="subtle" style="margin-top:4px">Get a free key at klipy.com</p>
         </div>
 
         <div class="settings-section">

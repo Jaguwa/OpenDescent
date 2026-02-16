@@ -287,6 +287,8 @@ export interface BackgroundConfig {
   colors: string[];
   angle?: number;
   patternType?: 'dots' | 'grid' | 'diagonal' | 'circuit' | 'waves';
+  animationType?: 'none' | 'drift' | 'aurora' | 'particles' | 'mesh' | 'fireflies';
+  animationSpeed?: 'slow' | 'normal' | 'fast';
 }
 
 /** Chat bubble display style */

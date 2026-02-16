@@ -9,6 +9,7 @@
  */
 
 import * as http from 'http';
+import * as https from 'https';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -93,6 +94,7 @@ export class APIServer {
   private frontendDir: string;
   private tempDir: string;
   private callSignals: Map<string, (signal: any) => void> = new Map();
+  private static readonly DEFAULT_GIF_API_KEY = '5fVUQujaNd2qvaw97xmsxBSjY0OJ1g4dHruLEmuh5vn76xeo5uVaXD9SMscmTT0w';
 
   constructor(port: number, deps: APIServerDeps) {
     this.deps = deps;
@@ -145,7 +147,7 @@ export class APIServer {
     const securityHeaders: Record<string, string> = {
       // Note: 'unsafe-inline' required for script-src because the frontend uses inline onclick handlers.
       // XSS is mitigated at the application layer via escapeAttr() and input sanitization (Phase A).
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* wss://localhost:*; img-src 'self' data: blob:; media-src 'self' blob: data:;",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* wss://localhost:*; img-src 'self' data: blob: https://*.klipy.com https://static.klipy.com; media-src 'self' blob: data:;",
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
     };
@@ -1133,6 +1135,65 @@ export class APIServer {
           return this.ok(id, hubListings.slice(0, data?.limit || 50));
         }
 
+        // ─── GIF Library (Klipy) ──────────────────────────────
+
+        case 'gif_search': {
+          const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          const q = encodeURIComponent(data.q || '');
+          const perPage = data.per_page || 24;
+          const url = `https://api.klipy.com/api/v1/${apiKey}/gifs/search?q=${q}&per_page=${perPage}&content_filter=medium`;
+          try {
+            const result = await this.fetchExternal(url);
+            const parsed = JSON.parse(result);
+            // Klipy returns { result, data: { data: [...gifs], has_next, ... } }
+            const gifs = parsed?.data?.data || parsed?.data || [];
+            return this.ok(id, { gifs });
+          } catch (e: any) {
+            return this.err(id, 'GIF search failed: ' + e.message);
+          }
+        }
+
+        case 'gif_trending': {
+          const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          const perPage = data?.per_page || 24;
+          const url = `https://api.klipy.com/api/v1/${apiKey}/gifs/trending?per_page=${perPage}`;
+          try {
+            const result = await this.fetchExternal(url);
+            const parsed = JSON.parse(result);
+            const gifs = parsed?.data?.data || parsed?.data || [];
+            return this.ok(id, { gifs });
+          } catch (e: any) {
+            return this.err(id, 'GIF trending failed: ' + e.message);
+          }
+        }
+
+        case 'gif_categories': {
+          const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          const url = `https://api.klipy.com/api/v1/${apiKey}/gifs/categories`;
+          try {
+            const result = await this.fetchExternal(url);
+            const parsed = JSON.parse(result);
+            const categories = parsed?.data?.data || parsed?.data || [];
+            return this.ok(id, { categories });
+          } catch (e: any) {
+            return this.err(id, 'GIF categories failed: ' + e.message);
+          }
+        }
+
+        case 'set_gif_api_key': {
+          if (!data.apiKey || typeof data.apiKey !== 'string') return this.err(id, 'Missing API key');
+          const key = data.apiKey.trim().slice(0, 128);
+          await this.deps.store.setMeta('gif_api_key', key);
+          return this.ok(id, { saved: true });
+        }
+
+        case 'get_gif_api_key': {
+          const key = await this.deps.store.getMeta('gif_api_key');
+          if (!key) return this.ok(id, { maskedKey: null });
+          const masked = key.length > 8 ? key.slice(0, 4) + '...' + key.slice(-4) : '****';
+          return this.ok(id, { maskedKey: masked });
+        }
+
         default:
           return this.err(id, `Unknown action: ${action}`);
       }
@@ -1374,6 +1435,33 @@ export class APIServer {
       if (peer.peerId.startsWith(input)) return peer.peerId;
     }
     return null;
+  }
+
+  private fetchExternal(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Request timeout')), 10000);
+      https.get(url, { headers: { 'User-Agent': 'DecentraNet/1.0' } }, (res) => {
+        if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+          clearTimeout(timeout);
+          reject(new Error(`HTTP ${res.statusCode}`));
+          res.resume();
+          return;
+        }
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => {
+          clearTimeout(timeout);
+          resolve(Buffer.concat(chunks).toString('utf8'));
+        });
+        res.on('error', (e) => {
+          clearTimeout(timeout);
+          reject(e);
+        });
+      }).on('error', (e) => {
+        clearTimeout(timeout);
+        reject(e);
+      });
+    });
   }
 
   close(): void {

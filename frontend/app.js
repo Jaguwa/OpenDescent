@@ -105,6 +105,12 @@ const THEME_PRESETS = [
   { id: 'light', name: 'Minimal Light', vars: { bgPrimary:'#ffffff', bgSecondary:'#f6f8fa', bgTertiary:'#eef1f5', bgHover:'#e2e6ea', bgActive:'#0969da22', border:'#d0d7de', textPrimary:'#1f2328', textSecondary:'#656d76', textMuted:'#8b949e', accent:'#0969da', accentHover:'#0c7eeb', green:'#1a7f37', red:'#cf222e', orange:'#bf8700', msgSent:'#ddf4ff', msgReceived:'#f6f8fa', radius:'8px', radiusLg:'12px' }},
   { id: 'sunset', name: 'Sunset', vars: { bgPrimary:'#1a0a0a', bgSecondary:'#221111', bgTertiary:'#2d1818', bgHover:'#442222', bgActive:'#ff660022', border:'#3d2222', textPrimary:'#ffe8d8', textSecondary:'#cc9988', textMuted:'#885544', accent:'#ff6600', accentHover:'#ff8833', green:'#44cc44', red:'#ff3333', orange:'#ffcc00', msgSent:'#442200', msgReceived:'#2d1818', radius:'8px', radiusLg:'12px' }},
   { id: 'terminal', name: 'Hacker', vars: { bgPrimary:'#000000', bgSecondary:'#0a0a0a', bgTertiary:'#111111', bgHover:'#1a1a1a', bgActive:'#00ff0022', border:'#222222', textPrimary:'#00ff00', textSecondary:'#00bb00', textMuted:'#006600', accent:'#00ff00', accentHover:'#33ff33', green:'#00ff00', red:'#ff0000', orange:'#ffff00', msgSent:'#002200', msgReceived:'#111111', radius:'0px', radiusLg:'0px' }},
+  { id: 'warm-ember', name: 'Warm Ember', vars: { bgPrimary:'#1a1210', bgSecondary:'#211916', bgTertiary:'#2d221e', bgHover:'#3d302a', bgActive:'#f5a62322', border:'#3d302a', textPrimary:'#f0e0d0', textSecondary:'#b89880', textMuted:'#6b5545', accent:'#f5a623', accentHover:'#f7b84a', green:'#5cb85c', red:'#e74c3c', orange:'#e67e22', msgSent:'#3d2a1a', msgReceived:'#2d221e', radius:'8px', radiusLg:'12px' }},
+  { id: 'rose-garden', name: 'Rose Garden', vars: { bgPrimary:'#1a0f14', bgSecondary:'#22141b', bgTertiary:'#2d1b25', bgHover:'#3d2835', bgActive:'#e8487f22', border:'#3d2835', textPrimary:'#f5e0ea', textSecondary:'#bb8899', textMuted:'#6b4455', accent:'#e8487f', accentHover:'#ef6d9a', green:'#55cc77', red:'#ff4466', orange:'#e6a040', msgSent:'#3d1830', msgReceived:'#2d1b25', radius:'8px', radiusLg:'12px' }},
+  { id: 'sunrise', name: 'Sunrise', vars: { bgPrimary:'#13111f', bgSecondary:'#1a1728', bgTertiary:'#231f34', bgHover:'#332d48', bgActive:'#8b5cf622', border:'#332d48', textPrimary:'#ede6ff', textSecondary:'#a090c0', textMuted:'#5a4880', accent:'#8b5cf6', accentHover:'#a78bfa', green:'#4ade80', red:'#f87171', orange:'#fbbf24', msgSent:'#2d1f60', msgReceived:'#231f34', radius:'8px', radiusLg:'12px' }},
+  { id: 'honey', name: 'Honey', vars: { bgPrimary:'#1a1712', bgSecondary:'#211e17', bgTertiary:'#2d2920', bgHover:'#3d3830', bgActive:'#d4a23a22', border:'#3d3830', textPrimary:'#f0e8d8', textSecondary:'#b8a888', textMuted:'#6b6050', accent:'#d4a23a', accentHover:'#e0b85a', green:'#6bc96b', red:'#e05555', orange:'#cc8833', msgSent:'#3d3020', msgReceived:'#2d2920', radius:'8px', radiusLg:'12px' }},
+  { id: 'lavender', name: 'Lavender Dream', vars: { bgPrimary:'#16141f', bgSecondary:'#1d1a28', bgTertiary:'#262234', bgHover:'#352f48', bgActive:'#a78bfa22', border:'#352f48', textPrimary:'#ede8ff', textSecondary:'#a89cc0', textMuted:'#5e5478', accent:'#a78bfa', accentHover:'#c4b5fc', green:'#6ee7b7', red:'#fb7185', orange:'#fcd34d', msgSent:'#2e2260', msgReceived:'#262234', radius:'10px', radiusLg:'14px' }},
+  { id: 'autumn', name: 'Autumn', vars: { bgPrimary:'#1a0e0c', bgSecondary:'#221412', bgTertiary:'#2d1c18', bgHover:'#3d2a24', bgActive:'#e0733422', border:'#3d2a24', textPrimary:'#f5e0d5', textSecondary:'#bb8877', textMuted:'#6b4a40', accent:'#e07334', accentHover:'#e89058', green:'#66bb6a', red:'#ef5350', orange:'#ff9800', msgSent:'#3d2010', msgReceived:'#2d1c18', radius:'8px', radiusLg:'12px' }},
 ];
 
 // ─── Theme Engine ───────────────────────────────────────────────────────────
@@ -168,6 +174,41 @@ function applyTheme(prefs) {
   } else {
     document.body.style.backgroundImage = '';
     document.body.className = document.body.className.replace(/bg-pattern-\S+/g, '');
+  }
+
+  // Animated background
+  const bgLayer = document.getElementById('bg-animation-layer');
+  if (bgLayer) {
+    bgLayer.className = '';
+    bgLayer.innerHTML = '';
+    const animType = prefs.animationType || (prefs.background && prefs.background.animationType) || 'none';
+    const animSpeed = prefs.animationSpeed || (prefs.background && prefs.background.animationSpeed) || 'normal';
+    if (animType && animType !== 'none') {
+      bgLayer.classList.add('bg-anim-' + animType);
+      if (animSpeed === 'slow') bgLayer.classList.add('bg-anim-slow');
+      else if (animSpeed === 'fast') bgLayer.classList.add('bg-anim-fast');
+      // Create child elements for particles/fireflies
+      if (animType === 'particles') {
+        for (let i = 0; i < 18; i++) {
+          const span = document.createElement('span');
+          span.className = 'particle';
+          span.style.left = (Math.random() * 100) + '%';
+          span.style.animationDelay = (Math.random() * 8) + 's';
+          span.style.animationDuration = (5 + Math.random() * 6) + 's';
+          bgLayer.appendChild(span);
+        }
+      } else if (animType === 'fireflies') {
+        for (let i = 0; i < 15; i++) {
+          const span = document.createElement('span');
+          span.className = 'firefly';
+          span.style.left = (Math.random() * 100) + '%';
+          span.style.top = (Math.random() * 100) + '%';
+          span.style.animationDelay = (Math.random() * 6) + 's';
+          span.style.animationDuration = (4 + Math.random() * 4) + 's';
+          bgLayer.appendChild(span);
+        }
+      }
+    }
   }
 
   // Cache in localStorage for flash prevention
@@ -538,7 +579,7 @@ async function refreshGroups() {
 function renderConversations() {
   const el = document.getElementById('conversations-list');
   if (state.conversations.length === 0) {
-    el.innerHTML = '<div class="list-item"><span class="subtle">No conversations yet</span></div>';
+    el.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128172;</div><div class="empty-state-text"><strong>No conversations yet</strong>Start chatting with a peer!</div></div>';
     return;
   }
   el.innerHTML = state.conversations.map((c) => {
@@ -558,7 +599,7 @@ function renderConversations() {
 function renderContacts() {
   const el = document.getElementById('contacts-list');
   if (state.contacts.length === 0) {
-    el.innerHTML = '<div class="list-item"><span class="subtle">No contacts yet. Connect a peer!</span></div>';
+    el.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128101;</div><div class="empty-state-text"><strong>No contacts yet</strong>Connect with peers to start!</div></div>';
     return;
   }
   el.innerHTML = state.contacts.map((c) => `
@@ -575,7 +616,7 @@ function renderContacts() {
 function renderGroups() {
   const el = document.getElementById('groups-list');
   if (state.groups.length === 0) {
-    el.innerHTML = '<div class="list-item"><span class="subtle">No groups yet</span></div>';
+    el.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128101;</div><div class="empty-state-text"><strong>No groups yet</strong>Create one to start collaborating!</div></div>';
     return;
   }
   el.innerHTML = state.groups.map((g) => `
@@ -621,11 +662,11 @@ function renderMessages(messages) {
       continue;
     }
     el.innerHTML += `
-      <div class="message ${isMine ? 'sent' : 'received'}">
-        ${senderHTML}
-        <div class="msg-body">${escapeHtml(m.body)}</div>
-        <div class="msg-time">${time} ${isMine ? `<span class="msg-status">${m.status || ''}</span>` : ''}</div>
-      </div>`;
+        <div class="message ${isMine ? 'sent' : 'received'}">
+          ${senderHTML}
+          <div class="msg-body">${renderContentWithGifs(m.body)}</div>
+          <div class="msg-time">${time} ${isMine ? `<span class="msg-status">${m.status || ''}</span>` : ''}</div>
+        </div>`;
   }
   // Draw voicenote waveforms after DOM is ready
   requestAnimationFrame(() => {
@@ -649,18 +690,23 @@ function appendMessage(msg) {
   const vnMsg = tryParseVoicenoteMsg(msg.body);
   if (vnMsg) {
     if (vnMsg.data && !vnBlobCache.has(vnMsg.contentId)) {
-      vnBlobCache.set(vnMsg.contentId, vnMsg.data); // store raw data URL, decode on play
+      vnBlobCache.set(vnMsg.contentId, vnMsg.data);
     }
     msg.voicenote = vnMsg;
     appendVoicenoteMessage(msg, true);
     return;
   }
   el.innerHTML += `
-    <div class="message ${isMine ? 'sent' : 'received'}">
-      ${senderHTML}
-      <div class="msg-body">${escapeHtml(msg.body)}</div>
-      <div class="msg-time">${time}</div>
-    </div>`;
+      <div class="message ${isMine ? 'sent' : 'received'} message-new">
+        ${senderHTML}
+        <div class="msg-body">${renderContentWithGifs(msg.body)}</div>
+        <div class="msg-time">${time}</div>
+      </div>`;
+  // Remove animation class after it plays
+  requestAnimationFrame(() => {
+    const last = el.lastElementChild;
+    if (last) setTimeout(() => last.classList.remove('message-new'), 250);
+  });
   scrollToBottom();
 }
 
@@ -864,8 +910,9 @@ function showSettingsModal() {
   grid.innerHTML = THEME_PRESETS.map(p => {
     const bg = p.vars.bgPrimary;
     const accent = p.vars.accent;
+    const text = p.vars.textPrimary;
     return `<button class="theme-preset-btn ${p.id === currentId ? 'active' : ''}" data-preset="${p.id}" onclick="selectPreset('${p.id}')">
-      <div class="theme-preview-swatch" style="background:linear-gradient(135deg,${bg},${accent})"></div>
+      <div class="theme-preview-swatch" style="background:linear-gradient(135deg,${bg} 40%,${accent})"></div>
       ${escapeHtml(p.name)}
     </button>`;
   }).join('');
@@ -874,8 +921,6 @@ function showSettingsModal() {
   const prefs = state.themePrefs || {};
   const preset = THEME_PRESETS.find(p => p.id === (prefs.presetId || 'default')) || THEME_PRESETS[0];
   const vars = { ...preset.vars, ...(prefs.customOverrides || {}) };
-  document.getElementById('setting-accent').value = vars.accent.slice(0, 7);
-  document.getElementById('setting-msg-sent').value = vars.msgSent.slice(0, 7);
   document.getElementById('setting-font-size').value = prefs.fontSize || 14;
   document.getElementById('font-size-val').textContent = (prefs.fontSize || 14) + 'px';
   document.getElementById('setting-radius').value = parseInt(vars.radius) || 8;
@@ -884,40 +929,125 @@ function showSettingsModal() {
   document.getElementById('setting-bg-pattern').value = prefs.background?.patternType || 'dots';
   document.getElementById('setting-bg-pattern').classList.toggle('hidden', (prefs.background?.mode || 'solid') !== 'pattern');
 
+  // Animation
+  document.getElementById('setting-anim-type').value = prefs.animationType || 'none';
+  document.getElementById('setting-anim-speed').value = prefs.animationSpeed || 'normal';
+
+  // Font family
+  document.getElementById('setting-font-family').value = prefs.fontFamily || '';
+
   // Bubble style
   document.querySelectorAll('.bubble-option').forEach(el => {
     el.classList.toggle('active', el.dataset.style === (prefs.bubbleStyle || 'modern'));
   });
 
+  // Advanced colors — populate all 16 color pickers
+  populateColorEditor(vars);
+
+  // GIF API key
+  loadGifApiKey();
+
   modal.classList.remove('hidden');
+}
+
+function populateColorEditor(vars) {
+  const fields = ['bgPrimary','bgSecondary','bgTertiary','bgHover','bgActive','textPrimary','textSecondary','textMuted','accent','accentHover','msgSent','msgReceived','green','red','orange','border'];
+  for (const f of fields) {
+    const el = document.getElementById('ce-' + f);
+    if (el) {
+      let val = vars[f] || '#000000';
+      // Handle colors with alpha (e.g. #1f6feb22) — strip to 7 chars
+      if (val.length > 7) val = val.slice(0, 7);
+      el.value = val;
+    }
+  }
+  // Wire live preview
+  for (const f of fields) {
+    const el = document.getElementById('ce-' + f);
+    if (el && !el._ceWired) {
+      el._ceWired = true;
+      el.addEventListener('input', () => livePreviewColors());
+    }
+  }
+}
+
+function livePreviewColors() {
+  const overrides = getColorEditorOverrides();
+  const prefs = { ...state.themePrefs, customOverrides: { ...(state.themePrefs?.customOverrides || {}), ...overrides } };
+  applyTheme(prefs);
+}
+
+function getColorEditorOverrides() {
+  const fields = ['bgPrimary','bgSecondary','bgTertiary','bgHover','bgActive','textPrimary','textSecondary','textMuted','accent','accentHover','msgSent','msgReceived','green','red','orange','border'];
+  const preset = THEME_PRESETS.find(p => p.id === (state.themePrefs?.presetId || 'default')) || THEME_PRESETS[0];
+  const overrides = {};
+  for (const f of fields) {
+    const el = document.getElementById('ce-' + f);
+    if (!el) continue;
+    const val = el.value;
+    let presetVal = preset.vars[f] || '';
+    if (presetVal.length > 7) presetVal = presetVal.slice(0, 7);
+    if (val !== presetVal) overrides[f] = val;
+  }
+  return overrides;
+}
+
+function toggleAdvancedColors() {
+  const panel = document.getElementById('advanced-colors-panel');
+  const btn = document.getElementById('advanced-colors-toggle');
+  panel.classList.toggle('hidden');
+  btn.classList.toggle('open');
+}
+
+function exportTheme() {
+  const prefs = state.themePrefs || {};
+  const json = JSON.stringify(prefs, null, 2);
+  navigator.clipboard.writeText(json).then(() => showToast('Theme Exported', 'Copied to clipboard', 'success'));
+}
+
+function importTheme() {
+  const json = prompt('Paste theme JSON:');
+  if (!json) return;
+  try {
+    const prefs = JSON.parse(json);
+    if (!prefs.presetId) throw new Error('Invalid theme');
+    state.themePrefs = prefs;
+    applyTheme(prefs);
+    showSettingsModal(); // refresh the modal
+    showToast('Theme Imported', 'Applied successfully', 'success');
+  } catch (e) {
+    showToast('Import Failed', 'Invalid theme JSON', 'error');
+  }
 }
 
 function selectPreset(id) {
   document.querySelectorAll('.theme-preset-btn').forEach(el => {
     el.classList.toggle('active', el.dataset.preset === id);
   });
-  // Preview immediately
+  // Preview immediately and update color editor
   const preset = THEME_PRESETS.find(p => p.id === id);
   if (preset) {
-    const prefs = { ...state.themePrefs, presetId: id };
+    const prefs = { ...state.themePrefs, presetId: id, customOverrides: undefined };
     applyTheme(prefs);
+    populateColorEditor(preset.vars);
   }
 }
 
 async function saveSettings() {
   const presetId = document.querySelector('.theme-preset-btn.active')?.dataset.preset || 'default';
-  const accent = document.getElementById('setting-accent').value;
-  const msgSent = document.getElementById('setting-msg-sent').value;
   const fontSize = parseInt(document.getElementById('setting-font-size').value);
   const radius = parseInt(document.getElementById('setting-radius').value);
   const bubbleStyle = document.querySelector('.bubble-option.active')?.dataset.style || 'modern';
   const bgMode = document.getElementById('setting-bg-mode').value;
   const patternType = document.getElementById('setting-bg-pattern').value;
+  const animType = document.getElementById('setting-anim-type').value;
+  const animSpeed = document.getElementById('setting-anim-speed').value;
+  const fontFamily = document.getElementById('setting-font-family').value;
 
   const preset = THEME_PRESETS.find(p => p.id === presetId) || THEME_PRESETS[0];
-  const customOverrides = {};
-  if (accent !== preset.vars.accent.slice(0, 7)) customOverrides.accent = accent;
-  if (msgSent !== preset.vars.msgSent.slice(0, 7)) customOverrides.msgSent = msgSent;
+  // Gather overrides from advanced color editor
+  const colorOverrides = getColorEditorOverrides();
+  const customOverrides = { ...colorOverrides };
   if (radius + 'px' !== preset.vars.radius) {
     customOverrides.radius = radius + 'px';
     customOverrides.radiusLg = Math.min(radius + 4, 20) + 'px';
@@ -928,6 +1058,9 @@ async function saveSettings() {
     customOverrides: Object.keys(customOverrides).length > 0 ? customOverrides : undefined,
     fontSize,
     bubbleStyle,
+    fontFamily: fontFamily || undefined,
+    animationType: animType !== 'none' ? animType : undefined,
+    animationSpeed: animSpeed !== 'normal' ? animSpeed : undefined,
     background: bgMode !== 'solid' ? {
       mode: bgMode,
       colors: [preset.vars.bgPrimary, preset.vars.accent],
@@ -943,7 +1076,7 @@ async function saveSettings() {
   const discoverable = document.getElementById('setting-discoverable').checked;
   send('set_discoverable', { discoverable }).catch(() => {});
 
-  try { await send('set_theme', prefs); } catch (e) { showToast('Failed to save theme', e.message); }
+  try { await send('set_theme', prefs); } catch (e) { showToast('Failed to save theme', e.message, 'error'); }
   document.getElementById('settings-modal').classList.add('hidden');
 }
 
@@ -1361,7 +1494,7 @@ function renderFeed() {
   items.sort((a, b) => b.timestamp - a.timestamp);
 
   if (items.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><p class="subtle">No posts yet. Be the first to post!</p></div>';
+    el.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128172;</div><div class="empty-state-text"><strong>No posts yet</strong>Be the first to share something!</div></div>';
     return;
   }
   el.innerHTML = items.map(item => item.type === 'post' ? renderPostCard(item.data) : renderPollCard(item.data)).join('');
@@ -1433,7 +1566,7 @@ function renderPostCard(post) {
         <div class="post-time">${relativeTime(post.timestamp)}${post.visibility === 'friends' ? ' &middot; <span class="visibility-badge" title="Friends only">&#128101;</span>' : ''}</div>
       </div>
     </div>
-    ${post.content ? `<div class="post-content">${escapeHtml(post.content)}</div>` : ''}
+    ${post.content ? `<div class="post-content">${renderContentWithGifs(post.content)}</div>` : ''}
     ${mediaHTML}
     <div class="post-actions">
       <button class="post-action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike('${safePostId}', ${!!post.liked})">
@@ -1508,7 +1641,7 @@ async function openComments(postId) {
             <span class="comment-author">${escapeHtml(c.authorName || c.authorId.slice(0, 12))}</span>
             <span class="comment-time">${relativeTime(c.timestamp)}</span>
           </div>
-          <div class="comment-body">${escapeHtml(c.content)}</div>
+          <div class="comment-body">${renderContentWithGifs(c.content)}</div>
         </div>
       `).join('');
     }
@@ -2410,13 +2543,23 @@ function scrollToBottom() {
   container.scrollTop = container.scrollHeight;
 }
 
-function showToast(title, body) {
+function showToast(title, body, type) {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
-  toast.className = 'toast';
+  const typeClass = type ? ' toast-' + type : ' toast-info';
+  toast.className = 'toast' + typeClass;
   toast.innerHTML = `<div class="toast-title">${escapeHtml(title)}</div>${body ? `<div class="toast-body">${escapeHtml(body)}</div>` : ''}`;
+  toast.onclick = () => {
+    toast.classList.add('toast-dismiss');
+    setTimeout(() => toast.remove(), 200);
+  };
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.classList.add('toast-dismiss');
+      setTimeout(() => toast.remove(), 200);
+    }
+  }, 4000);
 }
 
 function formatTime(ts) { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
@@ -2441,6 +2584,226 @@ function relativeTime(ts) {
   return Math.floor(diff / 86400000) + 'd ago';
 }
 
+// ─── GIF Library (Klipy) ─────────────────────────────────────────────────────
+
+function isGifUrl(text) {
+  if (!text || typeof text !== 'string') return false;
+  const t = text.trim();
+  if (t.includes('\n') || t.includes(' ')) return false;
+  return t.includes('klipy.com') || /\.(gif|webp)(\?.*)?$/i.test(t);
+}
+
+function isGifLine(line) {
+  if (!line) return false;
+  const t = line.trim();
+  if (!t || t.includes(' ')) return false;
+  return (t.startsWith('http') && (t.includes('klipy.com') || /\.(gif|webp)(\?.*)?$/i.test(t)));
+}
+
+function renderContentWithGifs(text) {
+  if (!text) return '';
+  const lines = text.split('\n');
+  return lines.map(line => {
+    if (isGifLine(line)) {
+      return `<img class="gif-message" src="${escapeAttr(line.trim())}" alt="GIF" loading="lazy">`;
+    }
+    return escapeHtml(line);
+  }).join('<br>');
+}
+
+let _gifPickerContext = null; // 'post' | 'chat' | 'hub'
+let _gifSearchTimer = null;
+let _gifCategories = null;
+
+function showGifPicker(context, anchorEl) {
+  _gifPickerContext = context;
+  let picker = document.getElementById('gif-picker');
+  if (!picker) {
+    picker = document.createElement('div');
+    picker.id = 'gif-picker';
+    picker.innerHTML = `
+      <div class="gif-picker-header">
+        <input type="text" id="gif-search-input" placeholder="Search GIFs..." autocomplete="off">
+        <button class="gif-picker-close" onclick="closeGifPicker()">&times;</button>
+      </div>
+      <div class="gif-categories" id="gif-categories"></div>
+      <div class="gif-results" id="gif-results"></div>
+      <div class="gif-attribution">Powered by Klipy</div>
+    `;
+    document.body.appendChild(picker);
+    // Wire search input with debounce
+    const input = picker.querySelector('#gif-search-input');
+    input.addEventListener('input', () => {
+      clearTimeout(_gifSearchTimer);
+      _gifSearchTimer = setTimeout(() => {
+        const q = input.value.trim();
+        if (q) searchGifs(q);
+        else loadTrendingGifs();
+      }, 300);
+    });
+  }
+  // Position near anchor — prefer above button, fall back to below, clamp to viewport
+  picker.style.top = 'auto';
+  picker.style.bottom = 'auto';
+  picker.style.left = 'auto';
+  picker.style.right = 'auto';
+  if (anchorEl) {
+    const rect = anchorEl.getBoundingClientRect();
+    const pickerH = 420; // max-height
+    const pickerW = 380;
+    const margin = 8;
+    // Horizontal: clamp to viewport
+    const left = Math.max(margin, Math.min(rect.left, window.innerWidth - pickerW - margin));
+    picker.style.left = left + 'px';
+    // Vertical: prefer above, fall back to below
+    const spaceAbove = rect.top - margin;
+    const spaceBelow = window.innerHeight - rect.bottom - margin;
+    if (spaceAbove >= pickerH || spaceAbove >= spaceBelow) {
+      // Place above button, clamp top to viewport
+      const top = Math.max(margin, rect.top - pickerH);
+      picker.style.top = top + 'px';
+      picker.style.maxHeight = (rect.top - top) + 'px';
+    } else {
+      // Place below button
+      picker.style.top = (rect.bottom + margin) + 'px';
+      picker.style.maxHeight = Math.min(pickerH, spaceBelow) + 'px';
+    }
+  } else {
+    picker.style.bottom = '60px';
+    picker.style.right = '20px';
+  }
+  picker.classList.remove('hidden');
+  picker.querySelector('#gif-search-input').value = '';
+  picker.querySelector('#gif-search-input').focus();
+  loadGifCategories();
+  loadTrendingGifs();
+}
+
+function closeGifPicker() {
+  const picker = document.getElementById('gif-picker');
+  if (picker) picker.classList.add('hidden');
+  _gifPickerContext = null;
+}
+
+async function searchGifs(query) {
+  const results = document.getElementById('gif-results');
+  if (!results) return;
+  results.innerHTML = '<div class="gif-loading">Searching...</div>';
+  try {
+    const data = await send('gif_search', { q: query, per_page: 24 });
+    renderGifResults(data);
+  } catch (e) {
+    results.innerHTML = '<div class="gif-loading">Failed to search. Check API key in Settings.</div>';
+  }
+}
+
+async function loadTrendingGifs() {
+  const results = document.getElementById('gif-results');
+  if (!results) return;
+  results.innerHTML = '<div class="gif-loading">Loading trending...</div>';
+  try {
+    const data = await send('gif_trending', { per_page: 24 });
+    renderGifResults(data);
+  } catch (e) {
+    results.innerHTML = '<div class="gif-loading">Set your Klipy API key in Settings to use GIFs.</div>';
+  }
+}
+
+async function loadGifCategories() {
+  const el = document.getElementById('gif-categories');
+  if (!el) return;
+  if (_gifCategories) {
+    renderGifCategoryChips(_gifCategories);
+    return;
+  }
+  try {
+    const data = await send('gif_categories');
+    _gifCategories = data?.categories || data || [];
+    renderGifCategoryChips(_gifCategories);
+  } catch {
+    el.innerHTML = '';
+  }
+}
+
+function renderGifCategoryChips(categories) {
+  const el = document.getElementById('gif-categories');
+  if (!el || !categories) return;
+  const chips = categories.slice(0, 8).map(c => {
+    const name = typeof c === 'string' ? c : (c.name || c.searchterm || '');
+    return `<button class="gif-category-chip" onclick="searchGifs('${escapeAttr(name)}')">${escapeHtml(name)}</button>`;
+  });
+  el.innerHTML = chips.join('');
+}
+
+function renderGifResults(data) {
+  const el = document.getElementById('gif-results');
+  if (!el) return;
+  // Backend now sends { gifs: [...] } after unwrapping Klipy response
+  const gifs = data?.gifs || data?.results || data?.data || [];
+  if (!Array.isArray(gifs) || gifs.length === 0) {
+    el.innerHTML = '<div class="gif-loading">No GIFs found</div>';
+    return;
+  }
+  el.innerHTML = gifs.map(g => {
+    const thumb = g.file?.sm?.webp?.url || g.file?.sm?.gif?.url || g.file?.xs?.webp?.url || '';
+    const full = g.file?.md?.gif?.url || g.file?.md?.webp?.url || g.file?.hd?.gif?.url || thumb;
+    if (!thumb) return '';
+    return `<div class="gif-item" onclick="selectGif('${escapeAttr(full)}')">
+      <img src="${escapeAttr(thumb)}" alt="GIF" loading="lazy">
+    </div>`;
+  }).join('');
+}
+
+function selectGif(url) {
+  const context = _gifPickerContext;
+  closeGifPicker();
+  if (context === 'chat' || context === 'hub') {
+    // Send GIF as a message
+    const input = document.getElementById('message-input');
+    if (input) input.value = url;
+    document.getElementById('btn-send').click();
+  } else if (context === 'post') {
+    // Add GIF URL to post content
+    const postInput = document.getElementById('post-input');
+    if (postInput) {
+      postInput.value = (postInput.value ? postInput.value + '\n' : '') + url;
+      postInput.dispatchEvent(new Event('input'));
+    }
+  }
+}
+
+// GIF API key management
+async function saveGifApiKey() {
+  const keyInput = document.getElementById('setting-gif-api-key');
+  if (!keyInput) return;
+  const apiKey = keyInput.value.trim();
+  if (!apiKey) return;
+  try {
+    await send('set_gif_api_key', { apiKey });
+    showToast('API Key Saved', 'GIF library is ready', 'success');
+    // Mask the key
+    keyInput.value = apiKey.slice(0, 4) + '...' + apiKey.slice(-4);
+    keyInput.type = 'text';
+  } catch (e) {
+    showToast('Save Failed', e.message, 'error');
+  }
+}
+
+async function loadGifApiKey() {
+  const keyInput = document.getElementById('setting-gif-api-key');
+  if (!keyInput) return;
+  try {
+    const data = await send('get_gif_api_key');
+    if (data && data.maskedKey) {
+      keyInput.value = data.maskedKey;
+    } else {
+      keyInput.value = '';
+    }
+  } catch {
+    keyInput.value = '';
+  }
+}
+
 // ─── Dead Drops ──────────────────────────────────────────────────────────────
 
 async function loadDeadDrops() {
@@ -2460,7 +2823,7 @@ function renderDeadDrops() {
   feed.innerHTML = '';
 
   if (state.deadDrops.length === 0) {
-    feed.innerHTML = '<div class="sidebar-hint"><p class="subtle">No drops yet. Be the first.</p></div>';
+    feed.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128123;</div><div class="empty-state-text"><strong>The void is silent</strong>Drop something anonymous.</div></div>';
     return;
   }
 
@@ -2496,7 +2859,7 @@ function renderDeadDropCard(drop) {
       <span>&middot;</span>
       <span>${time}</span>
     </div>
-    <div class="deaddrop-content">${escapeHtml(content)}</div>
+    <div class="deaddrop-content">${renderContentWithGifs(content)}</div>
     <div class="deaddrop-actions">
       <button class="deaddrop-vote-btn ${voted === 'up' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'up')">&#9650;</button>
       <span class="deaddrop-score">${drop.votes || 0}</span>
