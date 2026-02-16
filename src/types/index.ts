@@ -579,6 +579,92 @@ export interface PollVoteReceipt {
   timestamp: number;
 }
 
+// ─── Hubs ─────────────────────────────────────────────────────────────────
+
+export type HubRoleType = 'owner' | 'admin' | 'member';
+export type HubChannelType = 'text' | 'voice';
+
+export interface HubPermissions {
+  manageHub: boolean;
+  manageChannels: boolean;
+  manageMembers: boolean;
+  sendMessages: boolean;
+  joinVoice: boolean;
+}
+
+export const HUB_ROLE_PERMISSIONS: Record<HubRoleType, HubPermissions> = {
+  owner:  { manageHub: true,  manageChannels: true,  manageMembers: true,  sendMessages: true,  joinVoice: true },
+  admin:  { manageHub: false, manageChannels: true,  manageMembers: true,  sendMessages: true,  joinVoice: true },
+  member: { manageHub: false, manageChannels: false, manageMembers: false, sendMessages: true,  joinVoice: true },
+};
+
+export interface Hub {
+  hubId: string;
+  name: string;
+  description: string;
+  icon?: string;
+  ownerId: PeerId;
+  hubKey: string;
+  isPublic: boolean;
+  tags: string[];
+  createdAt: number;
+  lastActivityAt: number;
+  version: number;
+  signature: string;
+}
+
+export interface HubCategory {
+  categoryId: string;
+  hubId: string;
+  name: string;
+  position: number;
+}
+
+export interface HubChannel {
+  channelId: string;
+  hubId: string;
+  categoryId: string;
+  name: string;
+  type: HubChannelType;
+  position: number;
+  topic?: string;
+}
+
+export interface HubMember {
+  peerId: PeerId;
+  hubId: string;
+  role: HubRoleType;
+  joinedAt: number;
+  displayName?: string;
+}
+
+export interface HubInvite {
+  inviteId: string;
+  hubId: string;
+  creatorId: PeerId;
+  maxUses: number;
+  uses: number;
+  expiresAt: number;
+  createdAt: number;
+}
+
+export interface HubListing {
+  hubId: string;
+  name: string;
+  description: string;
+  icon?: string;
+  memberCount: number;
+  isPublic: boolean;
+  ownerId: PeerId;
+  ownerName?: string;
+  tags: string[];
+  createdAt: number;
+  lastActivityAt: number;
+  signature: string;
+  hopCount: number;
+  maxHops: number;
+}
+
 // ─── Account Recovery ────────────────────────────────────────────────────────
 
 /** Account bundle distributed to network peers for recovery */
@@ -587,6 +673,7 @@ export interface AccountBundle {
   peerId: PeerId;
   contacts: PeerId[];
   groups: { groupId: string; name: string; groupKey: string; members: PeerId[] }[];
+  hubs?: { hubId: string; name: string; hubKey: string }[];
   settings: { displayName?: string; themePrefs?: ThemePreferences };
   updatedAt: number;
   signature: Uint8Array;

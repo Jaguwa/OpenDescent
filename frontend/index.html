@@ -8,6 +8,15 @@
 </head>
 <body>
   <div id="app">
+    <!-- ─── Hub Strip (leftmost, 56px) ───────────────────────── -->
+    <nav id="hub-strip">
+      <button id="hub-dm-btn" class="hub-icon hub-dm-icon active" onclick="selectDMMode()" title="Direct Messages">DM</button>
+      <div class="hub-separator"></div>
+      <div id="hub-icons-list"></div>
+      <button id="hub-add-btn" class="hub-icon hub-add-icon" onclick="showCreateHubModal()" title="Create Hub">+</button>
+      <button id="hub-browse-btn" class="hub-icon hub-browse-icon" onclick="showBrowseHubsModal()" title="Browse Hubs">&#9788;</button>
+    </nav>
+
     <!-- ─── Sidebar ─────────────────────────────────────────── -->
     <aside id="sidebar">
       <div id="identity-bar">
@@ -75,6 +84,15 @@
         <div class="sidebar-hint">
           <p class="subtle">Anonymous posts. No identity. No trace.</p>
         </div>
+      </div>
+
+      <!-- Hub Channel Sidebar (replaces tabs when hub selected) -->
+      <div id="hub-sidebar" class="hidden">
+        <div id="hub-sidebar-header">
+          <span id="hub-sidebar-name">Hub Name</span>
+          <button id="hub-settings-btn" class="icon-btn-sm" onclick="showHubSettingsModal()" title="Hub Settings">&#9881;</button>
+        </div>
+        <div id="hub-channels-list"></div>
       </div>
     </aside>
 
@@ -190,6 +208,15 @@
         <div id="profile-bento"></div>
       </div>
     </main>
+
+    <!-- ─── Member Panel (right side, hub mode) ─────────────── -->
+    <aside id="member-panel" class="hidden">
+      <div id="member-panel-header">
+        <span>Members</span>
+        <button class="icon-btn-sm" onclick="toggleMemberPanel()" title="Close">&#10005;</button>
+      </div>
+      <div id="member-panel-list"></div>
+    </aside>
 
     <!-- ─── Call Panel (floating, non-blocking) ────────────── -->
     <div id="call-panel" class="hidden">
@@ -528,6 +555,136 @@
         <div class="tofu-actions">
           <button id="btn-tofu-accept" class="btn-primary">Accept New Key</button>
           <button id="btn-tofu-reject" class="call-btn end">Reject</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Create Hub Modal ──────────────────────────────────── -->
+    <div id="create-hub-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Create Hub</h3>
+        <div class="settings-section">
+          <label>Name</label>
+          <input type="text" id="hub-name-input" placeholder="My Community" maxlength="100">
+        </div>
+        <div class="settings-section">
+          <label>Description</label>
+          <textarea id="hub-desc-input" placeholder="What's this hub about?" rows="2" maxlength="500"></textarea>
+        </div>
+        <div class="settings-section">
+          <label>Icon (emoji)</label>
+          <input type="text" id="hub-icon-input" placeholder="&#128640;" maxlength="4" style="width:60px">
+        </div>
+        <div class="settings-section">
+          <label>Tags (comma-separated)</label>
+          <input type="text" id="hub-tags-input" placeholder="gaming, music, dev">
+        </div>
+        <div class="settings-section">
+          <label class="toggle-label">
+            <input type="checkbox" id="hub-public-toggle">
+            Public (discoverable by others)
+          </label>
+        </div>
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn-secondary" onclick="closeCreateHubModal()">Cancel</button>
+          <button class="btn-primary" onclick="submitCreateHub()">Create Hub</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Hub Settings Modal ───────────────────────────────── -->
+    <div id="hub-settings-modal" class="modal hidden">
+      <div class="modal-content hub-settings-content">
+        <h3 id="hub-settings-title">Hub Settings</h3>
+        <div id="hub-settings-tabs" class="hub-settings-tab-bar">
+          <button class="tab active" data-htab="overview" onclick="switchHubSettingsTab('overview')">Overview</button>
+          <button class="tab" data-htab="channels" onclick="switchHubSettingsTab('channels')">Channels</button>
+          <button class="tab" data-htab="members" onclick="switchHubSettingsTab('members')">Members</button>
+          <button class="tab" data-htab="invites" onclick="switchHubSettingsTab('invites')">Invites</button>
+        </div>
+
+        <!-- Overview tab -->
+        <div id="htab-overview" class="hub-settings-tab active">
+          <div class="settings-section">
+            <label>Name</label>
+            <input type="text" id="hs-name" maxlength="100">
+          </div>
+          <div class="settings-section">
+            <label>Description</label>
+            <textarea id="hs-desc" rows="2" maxlength="500"></textarea>
+          </div>
+          <div class="settings-section">
+            <label>Icon</label>
+            <input type="text" id="hs-icon" maxlength="4" style="width:60px">
+          </div>
+          <div class="settings-section">
+            <label class="toggle-label">
+              <input type="checkbox" id="hs-public">
+              Public
+            </label>
+          </div>
+          <div class="settings-section">
+            <button class="btn-danger" id="hs-delete-btn" onclick="deleteCurrentHub()">Delete Hub</button>
+            <button class="btn-secondary" id="hs-leave-btn" onclick="leaveCurrentHub()">Leave Hub</button>
+          </div>
+        </div>
+
+        <!-- Channels tab -->
+        <div id="htab-channels" class="hub-settings-tab hidden">
+          <div id="hs-categories-list"></div>
+          <div class="settings-section" style="margin-top:12px">
+            <input type="text" id="hs-new-cat-name" placeholder="New category name" maxlength="50">
+            <button class="btn-secondary" onclick="createHubCategory()">+ Category</button>
+          </div>
+        </div>
+
+        <!-- Members tab -->
+        <div id="htab-members" class="hub-settings-tab hidden">
+          <div class="settings-section">
+            <label>Invite a contact</label>
+            <select id="hs-invite-peer-select"></select>
+            <button class="btn-primary" onclick="inviteHubMember()">Invite</button>
+          </div>
+          <div id="hs-members-list"></div>
+        </div>
+
+        <!-- Invites tab -->
+        <div id="htab-invites" class="hub-settings-tab hidden">
+          <div class="settings-section">
+            <button class="btn-primary" onclick="createHubInviteCode()">Generate Invite Code</button>
+            <div id="hs-invite-code-display" class="hidden">
+              <textarea id="hs-invite-code" class="invite-code" rows="2" readonly></textarea>
+              <button class="btn-secondary" onclick="copyHubInviteCode()">Copy</button>
+            </div>
+          </div>
+          <div id="hs-invites-list"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn-secondary" onclick="closeHubSettingsModal()">Close</button>
+          <button class="btn-primary" id="hs-save-btn" onclick="saveHubSettings()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Browse/Discover Hubs Modal ───────────────────────── -->
+    <div id="browse-hubs-modal" class="modal hidden">
+      <div class="modal-content browse-hubs-content">
+        <h3>Discover Hubs</h3>
+        <div class="discover-search">
+          <input type="text" id="hub-search-input" placeholder="Search hubs..." autocomplete="off">
+          <button class="btn-primary" onclick="searchHubs()">Search</button>
+        </div>
+        <div class="settings-section">
+          <label>Or join with invite code:</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="hub-invite-code-input" placeholder="Paste hub invite code...">
+            <button class="btn-primary" onclick="joinHubViaCode()">Join</button>
+          </div>
+        </div>
+        <div id="hub-listings"></div>
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn-secondary" onclick="closeBrowseHubsModal()">Close</button>
         </div>
       </div>
     </div>

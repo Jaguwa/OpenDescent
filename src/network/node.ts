@@ -56,6 +56,8 @@ export const PROTOCOLS = {
   DEAD_DROP_RELAY: `${PROTOCOL_PREFIX}/dead-drop-relay/1.0.0`,
   POLL_BROADCAST: `${PROTOCOL_PREFIX}/poll-broadcast/1.0.0`,
   POLL_VOTE: `${PROTOCOL_PREFIX}/poll-vote/1.0.0`,
+  HUB_SYNC: `${PROTOCOL_PREFIX}/hub-sync/1.0.0`,
+  HUB_DISCOVERY: `${PROTOCOL_PREFIX}/hub-discovery/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -86,6 +88,8 @@ export class DecentraNode {
   private deadDropRelayHandler?: (data: string) => Promise<void>;
   private pollBroadcastHandler?: (data: string) => Promise<void>;
   private pollVoteHandler?: (data: string) => Promise<void>;
+  private hubSyncHandler?: (data: string) => Promise<string | void>;
+  private hubDiscoveryHandler?: (data: string) => Promise<string | void>;
   private passphrase: string;
 
   // Rate limiting: 100 messages per 60-second window per peer
@@ -387,6 +391,16 @@ export class DecentraNode {
   /** Register handler for poll votes */
   setPollVoteHandler(handler: (data: string) => Promise<void>): void {
     this.pollVoteHandler = handler;
+  }
+
+  /** Register handler for hub sync messages */
+  setHubSyncHandler(handler: (data: string) => Promise<string | void>): void {
+    this.hubSyncHandler = handler;
+  }
+
+  /** Register handler for hub discovery messages */
+  setHubDiscoveryHandler(handler: (data: string) => Promise<string | void>): void {
+    this.hubDiscoveryHandler = handler;
   }
 
   /** Broadcast data to all connected peers on a given protocol */
@@ -970,6 +984,40 @@ export class DecentraNode {
         await writeToSink(stream, new TextEncoder().encode('VOTE_RECEIVED'));
       } catch (error) {
         console.error(`[Protocol] Error handling poll vote:`, error);
+      }
+    });
+
+    // Hub sync (invites, messages, state sync, updates)
+    await this.node.handle(PROTOCOLS.HUB_SYNC, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.hubSyncHandler) {
+          const response = await this.hubSyncHandler(text);
+          await writeToSink(stream, new TextEncoder().encode(response || 'OK'));
+        } else {
+          await writeToSink(stream, new TextEncoder().encode('OK'));
+        }
+      } catch (error) {
+        console.error(`[Protocol] Error handling hub sync:`, error);
+      }
+    });
+
+    // Hub discovery (public hub listings, search)
+    await this.node.handle(PROTOCOLS.HUB_DISCOVERY, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.hubDiscoveryHandler) {
+          const response = await this.hubDiscoveryHandler(text);
+          await writeToSink(stream, new TextEncoder().encode(response || 'OK'));
+        } else {
+          await writeToSink(stream, new TextEncoder().encode('OK'));
+        }
+      } catch (error) {
+        console.error(`[Protocol] Error handling hub discovery:`, error);
       }
     });
 

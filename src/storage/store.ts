@@ -12,7 +12,7 @@ import { Level } from 'level';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote, Poll, EncryptedVote, PollResults, PollVoteReceipt } from '../types/index.js';
+import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote, Poll, EncryptedVote, PollResults, PollVoteReceipt, Hub, HubCategory, HubChannel, HubMember, HubInvite, HubListing } from '../types/index.js';
 
 /** Decrypted message for conversation history */
 export interface StoredMessage {
@@ -59,6 +59,12 @@ const NS = {
   POLL_VOTE: 'pollvote:',
   POLL_RECEIPT: 'pollreceipt:',
   POLL_RESULTS: 'pollresults:',
+  HUB: 'hub:',
+  HUB_CATEGORY: 'hubcat:',
+  HUB_CHANNEL: 'hubch:',
+  HUB_MEMBER: 'hubmem:',
+  HUB_INVITE: 'hubinv:',
+  HUB_LISTING: 'hublst:',
 } as const;
 
 export class LocalStore {
@@ -942,6 +948,182 @@ export class LocalStore {
       }
     }
     return closed;
+  }
+
+  // ─── Hubs ─────────────────────────────────────────────────────────────
+
+  async storeHub(hub: Hub): Promise<void> {
+    await this.db.put(NS.HUB + hub.hubId, JSON.stringify(hub));
+  }
+
+  async getHub(hubId: string): Promise<Hub | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.HUB + hubId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getAllHubs(): Promise<Hub[]> {
+    const hubs: Hub[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.HUB, lt: NS.HUB + '\xFF' })) {
+      hubs.push(JSON.parse(value));
+    }
+    return hubs;
+  }
+
+  async deleteHub(hubId: string): Promise<void> {
+    try { await this.db.del(NS.HUB + hubId); } catch {}
+    // Clean categories, channels, members, invites
+    for await (const key of this.db.keys({ gte: NS.HUB_CATEGORY + hubId + ':', lt: NS.HUB_CATEGORY + hubId + ':\xFF' })) {
+      await this.db.del(key);
+    }
+    for await (const key of this.db.keys({ gte: NS.HUB_CHANNEL + hubId + ':', lt: NS.HUB_CHANNEL + hubId + ':\xFF' })) {
+      await this.db.del(key);
+    }
+    for await (const key of this.db.keys({ gte: NS.HUB_MEMBER + hubId + ':', lt: NS.HUB_MEMBER + hubId + ':\xFF' })) {
+      await this.db.del(key);
+    }
+  }
+
+  // ─── Hub Categories ──────────────────────────────────────────────────
+
+  async storeHubCategory(cat: HubCategory): Promise<void> {
+    await this.db.put(NS.HUB_CATEGORY + cat.hubId + ':' + cat.categoryId, JSON.stringify(cat));
+  }
+
+  async getHubCategories(hubId: string): Promise<HubCategory[]> {
+    const cats: HubCategory[] = [];
+    const prefix = NS.HUB_CATEGORY + hubId + ':';
+    for await (const [, value] of this.db.iterator({ gte: prefix, lt: prefix + '\xFF' })) {
+      cats.push(JSON.parse(value));
+    }
+    return cats.sort((a, b) => a.position - b.position);
+  }
+
+  async deleteHubCategory(hubId: string, categoryId: string): Promise<void> {
+    try { await this.db.del(NS.HUB_CATEGORY + hubId + ':' + categoryId); } catch {}
+  }
+
+  // ─── Hub Channels ────────────────────────────────────────────────────
+
+  async storeHubChannel(ch: HubChannel): Promise<void> {
+    await this.db.put(NS.HUB_CHANNEL + ch.hubId + ':' + ch.channelId, JSON.stringify(ch));
+  }
+
+  async getHubChannels(hubId: string): Promise<HubChannel[]> {
+    const channels: HubChannel[] = [];
+    const prefix = NS.HUB_CHANNEL + hubId + ':';
+    for await (const [, value] of this.db.iterator({ gte: prefix, lt: prefix + '\xFF' })) {
+      channels.push(JSON.parse(value));
+    }
+    return channels.sort((a, b) => a.position - b.position);
+  }
+
+  async getHubChannelsByCategory(hubId: string, categoryId: string): Promise<HubChannel[]> {
+    const all = await this.getHubChannels(hubId);
+    return all.filter(ch => ch.categoryId === categoryId);
+  }
+
+  async deleteHubChannel(hubId: string, channelId: string): Promise<void> {
+    try { await this.db.del(NS.HUB_CHANNEL + hubId + ':' + channelId); } catch {}
+  }
+
+  // ─── Hub Members ─────────────────────────────────────────────────────
+
+  async storeHubMember(member: HubMember): Promise<void> {
+    await this.db.put(NS.HUB_MEMBER + member.hubId + ':' + member.peerId, JSON.stringify(member));
+  }
+
+  async getHubMember(hubId: string, peerId: PeerId): Promise<HubMember | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.HUB_MEMBER + hubId + ':' + peerId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getHubMembers(hubId: string): Promise<HubMember[]> {
+    const members: HubMember[] = [];
+    const prefix = NS.HUB_MEMBER + hubId + ':';
+    for await (const [, value] of this.db.iterator({ gte: prefix, lt: prefix + '\xFF' })) {
+      members.push(JSON.parse(value));
+    }
+    return members;
+  }
+
+  async removeHubMember(hubId: string, peerId: PeerId): Promise<void> {
+    try { await this.db.del(NS.HUB_MEMBER + hubId + ':' + peerId); } catch {}
+  }
+
+  // ─── Hub Invites ─────────────────────────────────────────────────────
+
+  async storeHubInvite(invite: HubInvite): Promise<void> {
+    await this.db.put(NS.HUB_INVITE + invite.inviteId, JSON.stringify(invite));
+  }
+
+  async getHubInvite(inviteId: string): Promise<HubInvite | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.HUB_INVITE + inviteId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getHubInvites(hubId: string): Promise<HubInvite[]> {
+    const invites: HubInvite[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.HUB_INVITE, lt: NS.HUB_INVITE + '\xFF' })) {
+      const inv = JSON.parse(value) as HubInvite;
+      if (inv.hubId === hubId) invites.push(inv);
+    }
+    return invites;
+  }
+
+  async deleteHubInvite(inviteId: string): Promise<void> {
+    try { await this.db.del(NS.HUB_INVITE + inviteId); } catch {}
+  }
+
+  // ─── Hub Discovery ───────────────────────────────────────────────────
+
+  async storeHubListing(listing: HubListing): Promise<void> {
+    await this.db.put(NS.HUB_LISTING + listing.hubId, JSON.stringify(listing));
+  }
+
+  async getHubListing(hubId: string): Promise<HubListing | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.HUB_LISTING + hubId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getPublicHubListings(limit: number = 50): Promise<HubListing[]> {
+    const listings: HubListing[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.HUB_LISTING, lt: NS.HUB_LISTING + '\xFF' })) {
+      const listing = JSON.parse(value) as HubListing;
+      if (listing.isPublic) listings.push(listing);
+    }
+    return listings
+      .sort((a, b) => b.lastActivityAt - a.lastActivityAt)
+      .slice(0, limit);
+  }
+
+  async searchHubListings(searchTerm: string, tags?: string[], limit: number = 50): Promise<HubListing[]> {
+    const term = searchTerm.toLowerCase();
+    const listings: HubListing[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.HUB_LISTING, lt: NS.HUB_LISTING + '\xFF' })) {
+      const listing = JSON.parse(value) as HubListing;
+      if (!listing.isPublic) continue;
+      const nameMatch = listing.name.toLowerCase().includes(term);
+      const descMatch = listing.description.toLowerCase().includes(term);
+      const tagMatch = tags && tags.length > 0 ? listing.tags.some(t => tags.includes(t)) : false;
+      if (nameMatch || descMatch || tagMatch || !term) {
+        listings.push(listing);
+      }
+    }
+    return listings
+      .sort((a, b) => b.memberCount - a.memberCount)
+      .slice(0, limit);
   }
 
   // ─── Stats ─────────────────────────────────────────────────────────────

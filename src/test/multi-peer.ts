@@ -21,6 +21,7 @@ import { MessagingService } from '../messaging/delivery.js';
 import { GroupManager } from '../messaging/groups.js';
 import { ContentManager, type SharedFileInfo } from '../content/sharing.js';
 import { shardContent } from '../storage/shard.js';
+import { HubManager } from '../messaging/hubs.js';
 import type { NodeConfig, Message } from '../types/index.js';
 
 const TEST_DIR = './test-data-multi';
@@ -341,8 +342,110 @@ async function run() {
   assert(retrievedShard !== null, 'Stored shard retrieved successfully');
   assert(retrievedShard!.hash === shards[0].hash, 'Retrieved shard hash matches original');
 
-  // ─── Step 11: Shutdown ─────────────────────────────────────────────────
-  console.log('\n11. Shutting down all nodes...');
+  // ─── Step 11: Hub Creation and Messaging ─────────────────────────────
+  console.log('\n11. Testing Hub creation and messaging...');
+
+  const aliceHubs = new HubManager(aliceNode, aliceStore);
+  const bobHubs = new HubManager(bobNode, bobStore);
+  const charlieHubs = new HubManager(charlieNode, charlieStore);
+
+  // Wire hub sync handlers
+  aliceNode.setHubSyncHandler(async (data) => { return await aliceHubs.handleHubSyncMessage(data); });
+  bobNode.setHubSyncHandler(async (data) => { return await bobHubs.handleHubSyncMessage(data); });
+  charlieNode.setHubSyncHandler(async (data) => { return await charlieHubs.handleHubSyncMessage(data); });
+  aliceNode.setHubDiscoveryHandler(async (data) => { return await aliceHubs.handleDiscoveryMessage(data); });
+  bobNode.setHubDiscoveryHandler(async (data) => { return await bobHubs.handleDiscoveryMessage(data); });
+  charlieNode.setHubDiscoveryHandler(async (data) => { return await charlieHubs.handleDiscoveryMessage(data); });
+
+  await aliceHubs.loadHubs();
+  await bobHubs.loadHubs();
+  await charlieHubs.loadHubs();
+
+  // Alice creates a hub
+  const hubId = await aliceHubs.createHub('Test Hub', 'A hub for testing', false, ['test']);
+  assert(hubId.length > 0, 'Alice created a hub');
+
+  const aliceHubState = await aliceHubs.getHubState(hubId);
+  assert(aliceHubState !== null, 'Hub state exists after creation');
+  assert(aliceHubState!.categories.length === 2, 'Hub has 2 default categories (TEXT + VOICE)');
+  assert(aliceHubState!.channels.length === 2, 'Hub has 2 default channels');
+
+  const aliceRole = await aliceHubs.getMyRole(hubId);
+  assert(aliceRole === 'owner', 'Alice is the hub owner');
+
+  // Alice invites Bob
+  await aliceHubs.inviteMember(hubId, bobNode.getPeerId());
+  await sleep(2000);
+
+  const bobHubList = bobHubs.getHubs();
+  assert(bobHubList.length > 0, 'Bob received hub invite and joined');
+
+  if (bobHubList.length > 0) {
+    const bobRole = await bobHubs.getMyRole(hubId);
+    assert(bobRole === 'member', 'Bob joined as member role');
+  }
+
+  // Alice sends a message in #general
+  const generalChannel = aliceHubState!.channels.find(c => c.name === 'general');
+  assert(!!generalChannel, 'Found #general channel');
+
+  let bobHubMsg: any = null;
+  bobHubs.onChannelMessage.push((hId, chId, msg) => {
+    if (hId === hubId) bobHubMsg = msg;
+  });
+
+  if (generalChannel) {
+    await aliceHubs.sendChannelMessage(hubId, generalChannel.channelId, 'Hello from hub!');
+    await sleep(2000);
+
+    assert(bobHubMsg !== null, 'Bob received hub channel message');
+    if (bobHubMsg) {
+      assert(bobHubMsg.body === 'Hello from hub!', 'Bob decrypted hub message correctly');
+    }
+  }
+
+  // Alice promotes Bob to Admin
+  await aliceHubs.changeRole(hubId, bobNode.getPeerId(), 'admin');
+  await sleep(1000);
+  const bobRoleAfter = await aliceStore.getHubMember(hubId, bobNode.getPeerId());
+  assert(bobRoleAfter !== null && bobRoleAfter.role === 'admin', 'Bob promoted to admin');
+
+  // Bob (admin) creates a channel
+  if (bobHubList.length > 0) {
+    const catId = aliceHubState!.categories[0].categoryId;
+    try {
+      const devChId = await bobHubs.createChannel(hubId, catId, 'dev', 'text');
+      assert(devChId.length > 0, 'Bob (admin) created #dev channel');
+    } catch {
+      assert(false, 'Bob (admin) created #dev channel');
+    }
+  }
+
+  // Alice invites Charlie via direct invite
+  await aliceHubs.inviteMember(hubId, charlieNode.getPeerId());
+  await sleep(2000);
+
+  const charlieHubList = charlieHubs.getHubs();
+  assert(charlieHubList.length > 0, 'Charlie received hub invite and joined');
+
+  // Alice kicks Charlie → key rotated
+  const keyBeforeKick = aliceHubs.getHub(hubId)?.hubKey || '';
+  await aliceHubs.kickMember(hubId, charlieNode.getPeerId());
+  await sleep(2000);
+  const keyAfterKick = aliceHubs.getHub(hubId)?.hubKey || '';
+  assert(keyBeforeKick !== keyAfterKick, 'Hub key rotated after kicking Charlie');
+
+  // Bob (admin) tries to kick Alice (owner) → should fail
+  let kickOwnerFailed = false;
+  try {
+    await bobHubs.kickMember(hubId, aliceNode.getPeerId());
+  } catch {
+    kickOwnerFailed = true;
+  }
+  assert(kickOwnerFailed, 'Cannot kick owner (auth check works)');
+
+  // ─── Step 12: Shutdown ─────────────────────────────────────────────────
+  console.log('\n12. Shutting down all nodes...');
 
   await aliceNode.stop();
   await bobNode.stop();

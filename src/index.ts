@@ -23,6 +23,7 @@ import { PostService } from './content/posts.js';
 import { TrustWebService } from './trust/web.js';
 import { DeadDropService } from './content/deaddrops.js';
 import { PollService } from './content/polls.js';
+import { HubManager } from './messaging/hubs.js';
 import { APIServer } from './api/server.js';
 import type { NodeConfig, Message, PeerProfile, ContentType } from './types/index.js';
 
@@ -767,6 +768,7 @@ Options:
   const trustWeb = new TrustWebService(node, store);
   const deadDrops = new DeadDropService(node, store);
   const polls = new PollService(node, store);
+  const hubs = new HubManager(node, store);
 
   // Wire poll handlers
   node.setPollBroadcastHandler(async (data) => {
@@ -788,6 +790,15 @@ Options:
   node.setVouchBroadcastHandler(async (data) => {
     await trustWeb.handleIncomingVouch(data);
   });
+
+  // Wire hub handlers
+  node.setHubSyncHandler(async (data) => {
+    return await hubs.handleHubSyncMessage(data);
+  });
+  node.setHubDiscoveryHandler(async (data) => {
+    return await hubs.handleDiscoveryMessage(data);
+  });
+  await hubs.loadHubs();
 
   // Wire group message handler into the messaging layer
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
@@ -984,6 +995,7 @@ Options:
     trustWeb,
     deadDrops,
     polls,
+    hubs,
   });
 
   // Periodic cleanup of expired dead drops (every 30 minutes)

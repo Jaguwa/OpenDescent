@@ -11,6 +11,18 @@
  * - Global timeline with posts, likes, comments
  */
 
+console.log('[DecentraNet] app.js loaded');
+
+// ─── Debounce Utility ────────────────────────────────────────────────────────
+
+function debounce(fn, ms) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
 // ─── State ──────────────────────────────────────────────────────────────────
 
 const state = {
@@ -70,6 +82,16 @@ const state = {
   pollReceipts: {},
   pollResultsData: {},
   currentPollId: null,
+  // Hubs
+  hubs: [],
+  activeHub: null,
+  hubCategories: [],
+  hubChannels: [],
+  hubMembers: [],
+  activeChannel: null,
+  hubListings: [],
+  memberPanelOpen: false,
+  _selectingHub: false,  // guard against concurrent selectHub calls
 };
 
 // ─── Theme Presets ──────────────────────────────────────────────────────────
@@ -304,10 +326,12 @@ function getAvatarDataURL(peerId, size) {
 
 function connectWS() {
   const wsUrl = `ws://${window.location.host}`;
+  console.log('[DecentraNet] Connecting to', wsUrl);
   state.ws = new WebSocket(wsUrl);
 
   state.ws.onopen = () => {
     const token = window.__DECENTRA_TOKEN || '';
+    console.log('[DecentraNet] WS open, sending auth token:', token ? `${token.slice(0, 8)}...` : '(empty)');
     state.ws.send(JSON.stringify({ type: 'auth', token }));
   };
 
@@ -315,13 +339,14 @@ function connectWS() {
   const origOnMessage = (event) => {
     if (!authDone) {
       const msg = JSON.parse(event.data);
+      console.log('[DecentraNet] WS pre-auth message:', msg);
       if (msg.type === 'auth') {
         if (msg.ok) {
           authDone = true;
           state.ws.onmessage = handleWSMessage;
           onAuthenticated();
         } else {
-          console.error('WebSocket auth failed');
+          console.error('[DecentraNet] WebSocket auth failed');
           setConnectionStatus('offline');
         }
         return;
@@ -331,6 +356,7 @@ function connectWS() {
   state.ws.onmessage = origOnMessage;
 
   function onAuthenticated() {
+    console.log('[DecentraNet] Authenticated! Loading data...');
     setConnectionStatus('online');
     send('get_identity').then((data) => {
       state.myPeerId = data.peerId;
@@ -354,13 +380,16 @@ function connectWS() {
     loadFeed();
   }
 
-  state.ws.onclose = () => {
+  state.ws.onclose = (ev) => {
+    console.warn('[DecentraNet] WS closed:', ev.code, ev.reason);
     setConnectionStatus('offline');
     state.connected = false;
     setTimeout(connectWS, 3000);
   };
 
-  state.ws.onerror = () => {};
+  state.ws.onerror = (ev) => {
+    console.error('[DecentraNet] WS error:', ev);
+  };
 }
 
 function handleWSMessage(event) {
@@ -434,6 +463,27 @@ function handleEvent(event, data) {
     case 'poll_vote_received':
       onPollVoteReceived(data);
       break;
+    case 'hub_message':
+      onHubMessage(data);
+      break;
+    case 'hub_updated':
+      onHubUpdated(data);
+      break;
+    case 'hub_joined':
+      showToast(`Joined hub "${data.name}"`);
+      refreshHubs();
+      break;
+    case 'hub_member_joined':
+      showToast(`${data.displayName || 'Someone'} joined the hub`);
+      if (state.activeHub && state.activeHub.hubId === data.hubId) refreshHubMembers(data.hubId);
+      break;
+    case 'hub_member_left':
+      if (state.activeHub && state.activeHub.hubId === data.hubId) refreshHubMembers(data.hubId);
+      break;
+    case 'hub_invite_received':
+      showToast(`Invited to hub "${data.hubName}"`, `by ${data.fromName}`);
+      refreshHubs();
+      break;
   }
 }
 
@@ -468,16 +518,16 @@ function onFileReceived(data) {
 // ─── Data Refresh ───────────────────────────────────────────────────────────
 
 async function refreshAll() {
-  await Promise.all([refreshContacts(), refreshConversations(), refreshGroups()]);
+  await Promise.all([refreshContacts(), refreshConversations(), refreshGroups(), refreshHubs()]);
 }
 
-async function refreshContacts() {
+const refreshContacts = debounce(async () => {
   try { state.contacts = await send('get_contacts'); renderContacts(); } catch (e) { console.error('Failed to refresh contacts:', e); }
-}
+}, 500);
 
-async function refreshConversations() {
+const refreshConversations = debounce(async () => {
   try { state.conversations = await send('get_conversations'); renderConversations(); } catch (e) { console.error('Failed to refresh conversations:', e); }
-}
+}, 500);
 
 async function refreshGroups() {
   try { state.groups = await send('get_groups'); renderGroups(); } catch (e) { console.error('Failed to refresh groups:', e); }
@@ -562,10 +612,11 @@ function renderMessages(messages) {
     // Check for voicenote message
     const vnMsg = tryParseVoicenoteMsg(m.body);
     if (vnMsg) {
-      // Cache the blob data for playback
-      if (vnMsg.data) vnBlobCache.set(vnMsg.contentId, dataUrlToBlob(vnMsg.data));
+      // Cache the blob data lazily — only decode on playback, not on render
+      if (vnMsg.data && !vnBlobCache.has(vnMsg.contentId)) {
+        vnBlobCache.set(vnMsg.contentId, vnMsg.data); // store raw data URL, decode on play
+      }
       m.voicenote = vnMsg;
-      state.messages.push(m);
       el.innerHTML += renderVoicenoteMessageHTML(isMine, vnMsg, time, senderHTML);
       continue;
     }
@@ -597,7 +648,9 @@ function appendMessage(msg) {
   // Check for voicenote
   const vnMsg = tryParseVoicenoteMsg(msg.body);
   if (vnMsg) {
-    if (vnMsg.data) vnBlobCache.set(vnMsg.contentId, dataUrlToBlob(vnMsg.data));
+    if (vnMsg.data && !vnBlobCache.has(vnMsg.contentId)) {
+      vnBlobCache.set(vnMsg.contentId, vnMsg.data); // store raw data URL, decode on play
+    }
     msg.voicenote = vnMsg;
     appendVoicenoteMessage(msg, true);
     return;
@@ -680,8 +733,17 @@ function openGroup(groupId, name) {
 async function sendMessage() {
   const input = document.getElementById('message-input');
   const text = input.value.trim();
-  if (!text || !state.activeChat) return;
+  if (!text) return;
   input.value = '';
+  // Hub channel message
+  if (state.activeChannel) {
+    try {
+      await send('send_hub_message', { hubId: state.activeChannel.hubId, channelId: state.activeChannel.channelId, text });
+      appendMessage({ from: state.myPeerId, body: text, timestamp: Date.now(), status: 'sent' });
+    } catch (e) { showToast('Failed to send message', e.message); }
+    return;
+  }
+  if (!state.activeChat) return;
   try {
     if (state.activeChat.type === 'dm') await send('send_message', { to: state.activeChat.peerId, text });
     else await send('send_group_message', { groupId: state.activeChat.groupId, text });
@@ -1268,7 +1330,7 @@ function renderTrustPath(pathResult) {
 
 // ─── Feed & Posts (Phase 4) ─────────────────────────────────────────────────
 
-async function loadFeed() {
+const loadFeed = debounce(async () => {
   try {
     const [posts, polls] = await Promise.all([
       send('get_timeline', { limit: 50 }),
@@ -1283,8 +1345,9 @@ async function loadFeed() {
     }
     renderFeed();
   } catch (e) { console.error('Failed to load feed:', e); }
-}
+}, 300);
 
+let _feedRafId = 0;
 function renderFeed() {
   const el = document.getElementById('feed-posts');
   // Merge posts + polls into single sorted array
@@ -1302,8 +1365,9 @@ function renderFeed() {
     return;
   }
   el.innerHTML = items.map(item => item.type === 'post' ? renderPostCard(item.data) : renderPollCard(item.data)).join('');
-  // Render avatars + voicenote waveforms
-  requestAnimationFrame(() => {
+  // Render avatars + voicenote waveforms (cancel any pending rAF to avoid stacking)
+  cancelAnimationFrame(_feedRafId);
+  _feedRafId = requestAnimationFrame(() => {
     el.querySelectorAll('canvas[data-peerid]').forEach(c => generateAvatar(c.dataset.peerid, c, parseInt(c.width)));
     el.querySelectorAll('canvas.vn-waveform-display').forEach(c => {
       try {
@@ -1419,6 +1483,8 @@ async function toggleLike(postId, isLiked) {
   try {
     if (isLiked) await send('unlike_post', { postId });
     else await send('like_post', { postId });
+    // Don't call loadFeed() here — the post_interaction event will trigger it.
+    // Calling both causes double full-DOM rebuild of the entire feed.
     loadFeed();
   } catch (e) { showToast('Failed', e.message); }
 }
@@ -1882,8 +1948,13 @@ function playVoicenote(contentId) {
   }
   if (state.vnPlaybackAnim) { cancelAnimationFrame(state.vnPlaybackAnim); state.vnPlaybackAnim = null; }
 
-  // 1. Try cached blob first (instant playback for own recordings)
+  // 1. Try cached blob/dataURL first (instant playback for own recordings)
   let blob = vnBlobCache.get(contentId);
+  // Lazy decode: if cache has a data URL string, convert to Blob now (on play, not on render)
+  if (blob && typeof blob === 'string') {
+    blob = dataUrlToBlob(blob);
+    vnBlobCache.set(contentId, blob); // replace with decoded blob for future plays
+  }
 
   // 2. Fall back to decoding the data URL from stored posts or chat messages
   if (!blob) {
@@ -2078,7 +2149,7 @@ function stopChatVnWaveform() {
 }
 
 async function sendChatVoicenote() {
-  if (!chatVnBlob || !state.activeChat) return;
+  if (!chatVnBlob || (!state.activeChat && !state.activeChannel)) return;
 
   const id = crypto.randomUUID();
   vnBlobCache.set(id, chatVnBlob);
@@ -2094,7 +2165,9 @@ async function sendChatVoicenote() {
     // Send as a special message with voicenote JSON body
     const msgBody = JSON.stringify({ type: 'voicenote', voicenote: vnData });
     try {
-      if (state.activeChat.type === 'dm') {
+      if (state.activeChannel) {
+        await send('send_hub_message', { hubId: state.activeChannel.hubId, channelId: state.activeChannel.channelId, text: msgBody });
+      } else if (state.activeChat.type === 'dm') {
         await send('send_message', { to: state.activeChat.peerId, text: msgBody });
       } else {
         await send('send_group_message', { groupId: state.activeChat.groupId, text: msgBody });
@@ -2837,6 +2910,552 @@ function isSafeColor(val) {
 /** Whitelist check for font style values */
 function isSafeFontStyle(val) {
   return ['sans', 'serif', 'mono', 'handwritten'].includes(val);
+}
+
+// ─── Hubs ────────────────────────────────────────────────────────────────────
+
+const refreshHubs = debounce(async () => {
+  try {
+    state.hubs = await send('get_hubs');
+    renderHubStrip();
+  } catch (e) { console.error('Failed to refresh hubs:', e); }
+}, 300);
+
+function renderHubStrip() {
+  const strip = document.getElementById('hub-strip');
+  const list = document.getElementById('hub-icons-list');
+  // Always show the hub strip so users can create their first hub
+  strip.classList.remove('hidden');
+  list.innerHTML = state.hubs.map(h => {
+    const active = state.activeHub && state.activeHub.hubId === h.hubId ? ' active' : '';
+    const icon = h.icon || h.name.charAt(0).toUpperCase();
+    return `<button class="hub-icon${active}" onclick="selectHub('${escapeAttr(h.hubId)}')" title="${escapeAttr(h.name)}">${escapeAttr(icon)}</button>`;
+  }).join('');
+}
+
+async function selectHub(hubId) {
+  if (state._selectingHub) return; // Prevent concurrent calls
+  state._selectingHub = true;
+  try {
+    const data = await send('get_hub', { hubId });
+    state.activeHub = data.hub;
+    state.hubCategories = data.categories || [];
+    state.hubChannels = data.channels || [];
+    state.hubMembers = data.members || [];
+    state.activeChannel = null;
+    state.activeChat = null;
+
+    // Switch sidebar to hub mode
+    document.getElementById('sidebar-tabs').classList.add('hidden');
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('hub-sidebar').classList.remove('hidden');
+    document.getElementById('hub-sidebar-name').textContent = data.hub.name;
+
+    // Show/hide settings based on role
+    const settingsBtn = document.getElementById('hub-settings-btn');
+    settingsBtn.style.display = data.myRole === 'owner' || data.myRole === 'admin' ? '' : 'none';
+
+    renderHubChannels();
+    renderHubStrip();
+
+    // Show member panel
+    state.memberPanelOpen = true;
+    document.getElementById('member-panel').classList.remove('hidden');
+    renderHubMemberPanel();
+
+    // Auto-select first text channel
+    const firstText = state.hubChannels.find(c => c.type === 'text');
+    if (firstText) openChannel(hubId, firstText.channelId, firstText.name);
+    else showView('empty');
+
+    // Mark DM button as inactive
+    document.getElementById('hub-dm-btn').classList.remove('active');
+  } catch (e) { showToast('Failed to load hub', e.message); }
+  finally { state._selectingHub = false; }
+}
+
+function selectDMMode() {
+  state.activeHub = null;
+  state.activeChannel = null;
+  state.hubCategories = [];
+  state.hubChannels = [];
+  state.hubMembers = [];
+
+  // Switch sidebar back to DM mode
+  document.getElementById('hub-sidebar').classList.add('hidden');
+  document.getElementById('sidebar-tabs').classList.remove('hidden');
+  switchTab('feed');
+
+  // Hide member panel
+  state.memberPanelOpen = false;
+  document.getElementById('member-panel').classList.add('hidden');
+
+  renderHubStrip();
+  document.getElementById('hub-dm-btn').classList.add('active');
+}
+
+function renderHubChannels() {
+  const el = document.getElementById('hub-channels-list');
+  if (!state.activeHub) { el.innerHTML = ''; return; }
+
+  // Group channels by category
+  const cats = state.hubCategories.sort((a, b) => a.position - b.position);
+  let html = '';
+  for (const cat of cats) {
+    const channels = state.hubChannels
+      .filter(c => c.categoryId === cat.categoryId)
+      .sort((a, b) => a.position - b.position);
+    html += `<div class="hub-category">
+      <div class="category-header" onclick="toggleCategory(this)">${escapeAttr(cat.name)}</div>
+      <div class="category-channels">`;
+    for (const ch of channels) {
+      const active = state.activeChannel && state.activeChannel.channelId === ch.channelId ? ' active' : '';
+      const prefix = ch.type === 'text' ? '#' : '&#128266;';
+      html += `<div class="channel-item${active}" onclick="openChannel('${escapeAttr(state.activeHub.hubId)}','${escapeAttr(ch.channelId)}','${escapeAttr(ch.name)}')">${prefix} ${escapeAttr(ch.name)}</div>`;
+    }
+    html += '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function toggleCategory(el) {
+  el.parentElement.classList.toggle('collapsed');
+}
+
+async function openChannel(hubId, channelId, name) {
+  state.activeChannel = { hubId, channelId, name };
+  state.activeChat = null;
+  showView('chat');
+  document.getElementById('chat-peer-name').textContent = `# ${name}`;
+  document.getElementById('chat-peer-name').onclick = null;
+  document.getElementById('chat-peer-status').textContent = '';
+  document.getElementById('chat-actions').style.display = 'none';
+
+  // Update channel highlight (lightweight — just toggle active class)
+  document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+  const allChannels = document.querySelectorAll('.channel-item');
+  for (const el of allChannels) {
+    if (el.textContent.includes(name)) el.classList.add('active');
+  }
+
+  try {
+    const messages = await send('get_hub_history', { hubId, channelId, limit: 100 });
+    state.messages = messages;
+    renderMessages(messages);
+  } catch (e) { console.error('Failed to load channel history:', e); }
+}
+
+function renderHubMemberPanel() {
+  const el = document.getElementById('member-panel-list');
+  if (!state.hubMembers.length) { el.innerHTML = '<div class="subtle" style="padding:12px">No members</div>'; return; }
+
+  const roleOrder = { owner: 0, admin: 1, member: 2 };
+  const sorted = [...state.hubMembers].sort((a, b) => (roleOrder[a.role] || 9) - (roleOrder[b.role] || 9));
+
+  let html = '';
+  let lastRole = '';
+  for (const m of sorted) {
+    if (m.role !== lastRole) {
+      const label = m.role === 'owner' ? 'OWNER' : m.role === 'admin' ? 'ADMINS' : 'MEMBERS';
+      html += `<div class="member-role-header">${label}</div>`;
+      lastRole = m.role;
+    }
+    const onlineDot = m.isOnline ? '<span class="online-dot"></span>' : '';
+    const isSelf = m.peerId === state.myPeerId;
+    html += `<div class="member-item" ${!isSelf ? `onclick="openPeerProfile('${escapeAttr(m.peerId)}')"` : ''}>
+      <span class="member-name">${onlineDot}${escapeAttr(m.displayName || m.peerId.slice(0, 12))}</span>
+      <span class="role-badge role-${m.role}">${m.role}</span>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+async function refreshHubMembers(hubId) {
+  try {
+    state.hubMembers = await send('get_hub_members', { hubId });
+    renderHubMemberPanel();
+  } catch {}
+}
+
+function toggleMemberPanel() {
+  state.memberPanelOpen = !state.memberPanelOpen;
+  document.getElementById('member-panel').classList.toggle('hidden', !state.memberPanelOpen);
+}
+
+function onHubMessage(data) {
+  if (state.activeChannel && state.activeChannel.hubId === data.hubId && state.activeChannel.channelId === data.channelId) {
+    appendMessage({ from: data.from, fromName: data.fromName, body: data.body, timestamp: data.timestamp, status: 'delivered' });
+  } else {
+    showToast(`[Hub] ${data.fromName}: ${data.body.slice(0, 40)}`);
+  }
+}
+
+function onHubUpdated(data) {
+  if (data.type === 'deleted' || data.type === 'kicked') {
+    if (state.activeHub && state.activeHub.hubId === data.hubId) {
+      selectDMMode();
+      showToast(data.type === 'kicked' ? 'You were removed from the hub' : 'Hub was deleted');
+    }
+    refreshHubs();
+    return;
+  }
+  // Only refresh hub strip (lightweight). Don't call selectHub() here —
+  // the originating action (saveHubSettings, createChannel, etc.) already does that.
+  // Calling selectHub from both places causes 4x DOM renders and UI freezes.
+  refreshHubs();
+}
+
+// ─── Hub Creation ────────────────────────────────────────────────────────
+
+function showCreateHubModal() {
+  document.getElementById('hub-name-input').value = '';
+  document.getElementById('hub-desc-input').value = '';
+  document.getElementById('hub-icon-input').value = '';
+  document.getElementById('hub-tags-input').value = '';
+  document.getElementById('hub-public-toggle').checked = false;
+  document.getElementById('create-hub-modal').classList.remove('hidden');
+}
+
+function closeCreateHubModal() {
+  document.getElementById('create-hub-modal').classList.add('hidden');
+}
+
+async function submitCreateHub() {
+  const name = document.getElementById('hub-name-input').value.trim();
+  if (!name) { showToast('Hub name is required'); return; }
+  const description = document.getElementById('hub-desc-input').value.trim();
+  const icon = document.getElementById('hub-icon-input').value.trim();
+  const tagsStr = document.getElementById('hub-tags-input').value.trim();
+  const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const isPublic = document.getElementById('hub-public-toggle').checked;
+
+  try {
+    const result = await send('create_hub', { name, description, icon, tags, isPublic });
+    closeCreateHubModal();
+    await refreshHubs();
+    selectHub(result.hubId);
+    showToast(`Hub "${name}" created!`);
+  } catch (e) { showToast('Failed to create hub', e.message); }
+}
+
+// ─── Hub Settings ────────────────────────────────────────────────────────
+
+function showHubSettingsModal() {
+  if (!state.activeHub) return;
+  const hub = state.activeHub;
+  document.getElementById('hub-settings-title').textContent = `${hub.name} — Settings`;
+  document.getElementById('hs-name').value = hub.name;
+  document.getElementById('hs-desc').value = hub.description || '';
+  document.getElementById('hs-icon').value = hub.icon || '';
+  document.getElementById('hs-public').checked = hub.isPublic;
+
+  // Show delete/leave based on role
+  const myRole = state.hubs.find(h => h.hubId === hub.hubId)?.myRole;
+  document.getElementById('hs-delete-btn').style.display = myRole === 'owner' ? '' : 'none';
+  document.getElementById('hs-leave-btn').style.display = myRole !== 'owner' ? '' : 'none';
+  document.getElementById('hs-save-btn').style.display = myRole === 'owner' ? '' : 'none';
+
+  switchHubSettingsTab('overview');
+  loadHubSettingsChannels();
+  loadHubSettingsMembers();
+  loadHubSettingsInvites();
+  document.getElementById('hub-settings-modal').classList.remove('hidden');
+}
+
+function closeHubSettingsModal() {
+  document.getElementById('hub-settings-modal').classList.add('hidden');
+}
+
+function switchHubSettingsTab(tab) {
+  document.querySelectorAll('.hub-settings-tab').forEach(t => t.classList.add('hidden'));
+  document.querySelectorAll('.hub-settings-tab-bar .tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`htab-${tab}`).classList.remove('hidden');
+  document.querySelector(`.hub-settings-tab-bar .tab[data-htab="${tab}"]`).classList.add('active');
+}
+
+async function saveHubSettings() {
+  if (!state.activeHub) return;
+  try {
+    await send('update_hub', {
+      hubId: state.activeHub.hubId,
+      name: document.getElementById('hs-name').value.trim(),
+      description: document.getElementById('hs-desc').value.trim(),
+      icon: document.getElementById('hs-icon').value.trim(),
+      isPublic: document.getElementById('hs-public').checked,
+    });
+    closeHubSettingsModal();
+    await refreshHubs();
+    selectHub(state.activeHub.hubId);
+    showToast('Hub settings saved');
+  } catch (e) { showToast('Failed to save', e.message); }
+}
+
+async function deleteCurrentHub() {
+  if (!state.activeHub) return;
+  if (!confirm(`Delete hub "${state.activeHub.name}"? This cannot be undone.`)) return;
+  try {
+    await send('delete_hub', { hubId: state.activeHub.hubId });
+    closeHubSettingsModal();
+    selectDMMode();
+    refreshHubs();
+    showToast('Hub deleted');
+  } catch (e) { showToast('Failed to delete', e.message); }
+}
+
+async function leaveCurrentHub() {
+  if (!state.activeHub) return;
+  if (!confirm(`Leave hub "${state.activeHub.name}"?`)) return;
+  try {
+    await send('leave_hub', { hubId: state.activeHub.hubId });
+    closeHubSettingsModal();
+    selectDMMode();
+    refreshHubs();
+    showToast('Left hub');
+  } catch (e) { showToast('Failed to leave', e.message); }
+}
+
+// ─── Hub Settings: Channels Tab ──────────────────────────────────────────
+
+function loadHubSettingsChannels() {
+  if (!state.activeHub) return;
+  const el = document.getElementById('hs-categories-list');
+  const cats = state.hubCategories.sort((a, b) => a.position - b.position);
+  let html = '';
+  for (const cat of cats) {
+    const channels = state.hubChannels.filter(c => c.categoryId === cat.categoryId).sort((a, b) => a.position - b.position);
+    html += `<div class="hs-category">
+      <div class="hs-cat-header">
+        <strong>${escapeAttr(cat.name)}</strong>
+        <button class="icon-btn-sm" onclick="deleteHubCategory('${escapeAttr(cat.categoryId)}')" title="Delete category">&#10005;</button>
+      </div>`;
+    for (const ch of channels) {
+      html += `<div class="hs-channel-item">
+        <span>${ch.type === 'text' ? '#' : '&#128266;'} ${escapeAttr(ch.name)}</span>
+        <button class="icon-btn-sm" onclick="deleteHubChannel('${escapeAttr(ch.channelId)}')" title="Delete">&#10005;</button>
+      </div>`;
+    }
+    html += `<div class="hs-add-channel">
+      <input type="text" class="hs-new-ch-name" placeholder="New channel" maxlength="50">
+      <select class="hs-new-ch-type"><option value="text">Text</option><option value="voice">Voice</option></select>
+      <button class="btn-secondary" onclick="createHubChannel('${escapeAttr(cat.categoryId)}', this)">+</button>
+    </div></div>`;
+  }
+  el.innerHTML = html;
+}
+
+async function createHubCategory() {
+  if (!state.activeHub) return;
+  const name = document.getElementById('hs-new-cat-name').value.trim();
+  if (!name) return;
+  try {
+    await send('create_category', { hubId: state.activeHub.hubId, name });
+    document.getElementById('hs-new-cat-name').value = '';
+    await selectHub(state.activeHub.hubId);
+    loadHubSettingsChannels();
+  } catch (e) { showToast('Failed to create category', e.message); }
+}
+
+async function createHubChannel(categoryId, btn) {
+  if (!state.activeHub) return;
+  const row = btn.parentElement;
+  const name = row.querySelector('.hs-new-ch-name').value.trim();
+  const type = row.querySelector('.hs-new-ch-type').value;
+  if (!name) return;
+  try {
+    await send('create_channel', { hubId: state.activeHub.hubId, categoryId, name, type });
+    row.querySelector('.hs-new-ch-name').value = '';
+    await selectHub(state.activeHub.hubId);
+    loadHubSettingsChannels();
+  } catch (e) { showToast('Failed to create channel', e.message); }
+}
+
+async function deleteHubCategory(categoryId) {
+  if (!state.activeHub || !confirm('Delete this category and all its channels?')) return;
+  try {
+    await send('delete_category', { hubId: state.activeHub.hubId, categoryId });
+    await selectHub(state.activeHub.hubId);
+    loadHubSettingsChannels();
+  } catch (e) { showToast('Failed to delete category', e.message); }
+}
+
+async function deleteHubChannel(channelId) {
+  if (!state.activeHub || !confirm('Delete this channel?')) return;
+  try {
+    await send('delete_channel', { hubId: state.activeHub.hubId, channelId });
+    await selectHub(state.activeHub.hubId);
+    loadHubSettingsChannels();
+  } catch (e) { showToast('Failed to delete channel', e.message); }
+}
+
+// ─── Hub Settings: Members Tab ───────────────────────────────────────────
+
+async function loadHubSettingsMembers() {
+  if (!state.activeHub) return;
+  // Populate invite dropdown with contacts
+  const sel = document.getElementById('hs-invite-peer-select');
+  const memberIds = new Set(state.hubMembers.map(m => m.peerId));
+  sel.innerHTML = state.contacts
+    .filter(c => !memberIds.has(c.peerId))
+    .map(c => `<option value="${escapeAttr(c.peerId)}">${escapeAttr(c.displayName)}</option>`)
+    .join('');
+
+  const el = document.getElementById('hs-members-list');
+  const myRole = state.hubs.find(h => h.hubId === state.activeHub.hubId)?.myRole;
+  const roleOrder = { owner: 0, admin: 1, member: 2 };
+  const sorted = [...state.hubMembers].sort((a, b) => (roleOrder[a.role] || 9) - (roleOrder[b.role] || 9));
+
+  let html = '';
+  for (const m of sorted) {
+    const isSelf = m.peerId === state.myPeerId;
+    let actions = '';
+    if (!isSelf && myRole === 'owner') {
+      if (m.role === 'member') actions += `<button class="btn-secondary btn-sm" onclick="changeHubRole('${escapeAttr(m.peerId)}','admin')">Promote</button>`;
+      if (m.role === 'admin') actions += `<button class="btn-secondary btn-sm" onclick="changeHubRole('${escapeAttr(m.peerId)}','member')">Demote</button>`;
+      actions += `<button class="btn-danger btn-sm" onclick="kickHubMember('${escapeAttr(m.peerId)}')">Kick</button>`;
+    } else if (!isSelf && myRole === 'admin' && m.role === 'member') {
+      actions += `<button class="btn-danger btn-sm" onclick="kickHubMember('${escapeAttr(m.peerId)}')">Kick</button>`;
+    }
+    html += `<div class="hs-member-row">
+      <span>${escapeAttr(m.displayName || m.peerId.slice(0, 12))} <span class="role-badge role-${m.role}">${m.role}</span></span>
+      <span>${actions}</span>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+async function inviteHubMember() {
+  if (!state.activeHub) return;
+  const peerId = document.getElementById('hs-invite-peer-select').value;
+  if (!peerId) { showToast('Select a contact to invite'); return; }
+  try {
+    await send('invite_hub_member', { hubId: state.activeHub.hubId, peerId });
+    showToast('Invite sent');
+    await selectHub(state.activeHub.hubId);
+    loadHubSettingsMembers();
+  } catch (e) { showToast('Failed to invite', e.message); }
+}
+
+async function kickHubMember(peerId) {
+  if (!state.activeHub || !confirm('Kick this member?')) return;
+  try {
+    await send('kick_hub_member', { hubId: state.activeHub.hubId, peerId });
+    showToast('Member kicked');
+    await selectHub(state.activeHub.hubId);
+    loadHubSettingsMembers();
+  } catch (e) { showToast('Failed to kick', e.message); }
+}
+
+async function changeHubRole(peerId, role) {
+  if (!state.activeHub) return;
+  try {
+    await send('change_hub_role', { hubId: state.activeHub.hubId, peerId, role });
+    showToast(`Role changed to ${role}`);
+    await selectHub(state.activeHub.hubId);
+    loadHubSettingsMembers();
+  } catch (e) { showToast('Failed to change role', e.message); }
+}
+
+// ─── Hub Settings: Invites Tab ───────────────────────────────────────────
+
+async function loadHubSettingsInvites() {
+  if (!state.activeHub) return;
+  try {
+    const invites = await send('get_hub_invites', { hubId: state.activeHub.hubId });
+    const el = document.getElementById('hs-invites-list');
+    if (!invites.length) { el.innerHTML = '<div class="subtle">No invites yet</div>'; return; }
+    el.innerHTML = invites.map(inv => {
+      const expires = inv.expiresAt ? new Date(inv.expiresAt).toLocaleString() : 'Never';
+      const uses = inv.maxUses ? `${inv.uses}/${inv.maxUses}` : `${inv.uses} uses`;
+      return `<div class="hs-invite-row"><span>${uses} &middot; Expires: ${expires}</span></div>`;
+    }).join('');
+  } catch {}
+}
+
+async function createHubInviteCode() {
+  if (!state.activeHub) return;
+  try {
+    const result = await send('create_hub_invite', { hubId: state.activeHub.hubId });
+    const display = document.getElementById('hs-invite-code-display');
+    document.getElementById('hs-invite-code').value = result.code;
+    display.classList.remove('hidden');
+    loadHubSettingsInvites();
+  } catch (e) { showToast('Failed to create invite', e.message); }
+}
+
+function copyHubInviteCode() {
+  const code = document.getElementById('hs-invite-code').value;
+  navigator.clipboard.writeText(code).then(() => showToast('Invite code copied!'));
+}
+
+// ─── Browse/Discover Hubs ────────────────────────────────────────────────
+
+function showBrowseHubsModal() {
+  document.getElementById('hub-search-input').value = '';
+  document.getElementById('hub-invite-code-input').value = '';
+  document.getElementById('hub-listings').innerHTML = '<div class="subtle">Loading...</div>';
+  document.getElementById('browse-hubs-modal').classList.remove('hidden');
+  browseHubs();
+}
+
+function closeBrowseHubsModal() {
+  document.getElementById('browse-hubs-modal').classList.add('hidden');
+}
+
+async function browseHubs() {
+  try {
+    const listings = await send('browse_hubs');
+    state.hubListings = listings;
+    renderHubListings();
+  } catch (e) { showToast('Failed to browse hubs', e.message); }
+}
+
+async function searchHubs() {
+  const term = document.getElementById('hub-search-input').value.trim();
+  try {
+    const listings = await send('discover_hubs', { searchTerm: term });
+    state.hubListings = listings;
+    renderHubListings();
+  } catch (e) { showToast('Search failed', e.message); }
+}
+
+function renderHubListings() {
+  const el = document.getElementById('hub-listings');
+  if (!state.hubListings.length) { el.innerHTML = '<div class="subtle">No hubs found</div>'; return; }
+  el.innerHTML = state.hubListings.map(h => {
+    const icon = h.icon || h.name.charAt(0).toUpperCase();
+    const tags = (h.tags || []).map(t => `<span class="hub-tag">${escapeAttr(t)}</span>`).join('');
+    const alreadyJoined = state.hubs.some(mh => mh.hubId === h.hubId);
+    const btn = alreadyJoined
+      ? '<button class="btn-secondary" disabled>Joined</button>'
+      : `<button class="btn-primary hub-join-btn" onclick="joinDiscoveredHub('${escapeAttr(h.hubId)}')">Join</button>`;
+    return `<div class="hub-card">
+      <div class="hub-card-icon">${escapeAttr(icon)}</div>
+      <div class="hub-card-info">
+        <strong>${escapeAttr(h.name)}</strong>
+        <span class="subtle">${escapeAttr(h.description || '')}</span>
+        <span class="subtle">${h.memberCount} members</span>
+        <div class="hub-tags">${tags}</div>
+      </div>
+      ${btn}
+    </div>`;
+  }).join('');
+}
+
+async function joinDiscoveredHub(hubId) {
+  // For now, discovered hubs need an invite code to actually join
+  showToast('Ask the hub owner for an invite code to join');
+}
+
+async function joinHubViaCode() {
+  const code = document.getElementById('hub-invite-code-input').value.trim();
+  if (!code) { showToast('Paste an invite code first'); return; }
+  try {
+    const result = await send('join_hub_invite', { code });
+    closeBrowseHubsModal();
+    await refreshHubs();
+    if (result.hubId) selectHub(result.hubId);
+    showToast(`Joined hub "${result.hubName || 'Hub'}"!`);
+  } catch (e) { showToast('Failed to join hub', e.message); }
 }
 
 // ─── Display Name ───────────────────────────────────────────────────────────

@@ -24,6 +24,7 @@ import type { PostService } from '../content/posts.js';
 import type { TrustWebService } from '../trust/web.js';
 import type { DeadDropService } from '../content/deaddrops.js';
 import type { PollService } from '../content/polls.js';
+import type { HubManager } from '../messaging/hubs.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export interface APIServerDeps {
   trustWeb?: TrustWebService;
   deadDrops?: DeadDropService;
   polls?: PollService;
+  hubs?: HubManager;
   /** Override frontend static files directory (default: <cwd>/frontend) */
   frontendDir?: string;
   /** Override temp directory for file shares/downloads (default: cwd) */
@@ -263,8 +265,8 @@ export class APIServer {
 
         case 'send_message': {
           const { to, text } = data;
-          if (!text || typeof text !== 'string' || text.length > 50_000) {
-            return this.err(id, 'Message too long (max 50,000 chars)');
+          if (!text || typeof text !== 'string' || text.length > 2_000_000) {
+            return this.err(id, 'Message too large (max 2MB)');
           }
           const recipientId = this.resolveRecipient(to);
           if (!recipientId) return this.err(id, `Unknown recipient: ${to}`);
@@ -317,8 +319,8 @@ export class APIServer {
 
         case 'send_group_message': {
           const { groupId, text } = data;
-          if (!text || typeof text !== 'string' || text.length > 50_000) {
-            return this.err(id, 'Message too long (max 50,000 chars)');
+          if (!text || typeof text !== 'string' || text.length > 2_000_000) {
+            return this.err(id, 'Message too large (max 2MB)');
           }
           const group = this.deps.groups.findGroup(groupId);
           if (!group) return this.err(id, `Unknown group: ${groupId}`);
@@ -730,11 +732,18 @@ export class APIServer {
 
         case 'create_post': {
           if (!this.deps.posts) return this.err(id, 'Posts not available');
-          if (!data.content || typeof data.content !== 'string' || data.content.length > 10_000) {
+          if (data.content != null && typeof data.content !== 'string') {
+            return this.err(id, 'Invalid post content');
+          }
+          const postContent = data.content || '';
+          if (postContent.length > 10_000) {
             return this.err(id, 'Post content too long (max 10,000 chars)');
           }
+          if (!postContent && (!data.attachments || data.attachments.length === 0)) {
+            return this.err(id, 'Post must have content or attachments');
+          }
           const visibility = data.visibility === 'friends' ? 'friends' : 'public';
-          const post = await this.deps.posts.createPost(data.content, data.attachments || [], visibility);
+          const post = await this.deps.posts.createPost(postContent, data.attachments || [], visibility);
           return this.ok(id, post);
         }
 
@@ -944,6 +953,186 @@ export class APIServer {
           return this.ok(id, { poll: pp, results: pr });
         }
 
+        // ─── Hubs ──────────────────────────────────────────────
+
+        case 'create_hub': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          if (!data.name || typeof data.name !== 'string' || data.name.length > 100) {
+            return this.err(id, 'Hub name too long (max 100 chars)');
+          }
+          const hubId = await this.deps.hubs.createHub(
+            data.name, data.description || '', !!data.isPublic, data.tags || [], data.icon,
+          );
+          return this.ok(id, { hubId });
+        }
+
+        case 'get_hubs': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          const hubs = this.deps.hubs.getHubs();
+          const enriched = [];
+          for (const h of hubs) {
+            const members = await this.deps.store.getHubMembers(h.hubId);
+            const myRole = await this.deps.hubs.getMyRole(h.hubId);
+            enriched.push({
+              hubId: h.hubId,
+              name: h.name,
+              description: h.description,
+              icon: h.icon,
+              ownerId: h.ownerId,
+              isPublic: h.isPublic,
+              tags: h.tags,
+              memberCount: members.length,
+              myRole,
+              lastActivityAt: h.lastActivityAt,
+              createdAt: h.createdAt,
+            });
+          }
+          return this.ok(id, enriched);
+        }
+
+        case 'get_hub': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          const state = await this.deps.hubs.getHubState(data.hubId);
+          if (!state) return this.err(id, `Unknown hub: ${data.hubId}`);
+          const myRole = await this.deps.hubs.getMyRole(data.hubId);
+          return this.ok(id, { ...state, myRole });
+        }
+
+        case 'update_hub': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          const { hubId: uhId, ...hubUpdates } = data;
+          await this.deps.hubs.updateHub(uhId, hubUpdates);
+          return this.ok(id, { updated: true });
+        }
+
+        case 'delete_hub': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.deleteHub(data.hubId);
+          return this.ok(id, { deleted: true });
+        }
+
+        case 'leave_hub': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.leaveHub(data.hubId);
+          return this.ok(id, { left: true });
+        }
+
+        case 'create_category': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          const catId = await this.deps.hubs.createCategory(data.hubId, data.name);
+          return this.ok(id, { categoryId: catId });
+        }
+
+        case 'rename_category': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.renameCategory(data.hubId, data.categoryId, data.name);
+          return this.ok(id, { renamed: true });
+        }
+
+        case 'delete_category': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.deleteCategory(data.hubId, data.categoryId);
+          return this.ok(id, { deleted: true });
+        }
+
+        case 'create_channel': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          const chId = await this.deps.hubs.createChannel(
+            data.hubId, data.categoryId, data.name, data.type || 'text',
+          );
+          return this.ok(id, { channelId: chId });
+        }
+
+        case 'update_channel': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.updateChannel(data.hubId, data.channelId, {
+            name: data.name, topic: data.topic,
+          });
+          return this.ok(id, { updated: true });
+        }
+
+        case 'delete_channel': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.deleteChannel(data.hubId, data.channelId);
+          return this.ok(id, { deleted: true });
+        }
+
+        case 'send_hub_message': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          if (!data.text || typeof data.text !== 'string' || data.text.length > 2_000_000) {
+            return this.err(id, 'Message too large (max 2MB)');
+          }
+          const hmId = await this.deps.hubs.sendChannelMessage(data.hubId, data.channelId, data.text);
+          return this.ok(id, { messageId: hmId });
+        }
+
+        case 'get_hub_history': {
+          const convoId = `hub:${data.hubId}:${data.channelId}`;
+          const history = await this.deps.store.getConversationHistory(convoId, data.limit || 50);
+          return this.ok(id, history);
+        }
+
+        case 'invite_hub_member': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.inviteMember(data.hubId, data.peerId);
+          return this.ok(id, { invited: true });
+        }
+
+        case 'kick_hub_member': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.kickMember(data.hubId, data.peerId);
+          return this.ok(id, { kicked: true });
+        }
+
+        case 'change_hub_role': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          await this.deps.hubs.changeRole(data.hubId, data.peerId, data.role);
+          return this.ok(id, { changed: true });
+        }
+
+        case 'get_hub_members': {
+          const hubMembers = await this.deps.store.getHubMembers(data.hubId);
+          const connectedIds3 = new Set(
+            this.deps.node.getConnectedPeers().filter(p => p.decentraId).map(p => p.decentraId)
+          );
+          return this.ok(id, hubMembers.map(m => ({
+            ...m,
+            isOnline: connectedIds3.has(m.peerId),
+            displayName: m.displayName || this.deps.node.getKnownPeer(m.peerId)?.displayName || m.peerId.slice(0, 12),
+          })));
+        }
+
+        case 'create_hub_invite': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          const invite = await this.deps.hubs.createInvite(
+            data.hubId, data.maxUses || 0, data.expiresAt || 0,
+          );
+          const code = this.deps.hubs.getHubInviteCode(invite);
+          return this.ok(id, { inviteId: invite.inviteId, code });
+        }
+
+        case 'join_hub_invite': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          const joinResult = await this.deps.hubs.joinViaInvite(data.code);
+          return this.ok(id, joinResult);
+        }
+
+        case 'get_hub_invites': {
+          const invites = await this.deps.store.getHubInvites(data.hubId);
+          return this.ok(id, invites);
+        }
+
+        case 'discover_hubs': {
+          if (!this.deps.hubs) return this.err(id, 'Hubs not available');
+          const listings = await this.deps.hubs.getDiscoveredHubs(data?.searchTerm, data?.tags);
+          return this.ok(id, listings.slice(0, data?.limit || 50));
+        }
+
+        case 'browse_hubs': {
+          const hubListings = await this.deps.store.getPublicHubListings();
+          return this.ok(id, hubListings.slice(0, data?.limit || 50));
+        }
+
         default:
           return this.err(id, `Unknown action: ${action}`);
       }
@@ -1090,6 +1279,46 @@ export class APIServer {
       });
       this.deps.polls.onVoteReceived.push((pollId, voterId) => {
         this.broadcast({ type: 'event', event: 'poll_vote_received', data: { pollId, voterId } });
+      });
+    }
+
+    // Hub events
+    if (this.deps.hubs) {
+      this.deps.hubs.onChannelMessage.push((hubId, channelId, message) => {
+        const senderProfile = this.deps.node.getKnownPeer(message.from);
+        this.broadcast({
+          type: 'event', event: 'hub_message',
+          data: {
+            hubId, channelId,
+            from: message.from,
+            fromName: senderProfile?.displayName || message.from.slice(0, 12),
+            body: message.body,
+            messageId: message.messageId,
+            timestamp: message.timestamp,
+          },
+        });
+      });
+      this.deps.hubs.onHubUpdate.push((hubId, update) => {
+        this.broadcast({ type: 'event', event: 'hub_updated', data: { hubId, ...update } });
+      });
+      this.deps.hubs.onHubJoined.push((hub) => {
+        this.broadcast({ type: 'event', event: 'hub_joined', data: { hubId: hub.hubId, name: hub.name } });
+      });
+      this.deps.hubs.onMemberJoined.push((hubId, member) => {
+        this.broadcast({
+          type: 'event', event: 'hub_member_joined',
+          data: { hubId, peerId: member.peerId, displayName: member.displayName },
+        });
+      });
+      this.deps.hubs.onMemberLeft.push((hubId, peerId) => {
+        this.broadcast({ type: 'event', event: 'hub_member_left', data: { hubId, peerId } });
+      });
+      this.deps.hubs.onInviteReceived.push((hubId, hubName, from) => {
+        const senderProfile = this.deps.node.getKnownPeer(from);
+        this.broadcast({
+          type: 'event', event: 'hub_invite_received',
+          data: { hubId, hubName, fromName: senderProfile?.displayName || from.slice(0, 12) },
+        });
       });
     }
 

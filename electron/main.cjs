@@ -13,6 +13,18 @@ const path = require('path');
 const fs = require('fs');
 const net = require('net');
 
+// ─── Log to file ─────────────────────────────────────────────────────────────
+
+const logPath = path.join(app.getPath('userData'), 'decentranet.log');
+const logStream = fs.createWriteStream(logPath, { flags: 'w' });
+const origLog = console.log;
+const origErr = console.error;
+const origWarn = console.warn;
+console.log = (...args) => { const msg = args.map(String).join(' '); logStream.write(`[LOG] ${msg}\n`); origLog(...args); };
+console.error = (...args) => { const msg = args.map(String).join(' '); logStream.write(`[ERR] ${msg}\n`); origErr(...args); };
+console.warn = (...args) => { const msg = args.map(String).join(' '); logStream.write(`[WRN] ${msg}\n`); origWarn(...args); };
+origLog(`[Electron] Logs: ${logPath}`);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Find a free TCP port starting from `preferred`. */
@@ -89,6 +101,9 @@ async function startApp() {
   const { PollService } = await import(
     /* webpackIgnore: true */ '../dist/content/polls.js'
   );
+  const { HubManager } = await import(
+    /* webpackIgnore: true */ '../dist/messaging/hubs.js'
+  );
   const { APIServer } = await import(
     /* webpackIgnore: true */ '../dist/api/server.js'
   );
@@ -138,6 +153,7 @@ async function startApp() {
   const trustWeb = new TrustWebService(backendNode, backendStore);
   const deadDrops = new DeadDropService(backendNode, backendStore);
   const polls = new PollService(backendNode, backendStore);
+  const hubs = new HubManager(backendNode, backendStore);
 
   // Wire poll handlers
   backendNode.setPollBroadcastHandler(async (data) => {
@@ -159,6 +175,15 @@ async function startApp() {
   backendNode.setVouchBroadcastHandler(async (data) => {
     await trustWeb.handleIncomingVouch(data);
   });
+
+  // Wire hub handlers
+  backendNode.setHubSyncHandler(async (data) => {
+    return await hubs.handleHubSyncMessage(data);
+  });
+  backendNode.setHubDiscoveryHandler(async (data) => {
+    return await hubs.handleDiscoveryMessage(data);
+  });
+  await hubs.loadHubs();
 
   // Wire group message handler
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
@@ -295,6 +320,7 @@ async function startApp() {
     trustWeb,
     deadDrops,
     polls,
+    hubs,
     frontendDir,
     tempDir,
   });
@@ -312,6 +338,18 @@ async function startApp() {
   });
 
   mainWindow.loadURL(`http://localhost:${apiPort}`);
+
+  // Open DevTools after page loads so early console messages are captured
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.openDevTools({ mode: 'bottom' });
+  });
+
+  // Allow F12 to toggle DevTools
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F12') {
+      mainWindow.webContents.toggleDevTools();
+    }
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
