@@ -2907,7 +2907,41 @@ function selectGif(url) {
       postInput.value = (postInput.value ? postInput.value + '\n' : '') + url;
       postInput.dispatchEvent(new Event('input'));
     }
+  } else if (context === 'hub-icon-create') {
+    const iconInput = document.getElementById('hub-icon-input');
+    if (iconInput) iconInput.value = url;
+    updateHubIconPreview('hub-icon-preview', url);
+  } else if (context === 'hub-icon-edit') {
+    const iconInput = document.getElementById('hs-icon');
+    if (iconInput) iconInput.value = url;
+    updateHubIconPreview('hs-icon-preview', url);
   }
+}
+
+function updateHubIconPreview(previewId, value) {
+  const preview = document.getElementById(previewId);
+  if (!preview) return;
+  if (value && (value.startsWith('http://') || value.startsWith('https://'))) {
+    preview.innerHTML = `<img src="${escapeAttr(value)}" alt="Hub icon">`;
+    preview.classList.remove('hidden');
+  } else if (value) {
+    preview.innerHTML = escapeHtml(value);
+    preview.classList.remove('hidden');
+  } else {
+    preview.innerHTML = '';
+    preview.classList.add('hidden');
+  }
+}
+
+function isUrlIcon(icon) {
+  return icon && (icon.startsWith('http://') || icon.startsWith('https://'));
+}
+
+function renderHubIcon(icon, fallbackName, cssClass) {
+  if (isUrlIcon(icon)) {
+    return `<img src="${escapeAttr(icon)}" alt="Hub" class="${cssClass}">`;
+  }
+  return escapeAttr(icon || (fallbackName || '?').charAt(0).toUpperCase());
 }
 
 // GIF API key management
@@ -3433,8 +3467,8 @@ function renderHubStrip() {
   strip.classList.remove('hidden');
   list.innerHTML = state.hubs.map(h => {
     const active = state.activeHub && state.activeHub.hubId === h.hubId ? ' active' : '';
-    const icon = h.icon || h.name.charAt(0).toUpperCase();
-    return `<button class="hub-icon${active}" onclick="selectHub('${escapeAttr(h.hubId)}')" title="${escapeAttr(h.name)}">${escapeAttr(icon)}</button>`;
+    const iconContent = renderHubIcon(h.icon, h.name, 'hub-icon-img');
+    return `<button class="hub-icon${active}" onclick="selectHub('${escapeAttr(h.hubId)}')" title="${escapeAttr(h.name)}">${iconContent}</button>`;
   }).join('');
 }
 
@@ -3456,7 +3490,12 @@ async function selectHub(hubId) {
     document.getElementById('sidebar-tabs').classList.add('hidden');
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById('hub-sidebar').classList.remove('hidden');
-    document.getElementById('hub-sidebar-name').textContent = data.hub.name;
+    const sidebarNameEl = document.getElementById('hub-sidebar-name');
+    if (isUrlIcon(data.hub.icon)) {
+      sidebarNameEl.innerHTML = `<img src="${escapeAttr(data.hub.icon)}" alt="" class="hub-sidebar-icon-img"> ${escapeHtml(data.hub.name)}`;
+    } else {
+      sidebarNameEl.textContent = data.hub.name;
+    }
 
     // Show/hide settings based on role
     const settingsBtn = document.getElementById('hub-settings-btn');
@@ -3658,6 +3697,7 @@ function showCreateHubModal() {
   document.getElementById('hub-icon-input').value = '';
   document.getElementById('hub-tags-input').value = '';
   document.getElementById('hub-public-toggle').checked = false;
+  updateHubIconPreview('hub-icon-preview', '');
   document.getElementById('create-hub-modal').classList.remove('hidden');
 }
 
@@ -3692,6 +3732,7 @@ function showHubSettingsModal() {
   document.getElementById('hs-name').value = hub.name;
   document.getElementById('hs-desc').value = hub.description || '';
   document.getElementById('hs-icon').value = hub.icon || '';
+  updateHubIconPreview('hs-icon-preview', hub.icon || '');
   document.getElementById('hs-public').checked = hub.isPublic;
 
   // Show delete/leave based on role
@@ -3967,14 +4008,14 @@ function renderHubListings() {
   const el = document.getElementById('hub-listings');
   if (!state.hubListings.length) { el.innerHTML = '<div class="subtle">No hubs found</div>'; return; }
   el.innerHTML = state.hubListings.map(h => {
-    const icon = h.icon || h.name.charAt(0).toUpperCase();
+    const iconContent = renderHubIcon(h.icon, h.name, 'hub-card-icon-img');
     const tags = (h.tags || []).map(t => `<span class="hub-tag">${escapeAttr(t)}</span>`).join('');
     const alreadyJoined = state.hubs.some(mh => mh.hubId === h.hubId);
     const btn = alreadyJoined
       ? '<button class="btn-secondary" disabled>Joined</button>'
       : `<button class="btn-primary hub-join-btn" onclick="joinDiscoveredHub('${escapeAttr(h.hubId)}')">Join</button>`;
     return `<div class="hub-card">
-      <div class="hub-card-icon">${escapeAttr(icon)}</div>
+      <div class="hub-card-icon">${iconContent}</div>
       <div class="hub-card-info">
         <strong>${escapeAttr(h.name)}</strong>
         <span class="subtle">${escapeAttr(h.description || '')}</span>

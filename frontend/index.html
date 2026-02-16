@@ -677,8 +677,12 @@
           <textarea id="hub-desc-input" placeholder="What's this hub about?" rows="2" maxlength="500"></textarea>
         </div>
         <div class="settings-section">
-          <label>Icon (emoji)</label>
-          <input type="text" id="hub-icon-input" placeholder="&#128640;" maxlength="4" style="width:60px">
+          <label>Icon</label>
+          <div class="hub-icon-picker-row">
+            <div id="hub-icon-preview" class="hub-icon-preview hidden"></div>
+            <input type="text" id="hub-icon-input" placeholder="Emoji or GIF" oninput="updateHubIconPreview('hub-icon-preview', this.value)">
+            <button type="button" class="gif-btn" onclick="showGifPicker('hub-icon-create', this)" title="Pick a GIF">GIF</button>
+          </div>
         </div>
         <div class="settings-section">
           <label>Tags (comma-separated)</label>
@@ -720,7 +724,11 @@
           </div>
           <div class="settings-section">
             <label>Icon</label>
-            <input type="text" id="hs-icon" maxlength="4" style="width:60px">
+            <div class="hub-icon-picker-row">
+              <div id="hs-icon-preview" class="hub-icon-preview hidden"></div>
+              <input type="text" id="hs-icon" placeholder="Emoji or GIF" oninput="updateHubIconPreview('hs-icon-preview', this.value)">
+              <button type="button" class="gif-btn" onclick="showGifPicker('hub-icon-edit', this)" title="Pick a GIF">GIF</button>
+            </div>
           </div>
           <div class="settings-section">
             <label class="toggle-label">
