@@ -111,6 +111,16 @@ const THEME_PRESETS = [
   { id: 'honey', name: 'Honey', vars: { bgPrimary:'#1a1712', bgSecondary:'#211e17', bgTertiary:'#2d2920', bgHover:'#3d3830', bgActive:'#d4a23a22', border:'#3d3830', textPrimary:'#f0e8d8', textSecondary:'#b8a888', textMuted:'#6b6050', accent:'#d4a23a', accentHover:'#e0b85a', green:'#6bc96b', red:'#e05555', orange:'#cc8833', msgSent:'#3d3020', msgReceived:'#2d2920', radius:'8px', radiusLg:'12px' }},
   { id: 'lavender', name: 'Lavender Dream', vars: { bgPrimary:'#16141f', bgSecondary:'#1d1a28', bgTertiary:'#262234', bgHover:'#352f48', bgActive:'#a78bfa22', border:'#352f48', textPrimary:'#ede8ff', textSecondary:'#a89cc0', textMuted:'#5e5478', accent:'#a78bfa', accentHover:'#c4b5fc', green:'#6ee7b7', red:'#fb7185', orange:'#fcd34d', msgSent:'#2e2260', msgReceived:'#262234', radius:'10px', radiusLg:'14px' }},
   { id: 'autumn', name: 'Autumn', vars: { bgPrimary:'#1a0e0c', bgSecondary:'#221412', bgTertiary:'#2d1c18', bgHover:'#3d2a24', bgActive:'#e0733422', border:'#3d2a24', textPrimary:'#f5e0d5', textSecondary:'#bb8877', textMuted:'#6b4a40', accent:'#e07334', accentHover:'#e89058', green:'#66bb6a', red:'#ef5350', orange:'#ff9800', msgSent:'#3d2010', msgReceived:'#2d1c18', radius:'8px', radiusLg:'12px' }},
+  { id: 'neon-tokyo', name: 'Neon Tokyo', vars: { bgPrimary:'#0a0a14', bgSecondary:'#10101c', bgTertiary:'#181828', bgHover:'#252540', bgActive:'#ff2d5522', border:'#252540', textPrimary:'#eee8ff', textSecondary:'#9088b0', textMuted:'#504870', accent:'#ff2d55', accentHover:'#ff5577', green:'#00ffaa', red:'#ff3b5c', orange:'#ff9500', msgSent:'#3a1028', msgReceived:'#181828', radius:'6px', radiusLg:'10px' }},
+  { id: 'ghost', name: 'Ghost', vars: { bgPrimary:'#0c0c10', bgSecondary:'#121218', bgTertiary:'#1a1a22', bgHover:'#24242e', bgActive:'#94a3b822', border:'#24242e', textPrimary:'#d4d4d8', textSecondary:'#71717a', textMuted:'#3f3f46', accent:'#94a3b8', accentHover:'#b0bec5', green:'#86efac', red:'#fca5a5', orange:'#fbbf24', msgSent:'#1e293b', msgReceived:'#1a1a22', radius:'8px', radiusLg:'12px' }},
+  { id: 'synthwave84', name: 'Synthwave 84', vars: { bgPrimary:'#13111c', bgSecondary:'#1a1726', bgTertiary:'#241f34', bgHover:'#322a4a', bgActive:'#f9731622', border:'#322a4a', textPrimary:'#ffe4d0', textSecondary:'#c09880', textMuted:'#604838', accent:'#f97316', accentHover:'#fb923c', green:'#4ade80', red:'#f87171', orange:'#fbbf24', msgSent:'#3d1e06', msgReceived:'#241f34', radius:'4px', radiusLg:'8px' }},
+  { id: 'void', name: 'Void', vars: { bgPrimary:'#000000', bgSecondary:'#060608', bgTertiary:'#0e0e14', bgHover:'#1a1a2e', bgActive:'#00d4ff22', border:'#1a1a2e', textPrimary:'#e0f0ff', textSecondary:'#6090b0', textMuted:'#304060', accent:'#00d4ff', accentHover:'#33ddff', green:'#00ffaa', red:'#ff4060', orange:'#ffaa00', msgSent:'#002a3a', msgReceived:'#0e0e14', radius:'0px', radiusLg:'2px' }},
+  { id: 'emerald', name: 'Emerald', vars: { bgPrimary:'#0a1a14', bgSecondary:'#0f221a', bgTertiary:'#162d24', bgHover:'#1f3d30', bgActive:'#10b98122', border:'#1f3d30', textPrimary:'#d0f0e0', textSecondary:'#6aaa88', textMuted:'#3a6a50', accent:'#10b981', accentHover:'#34d399', green:'#22d97f', red:'#f87171', orange:'#fbbf24', msgSent:'#0a3d28', msgReceived:'#162d24', radius:'8px', radiusLg:'12px' }},
+  { id: 'rust', name: 'Rust', vars: { bgPrimary:'#1a100a', bgSecondary:'#221610', bgTertiary:'#2d1e16', bgHover:'#3d2c20', bgActive:'#e2725b22', border:'#3d2c20', textPrimary:'#f0ddd0', textSecondary:'#b08068', textMuted:'#6a4838', accent:'#e2725b', accentHover:'#ea8f7a', green:'#6bc96b', red:'#ef5350', orange:'#ff9800', msgSent:'#3d1a10', msgReceived:'#2d1e16', radius:'6px', radiusLg:'10px' }},
+  { id: 'sapphire', name: 'Sapphire', vars: { bgPrimary:'#0a0e1e', bgSecondary:'#0f1428', bgTertiary:'#161d36', bgHover:'#1e2a4a', bgActive:'#3b82f622', border:'#1e2a4a', textPrimary:'#d0e0ff', textSecondary:'#7090c0', textMuted:'#3a5080', accent:'#3b82f6', accentHover:'#60a5fa', green:'#4ade80', red:'#f87171', orange:'#fbbf24', msgSent:'#1e3a5f', msgReceived:'#161d36', radius:'8px', radiusLg:'12px' }},
+  { id: 'plasma', name: 'Plasma', vars: { bgPrimary:'#0e0618', bgSecondary:'#140a20', bgTertiary:'#1c1030', bgHover:'#2a1a48', bgActive:'#c026d322', border:'#2a1a48', textPrimary:'#f0d8ff', textSecondary:'#a070c0', textMuted:'#603880', accent:'#c026d3', accentHover:'#d946ef', green:'#4ade80', red:'#f87171', orange:'#fbbf24', msgSent:'#3a1048', msgReceived:'#1c1030', radius:'6px', radiusLg:'10px' }},
+  { id: 'chalk', name: 'Chalk', vars: { bgPrimary:'#fafaf9', bgSecondary:'#f5f5f4', bgTertiary:'#e7e5e4', bgHover:'#d6d3d1', bgActive:'#44403c22', border:'#d6d3d1', textPrimary:'#1c1917', textSecondary:'#57534e', textMuted:'#a8a29e', accent:'#44403c', accentHover:'#57534e', green:'#16a34a', red:'#dc2626', orange:'#d97706', msgSent:'#e7e5e4', msgReceived:'#f5f5f4', radius:'10px', radiusLg:'14px' }},
+  { id: 'infrared', name: 'Infrared', vars: { bgPrimary:'#0a0404', bgSecondary:'#120808', bgTertiary:'#1c0e0e', bgHover:'#2e1616', bgActive:'#dc262622', border:'#2e1616', textPrimary:'#ffd0d0', textSecondary:'#b06060', textMuted:'#603030', accent:'#dc2626', accentHover:'#ef4444', green:'#4ade80', red:'#f87171', orange:'#fbbf24', msgSent:'#3a1010', msgReceived:'#1c0e0e', radius:'4px', radiusLg:'8px' }},
 ];
 
 // ─── Theme Engine ───────────────────────────────────────────────────────────
@@ -419,6 +429,11 @@ function connectWS() {
     });
     refreshAll();
     loadFeed();
+
+    // Show theme spin wheel button after a short delay
+    setTimeout(() => {
+      document.getElementById('theme-wheel-btn').classList.remove('hidden');
+    }, 1500);
   }
 
   state.ws.onclose = (ev) => {
@@ -3913,6 +3928,272 @@ async function mnemonicRecover() {
     showToast('Identity recovered!', `Peer ID: ${result.peerId.slice(0, 16)}...`);
     if (result.bundleFound) showToast('Account bundle found!', 'Contacts and groups restored.');
   } catch (e) { const errEl = document.getElementById('recover-error'); errEl.textContent = e.message; errEl.classList.remove('hidden'); }
+}
+
+// ─── Theme Spin (Live-Cycling) ─────────────────────────────────────────────
+
+const SPIN_BUBBLE_STYLES = ['modern', 'classic', 'minimal', 'rounded'];
+const SPIN_ANIM_TYPES = ['none', 'drift', 'aurora', 'particles', 'mesh', 'fireflies'];
+
+let spinTimer = null;
+let spinRunning = false;
+let spinDelay = 0;
+let spinMultiplier = 1;
+let spinIndex = 0;
+let spinOrder = [];
+let spinSavedPrefs = null;
+let confettiParticles = [];
+let confettiFrame = null;
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function quickApplyColors(preset, bubbleStyle) {
+  const root = document.documentElement;
+  const v = preset.vars;
+  root.style.setProperty('--bg-primary', v.bgPrimary);
+  root.style.setProperty('--bg-secondary', v.bgSecondary);
+  root.style.setProperty('--bg-tertiary', v.bgTertiary);
+  root.style.setProperty('--bg-hover', v.bgHover);
+  root.style.setProperty('--bg-active', v.bgActive);
+  root.style.setProperty('--border', v.border);
+  root.style.setProperty('--text-primary', v.textPrimary);
+  root.style.setProperty('--text-secondary', v.textSecondary);
+  root.style.setProperty('--text-muted', v.textMuted);
+  root.style.setProperty('--accent', v.accent);
+  root.style.setProperty('--accent-hover', v.accentHover);
+  root.style.setProperty('--green', v.green);
+  root.style.setProperty('--red', v.red);
+  root.style.setProperty('--orange', v.orange);
+  root.style.setProperty('--msg-sent', v.msgSent);
+  root.style.setProperty('--msg-received', v.msgReceived);
+  root.style.setProperty('--radius', v.radius);
+  root.style.setProperty('--radius-lg', v.radiusLg);
+
+  document.body.classList.remove('bubble-modern', 'bubble-classic', 'bubble-minimal', 'bubble-rounded');
+  if (bubbleStyle && bubbleStyle !== 'modern') {
+    document.body.classList.add('bubble-' + bubbleStyle);
+  }
+}
+
+function createSpinShapes() {
+  const container = document.getElementById('spin-shapes');
+  container.innerHTML = '';
+  container.classList.remove('hidden');
+  const types = ['circle', 'square', 'diamond', 'ring', 'hex', 'dot'];
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    const type = types[Math.floor(Math.random() * types.length)];
+    const size = 8 + Math.random() * 50;
+    el.className = 'spin-shape spin-shape-' + type;
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.left = Math.random() * 100 + '%';
+    el.style.top = (60 + Math.random() * 50) + '%';
+    el.style.setProperty('--shape-opacity', (0.06 + Math.random() * 0.14).toFixed(2));
+    el.style.setProperty('--drift-y', (-200 - Math.random() * 400) + 'px');
+    el.style.setProperty('--drift-x', (-60 + Math.random() * 120) + 'px');
+    el.style.setProperty('--drift-rot', (90 + Math.random() * 270) + 'deg');
+    el.style.animationDuration = (3 + Math.random() * 5) + 's';
+    el.style.animationDelay = (Math.random() * 4) + 's';
+    container.appendChild(el);
+  }
+}
+
+function removeSpinShapes() {
+  const container = document.getElementById('spin-shapes');
+  container.classList.add('hidden');
+  container.innerHTML = '';
+}
+
+function startThemeSpin() {
+  if (spinRunning) return;
+  spinRunning = true;
+
+  // Save current theme to revert if needed
+  spinSavedPrefs = state.themePrefs ? { ...state.themePrefs } : null;
+
+  // Shuffle theme order
+  spinOrder = shuffleArray([...Array(THEME_PRESETS.length).keys()]);
+
+  // Randomized timing for varied landing
+  spinDelay = 55 + Math.random() * 15;
+  const totalSteps = Math.floor(26 + Math.random() * 10);
+  spinMultiplier = Math.pow(700 / spinDelay, 1 / totalSteps);
+  spinIndex = 0;
+
+  // UI setup
+  document.getElementById('theme-wheel-btn').style.pointerEvents = 'none';
+  document.getElementById('theme-wheel-btn').style.opacity = '0.4';
+  const label = document.getElementById('theme-spin-label');
+  label.classList.remove('hidden', 'landed');
+  document.getElementById('theme-spin-result').classList.add('hidden');
+  document.body.classList.add('theme-spinning');
+  createSpinShapes();
+
+  // Clear leftover confetti
+  if (confettiFrame) { cancelAnimationFrame(confettiFrame); confettiFrame = null; }
+  const cc = document.getElementById('confetti-canvas');
+  cc.classList.add('hidden');
+
+  spinTick();
+}
+
+function spinTick() {
+  const presetIdx = spinOrder[spinIndex % spinOrder.length];
+  const preset = THEME_PRESETS[presetIdx];
+  const bubble = SPIN_BUBBLE_STYLES[Math.floor(Math.random() * SPIN_BUBBLE_STYLES.length)];
+
+  // Apply theme colors + bubble style (lightweight, no DOM-heavy animations)
+  quickApplyColors(preset, bubble);
+
+  // Update label
+  document.getElementById('theme-spin-name').textContent = preset.name;
+
+  spinIndex++;
+  spinDelay *= spinMultiplier;
+
+  if (spinDelay > 700) {
+    // Landed!
+    landThemeSpin(preset);
+    return;
+  }
+
+  spinTimer = setTimeout(spinTick, spinDelay);
+}
+
+function landThemeSpin(preset) {
+  spinRunning = false;
+  document.body.classList.remove('theme-spinning');
+
+  // Pick a random bubble and animation for the final theme
+  const bubble = SPIN_BUBBLE_STYLES[Math.floor(Math.random() * SPIN_BUBBLE_STYLES.length)];
+  const anim = SPIN_ANIM_TYPES[Math.floor(Math.random() * SPIN_ANIM_TYPES.length)];
+
+  const prefs = {
+    presetId: preset.id,
+    bubbleStyle: bubble,
+    animationType: anim !== 'none' ? anim : undefined,
+    animationSpeed: 'normal',
+  };
+
+  // Full apply (including animated background, caching, etc.)
+  state.themePrefs = prefs;
+  applyTheme(prefs);
+  send('set_theme', prefs).catch(() => {});
+
+  // Glow the label
+  const label = document.getElementById('theme-spin-label');
+  label.classList.add('landed');
+  document.getElementById('theme-spin-result').classList.remove('hidden');
+
+  // Show FAB again
+  document.getElementById('theme-wheel-btn').style.pointerEvents = '';
+  document.getElementById('theme-wheel-btn').style.opacity = '';
+
+  // Remove shapes after a beat
+  setTimeout(removeSpinShapes, 600);
+
+  // Confetti
+  const cc = document.getElementById('confetti-canvas');
+  cc.classList.remove('hidden');
+  fireConfetti([
+    preset.vars.accent, preset.vars.accentHover,
+    preset.vars.green, '#FFD700', '#ffffff', preset.vars.orange
+  ]);
+}
+
+function keepSpinTheme() {
+  document.getElementById('theme-spin-label').classList.add('hidden');
+  if (confettiFrame) { cancelAnimationFrame(confettiFrame); confettiFrame = null; }
+  const cc = document.getElementById('confetti-canvas');
+  cc.classList.add('hidden');
+  document.getElementById('theme-wheel-btn').classList.add('used');
+  showToast('Theme saved!', state.themePrefs?.presetId || '', 'success');
+}
+
+function reSpinTheme() {
+  document.getElementById('theme-spin-label').classList.add('hidden');
+  if (confettiFrame) { cancelAnimationFrame(confettiFrame); confettiFrame = null; }
+  const cc = document.getElementById('confetti-canvas');
+  cc.classList.add('hidden');
+  removeSpinShapes();
+
+  // Revert to saved theme before re-spinning
+  if (spinSavedPrefs) {
+    applyTheme(spinSavedPrefs);
+  }
+
+  document.getElementById('theme-wheel-btn').classList.add('used');
+  setTimeout(startThemeSpin, 200);
+}
+
+function fireConfetti(colors) {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  confettiParticles = [];
+  const cx = canvas.width / 2;
+  const cy = 80;
+
+  for (let i = 0; i < 200; i++) {
+    const angle = Math.random() * Math.PI;
+    const speed = 3 + Math.random() * 8;
+    confettiParticles.push({
+      x: cx + (Math.random() - 0.5) * 200,
+      y: cy,
+      vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1),
+      vy: Math.sin(angle) * speed + 1,
+      w: 4 + Math.random() * 7,
+      h: 3 + Math.random() * 5,
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1,
+      life: 0
+    });
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+
+    for (const p of confettiParticles) {
+      if (p.alpha <= 0) continue;
+      alive = true;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.12;
+      p.vx *= 0.99;
+      p.rot += p.rotV;
+      p.life++;
+      if (p.life > 100) p.alpha -= 0.02;
+      if (p.y > canvas.height + 30) p.alpha = 0;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    }
+
+    if (alive) {
+      confettiFrame = requestAnimationFrame(tick);
+    } else {
+      document.getElementById('confetti-canvas').classList.add('hidden');
+    }
+  }
+
+  tick();
 }
 
 // ─── TOFU Key Change Warning ────────────────────────────────────────────────

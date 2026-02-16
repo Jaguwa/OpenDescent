@@ -2645,6 +2645,229 @@ body {
   animation: messageIn 0.25s ease-out backwards;
 }
 
+/* ─── Theme Spin Wheel ─────────────────────────────────────────────────── */
+
+.theme-wheel-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  z-index: 1000;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fab-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, fab-pulse 2.5s ease-in-out 0.5s infinite;
+  transform: scale(0);
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+}
+
+.wheel-fab-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(#ff6b6b, #feca57, #48dbfb, #ff9ff3, #a78bfa, #22cc55, #ff6b6b);
+  animation: fab-ring-spin 3s linear infinite;
+}
+
+.wheel-fab-inner {
+  position: relative;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-secondary, #161b22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary, #e6edf3);
+  transition: background 0.2s;
+}
+
+.theme-wheel-fab:hover .wheel-fab-inner {
+  background: var(--bg-tertiary, #21262d);
+}
+
+.theme-wheel-fab.used {
+  transform: translateX(36px);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s;
+  animation: fab-pulse 2.5s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+.theme-wheel-fab.used:hover {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+@keyframes fab-ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fab-enter {
+  to { transform: scale(1); }
+}
+
+@keyframes fab-pulse {
+  0%, 100% { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4)); }
+  50% { filter: drop-shadow(0 4px 24px rgba(255,107,107,0.45)); }
+}
+
+/* Confetti Canvas (standalone) */
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2010;
+}
+
+.confetti-canvas.hidden { display: none; }
+
+/* Spin Label (top-center pill) */
+.theme-spin-label {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 14px 36px;
+  border-radius: 50px;
+  border: 2px solid var(--accent);
+  text-align: center;
+  animation: spin-label-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.theme-spin-label.hidden { display: none; }
+
+.theme-spin-label.landed {
+  box-shadow: 0 0 30px var(--accent), 0 0 60px var(--accent);
+  animation: spin-label-land 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes spin-label-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.8); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+@keyframes spin-label-land {
+  0% { transform: translateX(-50%) scale(1); }
+  40% { transform: translateX(-50%) scale(1.15); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+.theme-spin-name {
+  font-size: 1.4em;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  text-shadow: 0 0 12px var(--accent);
+  transition: color 0.1s;
+}
+
+.theme-spin-result { margin-top: 10px; }
+.theme-spin-result.hidden { display: none; }
+
+.theme-spin-result-sub {
+  color: #aaa;
+  font-size: 0.85em;
+  margin-bottom: 10px;
+}
+
+.theme-spin-result-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.theme-spin-result-actions button {
+  padding: 6px 20px;
+  font-size: 0.85em;
+  border-radius: 20px;
+}
+
+/* Spin Shapes (floating geometric background) */
+.spin-shapes {
+  position: fixed;
+  inset: 0;
+  z-index: 1999;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.spin-shapes.hidden { display: none; }
+
+.spin-shape {
+  position: absolute;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: shape-drift linear forwards;
+}
+
+.spin-shape-circle { border-radius: 50%; }
+.spin-shape-square { border-radius: 3px; }
+.spin-shape-diamond { transform: rotate(45deg); border-radius: 2px; }
+.spin-shape-ring {
+  border-radius: 50%;
+  border-width: 3px;
+}
+.spin-shape-hex {
+  border: none;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: var(--accent);
+}
+.spin-shape-dot {
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+@keyframes shape-drift {
+  0% { opacity: 0; transform: translateY(0) rotate(0deg) scale(0.5); }
+  10% { opacity: var(--shape-opacity, 0.15); }
+  80% { opacity: var(--shape-opacity, 0.15); }
+  100% { opacity: 0; transform: translateY(var(--drift-y, -300px)) translateX(var(--drift-x, 40px)) rotate(var(--drift-rot, 180deg)) scale(1); }
+}
+
+/* Speed lines overlay during spin */
+.theme-spinning::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1998;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    -60deg,
+    transparent,
+    transparent 12px,
+    rgba(255,255,255,0.025) 12px,
+    rgba(255,255,255,0.025) 13px
+  );
+  animation: speed-lines 0.2s linear infinite;
+}
+
+@keyframes speed-lines {
+  to { background-position: 13px 13px; }
+}
+
+/* Mobile adjustments */
+@media (max-width: 500px) {
+  .theme-wheel-fab { bottom: 16px; right: 16px; width: 50px; height: 50px; }
+  .wheel-fab-inner { width: 40px; height: 40px; }
+  .theme-spin-label { padding: 10px 24px; }
+  .theme-spin-name { font-size: 1.1em; }
+}
+
 /* ─── Responsive ───────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {

@@ -787,6 +787,38 @@
     <div id="toast-container"></div>
   </div>
 
+  <!-- ─── Theme Spin ─────────────────────────────────────────── -->
+  <button id="theme-wheel-btn" class="theme-wheel-fab hidden" onclick="startThemeSpin()" title="Spin for a random theme!">
+    <div class="wheel-fab-ring"></div>
+    <div class="wheel-fab-inner">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="10"/>
+        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="7"/>
+        <line x1="12" y1="17" x2="12" y2="22"/>
+        <line x1="2" y1="12" x2="7" y2="12"/>
+        <line x1="17" y1="12" x2="22" y2="12"/>
+        <line x1="5.64" y1="5.64" x2="8.46" y2="8.46"/>
+        <line x1="15.54" y1="15.54" x2="18.36" y2="18.36"/>
+      </svg>
+    </div>
+  </button>
+
+  <canvas id="confetti-canvas" class="confetti-canvas hidden"></canvas>
+  <div id="spin-shapes" class="spin-shapes hidden"></div>
+  <div id="theme-spin-label" class="theme-spin-label hidden">
+    <div class="theme-spin-name-wrap">
+      <div id="theme-spin-name" class="theme-spin-name"></div>
+    </div>
+    <div id="theme-spin-result" class="theme-spin-result hidden">
+      <div class="theme-spin-result-sub">Your new vibe</div>
+      <div class="theme-spin-result-actions">
+        <button class="btn-primary" onclick="keepSpinTheme()">Keep It</button>
+        <button class="btn-secondary" onclick="reSpinTheme()">Spin Again</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Hidden file inputs -->
   <input type="file" id="file-input" class="hidden">
   <input type="file" id="post-image-input" class="hidden" accept="image/*">
