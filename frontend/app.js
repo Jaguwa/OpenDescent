@@ -23,6 +23,83 @@ function debounce(fn, ms) {
   };
 }
 
+// ─── Sound Effects (Web Audio API) ──────────────────────────────────────────
+
+const sfx = (() => {
+  let ctx = null;
+
+  function getCtx() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function tone(freq, type, startTime, duration, vol, c) {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, startTime);
+    g.gain.setValueAtTime(0, startTime);
+    g.gain.linearRampToValueAtTime(vol, startTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    o.connect(g).connect(c.destination);
+    o.start(startTime);
+    o.stop(startTime + duration);
+  }
+
+  const sounds = {
+    voiceJoin() {
+      const c = getCtx(), t = c.currentTime;
+      tone(440, 'sine', t, 0.15, 0.15, c);
+      tone(587, 'sine', t + 0.1, 0.2, 0.15, c);
+      tone(880, 'sine', t + 0.2, 0.25, 0.1, c);
+    },
+    voiceLeave() {
+      const c = getCtx(), t = c.currentTime;
+      tone(587, 'sine', t, 0.15, 0.12, c);
+      tone(392, 'sine', t + 0.12, 0.25, 0.12, c);
+    },
+    msgSend() {
+      const c = getCtx(), t = c.currentTime;
+      tone(1200, 'sine', t, 0.06, 0.08, c);
+      tone(1800, 'sine', t + 0.02, 0.04, 0.04, c);
+    },
+    msgReceive() {
+      const c = getCtx(), t = c.currentTime;
+      tone(800, 'sine', t, 0.08, 0.12, c);
+      tone(1000, 'sine', t + 0.06, 0.12, 0.1, c);
+    },
+    callIncoming() {
+      const c = getCtx(), t = c.currentTime;
+      for (let i = 0; i < 3; i++) {
+        tone(523, 'sine', t + i * 0.4, 0.15, 0.15, c);
+        tone(659, 'sine', t + i * 0.4 + 0.15, 0.15, 0.15, c);
+      }
+    },
+    callConnect() {
+      const c = getCtx(), t = c.currentTime;
+      tone(523, 'sine', t, 0.1, 0.12, c);
+      tone(659, 'sine', t + 0.1, 0.1, 0.12, c);
+      tone(784, 'sine', t + 0.2, 0.15, 0.1, c);
+    },
+    callEnd() {
+      const c = getCtx(), t = c.currentTime;
+      tone(440, 'sine', t, 0.15, 0.1, c);
+      tone(330, 'sine', t + 0.12, 0.2, 0.1, c);
+    },
+    click() {
+      const c = getCtx(), t = c.currentTime;
+      tone(1000, 'sine', t, 0.03, 0.06, c);
+    },
+  };
+
+  return {
+    play(name) {
+      try { if (sounds[name]) sounds[name](); } catch {}
+    }
+  };
+})();
+
 // ─── State ──────────────────────────────────────────────────────────────────
 
 const state = {
@@ -92,6 +169,11 @@ const state = {
   hubListings: [],
   memberPanelOpen: false,
   _selectingHub: false,  // guard against concurrent selectHub calls
+  // Voice channels
+  voiceChannel: null,      // { hubId, channelId, name } | null
+  voicePeers: {},          // { [peerId]: { pc, remoteStream, name } }
+  voiceMuted: false,
+  voiceLocalStream: null,
 };
 
 // ─── Theme Presets ──────────────────────────────────────────────────────────
@@ -548,6 +630,7 @@ function onIncomingMessage(data) {
   if (state.activeChat && state.activeChat.id === convoId) {
     appendMessage({ from: data.from, body: data.body, timestamp: data.timestamp, status: 'delivered' });
   }
+  sfx.play('msgReceive');
   showToast(`${data.fromName}: ${data.body.slice(0, 50)}`);
   refreshConversations();
 }
@@ -557,6 +640,7 @@ function onIncomingGroupMessage(data) {
   if (state.activeChat && state.activeChat.id === convoId) {
     appendMessage({ from: data.from, fromName: data.fromName, body: data.body, timestamp: data.timestamp, status: 'delivered' });
   }
+  sfx.play('msgReceive');
   showToast(`[${data.groupName}] ${data.fromName}: ${data.body.slice(0, 40)}`);
   refreshConversations();
 }
@@ -676,11 +760,12 @@ function renderMessages(messages) {
       el.innerHTML += renderVoicenoteMessageHTML(isMine, vnMsg, time, senderHTML);
       continue;
     }
+    const msgDeleteBtn = isMine ? `<button class="msg-delete-btn" onclick="deleteMessage('${escapeAttr(m.messageId)}', ${m.timestamp})" title="Delete">&#128465;</button>` : '';
     el.innerHTML += `
         <div class="message ${isMine ? 'sent' : 'received'}">
           ${senderHTML}
           <div class="msg-body">${renderContentWithGifs(m.body)}</div>
-          <div class="msg-time">${time} ${isMine ? `<span class="msg-status">${m.status || ''}</span>` : ''}</div>
+          <div class="msg-time">${time} ${isMine ? `<span class="msg-status">${m.status || ''}</span>` : ''}${msgDeleteBtn}</div>
         </div>`;
   }
   // Draw voicenote waveforms after DOM is ready
@@ -801,6 +886,7 @@ async function sendMessage() {
     try {
       await send('send_hub_message', { hubId: state.activeChannel.hubId, channelId: state.activeChannel.channelId, text });
       appendMessage({ from: state.myPeerId, body: text, timestamp: Date.now(), status: 'sent' });
+      sfx.play('msgSend');
     } catch (e) { showToast('Failed to send message', e.message); }
     return;
   }
@@ -809,6 +895,7 @@ async function sendMessage() {
     if (state.activeChat.type === 'dm') await send('send_message', { to: state.activeChat.peerId, text });
     else await send('send_group_message', { groupId: state.activeChat.groupId, text });
     appendMessage({ from: state.myPeerId, body: text, timestamp: Date.now(), status: 'sent' });
+    sfx.play('msgSend');
     refreshConversations();
   } catch (e) { showToast('Failed to send message', e.message); }
 }
@@ -1590,6 +1677,7 @@ function renderPostCard(post) {
       <button class="post-action-btn" onclick="openComments('${safePostId}')">
         &#128172; ${post.commentCount || 0}
       </button>
+      ${isMe ? `<button class="post-action-btn post-delete-btn" onclick="deletePost('${safePostId}')" title="Delete post">&#128465;</button>` : ''}
     </div>
   </div>`;
 }
@@ -1625,6 +1713,34 @@ async function createPost() {
     loadFeed();
     showToast('Posted!');
   } catch (e) { showToast('Failed to post', e.message); }
+}
+
+async function deletePost(postId) {
+  if (!confirm('Delete this post?')) return;
+  try {
+    await send('delete_post', { postId });
+    showToast('Post deleted');
+    loadFeed();
+  } catch (e) { showToast('Failed to delete', e.message); }
+}
+
+async function deleteMessage(messageId, timestamp) {
+  try {
+    let conversationId;
+    if (state.activeChannel) {
+      conversationId = `hub:${state.activeChannel.hubId}:${state.activeChannel.channelId}`;
+    } else if (state.activeChat) {
+      conversationId = state.activeChat.id;
+    }
+    if (!conversationId) return;
+    await send('delete_message', { conversationId, messageId, timestamp });
+    // Remove from DOM
+    const msgEl = document.querySelector(`.msg-delete-btn[onclick*="${messageId}"]`);
+    if (msgEl) {
+      const bubble = msgEl.closest('.message');
+      if (bubble) { bubble.style.transition = 'opacity 0.2s'; bubble.style.opacity = '0'; setTimeout(() => bubble.remove(), 200); }
+    }
+  } catch (e) { showToast('Failed to delete', e.message); }
 }
 
 async function toggleLike(postId, isLiked) {
@@ -2430,15 +2546,21 @@ function createPeerConnection() {
   };
   state.peerConnection.onconnectionstatechange = () => {
     const cs = state.peerConnection.connectionState;
-    if (cs === 'connected') { state.callState = 'connected'; updateCallStatus('Connected'); startCallTimer(); }
+    if (cs === 'connected') { state.callState = 'connected'; sfx.play('callConnect'); updateCallStatus('Connected'); startCallTimer(); }
     else if (cs === 'disconnected' || cs === 'failed' || cs === 'closed') endCall();
   };
 }
 
 async function onCallSignal(data) {
   const signal = data.signal;
+  // Route voice channel signals
+  if (signal.type && signal.type.startsWith('voice_')) {
+    handleVoiceSignal(data);
+    return;
+  }
   if (signal.type === 'offer') {
     state.callPeerId = data.from; state.callPeerName = data.fromName; state.callType = signal.callType || 'voice'; state.callState = 'incoming'; state.iceCandidateQueue = []; state.pendingOffer = signal;
+    sfx.play('callIncoming');
     showCallUI(); updateCallStatus(`Incoming ${state.callType} call...`);
     document.getElementById('incoming-call-controls').classList.remove('hidden');
     document.getElementById('call-controls').classList.add('hidden');
@@ -2455,6 +2577,7 @@ async function onCallSignal(data) {
 }
 
 function endCall() {
+  sfx.play('callEnd');
   if (state.callPeerId && state.callState) send('call_signal', { peerId: state.callPeerId, signal: { type: 'hangup' } }).catch(() => {});
   if (state.peerConnection) { state.peerConnection.close(); state.peerConnection = null; }
   if (state.localStream) { state.localStream.getTracks().forEach(t => t.stop()); state.localStream = null; }
@@ -3314,6 +3437,8 @@ function renderHubStrip() {
 async function selectHub(hubId) {
   if (state._selectingHub) return; // Prevent concurrent calls
   state._selectingHub = true;
+  // Leave voice channel if switching hubs
+  if (state.voiceChannel && state.voiceChannel.hubId !== hubId) leaveVoiceChannel();
   try {
     const data = await send('get_hub', { hubId });
     state.activeHub = data.hub;
@@ -3353,6 +3478,9 @@ async function selectHub(hubId) {
 }
 
 function selectDMMode() {
+  // Leave voice channel if active
+  if (state.voiceChannel) leaveVoiceChannel();
+
   state.activeHub = null;
   state.activeChannel = null;
   state.hubCategories = [];
@@ -3390,10 +3518,37 @@ function renderHubChannels() {
       const active = state.activeChannel && state.activeChannel.channelId === ch.channelId ? ' active' : '';
       const prefix = ch.type === 'text' ? '#' : '&#128266;';
       html += `<div class="channel-item${active}" onclick="openChannel('${escapeAttr(state.activeHub.hubId)}','${escapeAttr(ch.channelId)}','${escapeAttr(ch.name)}')">${prefix} ${escapeAttr(ch.name)}</div>`;
+
+      // Show connected voice users below voice channels
+      if (ch.type === 'voice' && state.voiceChannel && state.voiceChannel.channelId === ch.channelId) {
+        html += '<div class="voice-users-inline">';
+        // Self
+        html += `<div class="voice-user-inline">
+          <canvas class="voice-user-avatar" width="20" height="20" data-peerid="${escapeAttr(state.myPeerId)}"></canvas>
+          <span>${escapeHtml(state.myName || 'You')}</span>
+          ${state.voiceMuted ? '<span class="voice-muted-icon">&#128263;</span>' : ''}
+        </div>`;
+        // Other peers
+        for (const [peerId, peer] of Object.entries(state.voicePeers)) {
+          html += `<div class="voice-user-inline">
+            <canvas class="voice-user-avatar" width="20" height="20" data-peerid="${escapeAttr(peerId)}"></canvas>
+            <span>${escapeHtml(peer.name || peerId.slice(0, 12))}</span>
+          </div>`;
+        }
+        html += '</div>';
+      }
     }
     html += '</div></div>';
   }
   el.innerHTML = html;
+
+  // Draw inline voice avatars
+  requestAnimationFrame(() => {
+    el.querySelectorAll('canvas.voice-user-avatar').forEach(c => {
+      const pid = c.dataset.peerid;
+      if (pid) drawAvatar(c, pid);
+    });
+  });
 }
 
 function toggleCategory(el) {
@@ -3401,20 +3556,28 @@ function toggleCategory(el) {
 }
 
 async function openChannel(hubId, channelId, name) {
+  const channelObj = state.hubChannels.find(c => c.channelId === channelId);
+
+  // Voice channel: join voice mesh, but also open text chat for it
+  if (channelObj && channelObj.type === 'voice') {
+    joinVoiceChannel(hubId, channelId, name);
+    // Don't return — fall through to open text chat too
+  } else {
+    // Switching to a text channel does NOT leave voice — voice persists across channel switches
+  }
+
   state.activeChannel = { hubId, channelId, name };
   state.activeChat = null;
+
   showView('chat');
-  document.getElementById('chat-peer-name').textContent = `# ${name}`;
+  const prefix = channelObj && channelObj.type === 'voice' ? '🔊' : '#';
+  document.getElementById('chat-peer-name').textContent = `${prefix} ${name}`;
   document.getElementById('chat-peer-name').onclick = null;
   document.getElementById('chat-peer-status').textContent = '';
   document.getElementById('chat-actions').style.display = 'none';
 
-  // Update channel highlight (lightweight — just toggle active class)
-  document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-  const allChannels = document.querySelectorAll('.channel-item');
-  for (const el of allChannels) {
-    if (el.textContent.includes(name)) el.classList.add('active');
-  }
+  // Update channel highlight
+  renderHubChannels();
 
   try {
     const messages = await send('get_hub_history', { hubId, channelId, limit: 100 });
@@ -4331,3 +4494,244 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 10000);
 });
+
+// ─── Voice Channel (Hub Voice Mesh) ──────────────────────────────────────────
+
+async function joinVoiceChannel(hubId, channelId, name) {
+  // Already in this voice channel? No-op
+  if (state.voiceChannel && state.voiceChannel.channelId === channelId) return;
+
+  // Leave any current voice channel
+  if (state.voiceChannel) leaveVoiceChannel();
+
+  // End any active DM call
+  if (state.callState) endCall();
+
+  try {
+    state.voiceLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    showToast('Microphone access denied', e.message);
+    return;
+  }
+
+  state.voiceChannel = { hubId, channelId, name };
+  state.voicePeers = {};
+  state.voiceMuted = false;
+  sfx.play('voiceJoin');
+
+  // Show voice status bar at bottom of sidebar + re-render channel list with users
+  showVoiceStatusBar();
+  renderHubChannels();
+
+  // Notify hub members we joined
+  const members = state.hubMembers || [];
+  for (const m of members) {
+    if (m.peerId === state.myPeerId) continue;
+    send('call_signal', {
+      peerId: m.peerId,
+      signal: { type: 'voice_join', hubId, channelId, name, fromName: state.myName },
+    }).catch(() => {});
+  }
+}
+
+function leaveVoiceChannel() {
+  if (!state.voiceChannel) return;
+  sfx.play('voiceLeave');
+
+  // Notify peers we're leaving
+  for (const peerId of Object.keys(state.voicePeers)) {
+    send('call_signal', {
+      peerId,
+      signal: { type: 'voice_leave', hubId: state.voiceChannel.hubId, channelId: state.voiceChannel.channelId },
+    }).catch(() => {});
+  }
+
+  // Close all peer connections
+  for (const [, peer] of Object.entries(state.voicePeers)) {
+    if (peer.pc) peer.pc.close();
+  }
+
+  // Stop local stream
+  if (state.voiceLocalStream) {
+    state.voiceLocalStream.getTracks().forEach(t => t.stop());
+    state.voiceLocalStream = null;
+  }
+
+  state.voiceChannel = null;
+  state.voicePeers = {};
+  state.voiceMuted = false;
+
+  // Hide voice status bar + re-render channels
+  hideVoiceStatusBar();
+  renderHubChannels();
+}
+
+function showVoiceStatusBar() {
+  const bar = document.getElementById('voice-status-bar');
+  bar.classList.remove('hidden');
+  document.getElementById('voice-bar-channel-name').textContent = state.voiceChannel.name;
+  updateVoiceMuteBtn();
+}
+
+function hideVoiceStatusBar() {
+  document.getElementById('voice-status-bar').classList.add('hidden');
+}
+
+function updateVoiceMuteBtn() {
+  const btn = document.getElementById('voice-mute-btn');
+  if (!btn) return;
+  if (state.voiceMuted) {
+    btn.innerHTML = '&#128263;';
+    btn.classList.add('active');
+    btn.title = 'Unmute';
+  } else {
+    btn.innerHTML = '&#127908;';
+    btn.classList.remove('active');
+    btn.title = 'Mute';
+  }
+}
+
+function toggleVoiceMute() {
+  if (!state.voiceLocalStream) return;
+  const track = state.voiceLocalStream.getAudioTracks()[0];
+  if (track) {
+    sfx.play('click');
+    state.voiceMuted = !state.voiceMuted;
+    track.enabled = !state.voiceMuted;
+    updateVoiceMuteBtn();
+    renderHubChannels();
+  }
+}
+
+// Create a WebRTC peer connection for a voice channel peer
+function createVoicePeerConnection(peerId, peerName) {
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      send('call_signal', {
+        peerId,
+        signal: {
+          type: 'voice_ice',
+          candidate: event.candidate,
+          hubId: state.voiceChannel.hubId,
+          channelId: state.voiceChannel.channelId,
+        },
+      }).catch(() => {});
+    }
+  };
+
+  pc.ontrack = (event) => {
+    if (state.voicePeers[peerId]) {
+      state.voicePeers[peerId].remoteStream = event.streams[0];
+      // Play audio
+      let audio = document.getElementById(`voice-audio-${peerId}`);
+      if (!audio) {
+        audio = document.createElement('audio');
+        audio.id = `voice-audio-${peerId}`;
+        audio.autoplay = true;
+        document.body.appendChild(audio);
+      }
+      audio.srcObject = event.streams[0];
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    const cs = pc.connectionState;
+    if (cs === 'disconnected' || cs === 'failed' || cs === 'closed') {
+      removeVoicePeer(peerId);
+    }
+  };
+
+  // Add local tracks
+  if (state.voiceLocalStream) {
+    state.voiceLocalStream.getTracks().forEach(track => pc.addTrack(track, state.voiceLocalStream));
+  }
+
+  state.voicePeers[peerId] = { pc, remoteStream: null, name: peerName || peerId.slice(0, 12) };
+  return pc;
+}
+
+function removeVoicePeer(peerId) {
+  const peer = state.voicePeers[peerId];
+  if (peer) {
+    sfx.play('voiceLeave');
+    if (peer.pc) peer.pc.close();
+    const audio = document.getElementById(`voice-audio-${peerId}`);
+    if (audio) audio.remove();
+    delete state.voicePeers[peerId];
+    renderHubChannels();
+  }
+}
+
+// Handle voice-related signals in the existing onCallSignal flow
+function handleVoiceSignal(data) {
+  const signal = data.signal;
+  const fromId = data.from;
+  const fromName = data.fromName || fromId?.slice(0, 12);
+
+  if (signal.type === 'voice_join') {
+    // Someone joined — if we're in the same channel, create offer
+    if (!state.voiceChannel) return;
+    if (signal.hubId !== state.voiceChannel.hubId || signal.channelId !== state.voiceChannel.channelId) return;
+    if (state.voicePeers[fromId]) return; // Already connected
+    sfx.play('voiceJoin');
+
+    (async () => {
+      const pc = createVoicePeerConnection(fromId, signal.fromName || fromName);
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await send('call_signal', {
+        peerId: fromId,
+        signal: {
+          type: 'voice_offer',
+          sdp: offer.sdp,
+          hubId: state.voiceChannel.hubId,
+          channelId: state.voiceChannel.channelId,
+          fromName: state.myName,
+        },
+      });
+      renderHubChannels();
+    })().catch(e => console.error('[Voice] Failed to create offer:', e));
+
+  } else if (signal.type === 'voice_offer') {
+    // Received an offer — if we're in the same channel, create answer
+    if (!state.voiceChannel) return;
+    if (signal.hubId !== state.voiceChannel.hubId || signal.channelId !== state.voiceChannel.channelId) return;
+
+    (async () => {
+      const pc = createVoicePeerConnection(fromId, signal.fromName || fromName);
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await send('call_signal', {
+        peerId: fromId,
+        signal: {
+          type: 'voice_answer',
+          sdp: answer.sdp,
+          hubId: state.voiceChannel.hubId,
+          channelId: state.voiceChannel.channelId,
+        },
+      });
+      renderHubChannels();
+    })().catch(e => console.error('[Voice] Failed to create answer:', e));
+
+  } else if (signal.type === 'voice_answer') {
+    // Set remote description on existing connection
+    if (!state.voicePeers[fromId]) return;
+    const pc = state.voicePeers[fromId].pc;
+    pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }))
+      .catch(e => console.error('[Voice] Failed to set answer:', e));
+
+  } else if (signal.type === 'voice_ice') {
+    // Add ICE candidate
+    if (!state.voicePeers[fromId]) return;
+    const pc = state.voicePeers[fromId].pc;
+    if (pc.remoteDescription) {
+      pc.addIceCandidate(new RTCIceCandidate(signal.candidate)).catch(() => {});
+    }
+
+  } else if (signal.type === 'voice_leave') {
+    removeVoicePeer(fromId);
+  }
+}

@@ -1978,7 +1978,7 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
 }
 #hub-sidebar-header {
   display: flex;
@@ -1988,6 +1988,10 @@ body {
   border-bottom: 1px solid var(--border);
   font-weight: 700;
   font-size: 15px;
+}
+#hub-channels-list {
+  flex: 1;
+  overflow-y: auto;
 }
 .hub-category { margin-bottom: 4px; }
 .category-header {
@@ -2866,6 +2870,144 @@ body {
   .wheel-fab-inner { width: 40px; height: 40px; }
   .theme-spin-label { padding: 10px 24px; }
   .theme-spin-name { font-size: 1.1em; }
+}
+
+/* ─── Delete Buttons ───────────────────────────────────────────────────── */
+
+.post-delete-btn {
+  margin-left: auto;
+  color: var(--text-muted) !important;
+}
+.post-delete-btn:hover {
+  color: var(--red) !important;
+}
+
+.msg-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8em;
+  padding: 0 4px;
+  margin-left: 6px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.message:hover .msg-delete-btn {
+  opacity: 1;
+}
+.msg-delete-btn:hover {
+  color: var(--red);
+}
+
+/* ─── Voice Channel (Sidebar Inline + Status Bar) ─────────────────────── */
+
+.voice-users-inline {
+  padding: 2px 0 4px 24px;
+}
+
+.voice-user-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: 0.82em;
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+}
+
+.voice-user-inline:hover {
+  background: var(--bg-hover);
+}
+
+.voice-user-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.voice-muted-icon {
+  color: var(--red);
+  font-size: 0.8em;
+  margin-left: auto;
+}
+
+/* Voice Status Bar (bottom of hub sidebar) */
+#voice-status-bar {
+  margin-top: auto;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.voice-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.voice-bar-icon {
+  font-size: 1em;
+  flex-shrink: 0;
+}
+
+#voice-bar-channel-name {
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.voice-bar-connected {
+  font-size: 0.72em;
+  color: var(--green);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.voice-bar-controls {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.voice-bar-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9em;
+  transition: background 0.15s;
+}
+
+.voice-bar-btn:hover {
+  background: var(--bg-hover);
+}
+
+.voice-bar-btn.active {
+  color: var(--red);
+}
+
+.voice-bar-leave {
+  color: var(--red);
+}
+
+.voice-bar-leave:hover {
+  background: var(--red);
+  color: #fff;
 }
 
 /* ─── Responsive ───────────────────────────────────────────────────────── */

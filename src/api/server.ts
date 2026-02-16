@@ -783,6 +783,26 @@ export class APIServer {
           return this.ok(id, comment);
         }
 
+        case 'delete_post': {
+          if (!this.deps.posts) return this.err(id, 'Posts not available');
+          if (!data.postId) return this.err(id, 'Missing postId');
+          await this.deps.posts.deletePost(data.postId);
+          return this.ok(id, { deleted: true });
+        }
+
+        case 'delete_message': {
+          if (!data.conversationId && !data.peerId) return this.err(id, 'Missing conversationId or peerId');
+          if (!data.timestamp || !data.messageId) return this.err(id, 'Missing timestamp or messageId');
+          let convoId = data.conversationId;
+          if (!convoId && data.peerId) {
+            // Build DM conversation ID (sorted peer IDs)
+            const myId = this.deps.node.getPeerId();
+            convoId = [myId, data.peerId].sort().join(':');
+          }
+          await this.deps.store.deleteHistoryMessage(convoId, data.timestamp, data.messageId);
+          return this.ok(id, { deleted: true });
+        }
+
         case 'get_comments': {
           const comments = await this.deps.store.getPostComments(data.postId);
           return this.ok(id, comments);

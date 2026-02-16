@@ -96,6 +96,17 @@
           <button id="hub-settings-btn" class="icon-btn-sm" onclick="showHubSettingsModal()" title="Hub Settings">&#9881;</button>
         </div>
         <div id="hub-channels-list"></div>
+        <div id="voice-status-bar" class="hidden">
+          <div class="voice-bar-info">
+            <span class="voice-bar-icon">&#128266;</span>
+            <span id="voice-bar-channel-name">Voice</span>
+            <span class="voice-bar-connected">Connected</span>
+          </div>
+          <div class="voice-bar-controls">
+            <button id="voice-mute-btn" class="voice-bar-btn" onclick="toggleVoiceMute()" title="Mute">&#127908;</button>
+            <button class="voice-bar-btn voice-bar-leave" onclick="leaveVoiceChannel()" title="Leave Voice">&#128277;</button>
+          </div>
+        </div>
       </div>
     </aside>
 

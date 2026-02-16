@@ -653,6 +653,31 @@ export class LocalStore {
     return posts;
   }
 
+  async deletePost(postId: string): Promise<void> {
+    // Delete post record
+    try { await this.db.del(NS.POST + postId); } catch {}
+    // Delete timestamp index entries
+    for await (const [key, value] of this.db.iterator({ gte: NS.POST_IDX, lt: NS.POST_IDX + '\xFF' })) {
+      if (value === postId) { await this.db.del(key); break; }
+    }
+    // Delete all reactions for this post
+    const reactionPrefix = NS.REACTION + postId + ':';
+    for await (const key of this.db.keys({ gte: reactionPrefix, lt: reactionPrefix + '\xFF' })) {
+      await this.db.del(key);
+    }
+    // Delete all comments for this post
+    const commentPrefix = NS.COMMENT + postId + ':';
+    for await (const key of this.db.keys({ gte: commentPrefix, lt: commentPrefix + '\xFF' })) {
+      await this.db.del(key);
+    }
+  }
+
+  async deleteHistoryMessage(conversationId: string, timestamp: number, messageId: string): Promise<void> {
+    const tsKey = timestamp.toString().padStart(15, '0');
+    const key = NS.HISTORY + conversationId + ':' + tsKey + ':' + messageId;
+    try { await this.db.del(key); } catch {}
+  }
+
   async getPostsByAuthor(authorId: PeerId, limit: number = 50): Promise<Post[]> {
     const posts: Post[] = [];
     for await (const [, value] of this.db.iterator({ gte: NS.POST, lt: NS.POST + '\xFF' })) {

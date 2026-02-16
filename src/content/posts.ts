@@ -80,6 +80,20 @@ export class PostService {
     return post;
   }
 
+  async deletePost(postId: string): Promise<void> {
+    const post = await this.store.getPost(postId);
+    if (!post) throw new Error('Post not found');
+    if (post.authorId !== this.node.getPeerId()) throw new Error('Cannot delete another user\'s post');
+    await this.store.deletePost(postId);
+    // Broadcast deletion to peers
+    const data = new TextEncoder().encode(JSON.stringify({
+      type: 'delete',
+      postId,
+      authorId: this.node.getPeerId(),
+    }));
+    await this.node.broadcastToAll(PROTOCOLS.POST_INTERACTION, data);
+  }
+
   private async broadcastPost(post: Post): Promise<void> {
     const data = new TextEncoder().encode(JSON.stringify(post));
     await this.node.broadcastToAll(PROTOCOLS.POST_BROADCAST, data);
@@ -262,6 +276,13 @@ export class PostService {
           await this.store.storePost(post);
         }
         for (const cb of this.onInteractionCallbacks) cb({ type: 'unlike', postId: msg.postId, authorId: msg.authorId });
+      } else if (msg.type === 'delete') {
+        // Verify the sender is the actual author of the post
+        const post = await this.store.getPost(msg.postId);
+        if (post && post.authorId === msg.authorId) {
+          await this.store.deletePost(msg.postId);
+          for (const cb of this.onInteractionCallbacks) cb({ type: 'delete', postId: msg.postId, authorId: msg.authorId });
+        }
       } else if (msg.type === 'comment') {
         const comment: PostComment = msg.comment;
 
