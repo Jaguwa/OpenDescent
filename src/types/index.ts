@@ -116,6 +116,12 @@ export interface MessageEnvelope {
   ttl: number;
   /** Content type hint (not encrypted, helps with prioritization) */
   contentTypeHint: ContentType;
+  /**
+   * Truncated SHA-256 of sender's public key (first 8 bytes, hex).
+   * Relays use this to look up the sender for signature verification
+   * without the full sender PeerId being visible in plaintext on the wire.
+   */
+  senderKeyFingerprint?: string;
 }
 
 /** Decrypted message content */
@@ -238,6 +244,7 @@ export interface NodeConfig {
   maxShards: number;
   enableRelay: boolean;
   messageRetentionSeconds: number;
+  disableMdns?: boolean;
 }
 
 export const DEFAULT_CONFIG: Partial<NodeConfig> = {
@@ -665,6 +672,60 @@ export interface HubListing {
   signature: string;
   hopCount: number;
   maxHops: number;
+}
+
+// ─── Onion Transport ─────────────────────────────────────────────────────────
+
+/** State of an onion circuit */
+export type OnionCircuitState = 'building' | 'ready' | 'destroyed';
+
+/** A single hop in an onion circuit */
+export interface OnionHop {
+  /** DecentraNet PeerId of this relay */
+  peerId: PeerId;
+  /** X25519 encryption public key of this relay */
+  encryptionPublicKey: Uint8Array;
+}
+
+/** An established onion circuit through multiple relays */
+export interface OnionCircuit {
+  /** Unique circuit identifier */
+  circuitId: string;
+  /** Ordered list of relay hops (entry, middle, exit) */
+  hops: OnionHop[];
+  /** Current circuit state */
+  state: OnionCircuitState;
+  /** When this circuit was created (ms since epoch) */
+  createdAt: number;
+  /** When this circuit was last used (ms since epoch) */
+  lastUsedAt: number;
+  /** Number of messages sent through this circuit */
+  messageCount: number;
+}
+
+/** Cell types for the onion relay protocol */
+export type OnionCellType = 'relay' | 'heartbeat' | 'heartbeat_ack' | 'destroy';
+
+/** A fixed-size onion cell sent between relays */
+export interface OnionCell {
+  /** Circuit identifier */
+  circuitId: string;
+  /** Cell type */
+  cellType: OnionCellType;
+  /** Encrypted payload (fixed size after padding) */
+  payload: string;
+}
+
+/** The decrypted content of a relay onion cell at each hop */
+export interface OnionRelayCell {
+  /** DecentraNet PeerId of next hop, or 'exit' for the final destination */
+  nextHop: string;
+  /** The destination peer (only meaningful at exit) */
+  destination?: string;
+  /** The protocol to deliver on (only meaningful at exit) */
+  protocol?: string;
+  /** The inner encrypted payload (or cleartext at exit) */
+  innerPayload: string;
 }
 
 // ─── Account Recovery ────────────────────────────────────────────────────────

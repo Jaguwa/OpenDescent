@@ -22,7 +22,7 @@
 
 import * as crypto from 'crypto';
 import type { CallSignal, CallType, CallState, Identity, PeerId } from '../types/index.js';
-import { sign } from '../crypto/identity.js';
+import { sign, verify } from '../crypto/identity.js';
 import { DecentraNode, PROTOCOLS } from '../network/node.js';
 
 const STUN_SERVERS = [
@@ -196,6 +196,27 @@ export class CallManager {
 
     if (!signalData || !signalData.type) {
       console.warn('[Call] Ignoring signal with missing signalData');
+      return;
+    }
+
+    // Verify sender signature before processing
+    const senderProfile = this.node.getKnownPeer(signal.from);
+    if (!senderProfile) {
+      console.warn(`[Call] Dropping signal from unknown sender ${signal.from}`);
+      return;
+    }
+    const sigBytes = typeof signal.signature === 'string'
+      ? new Uint8Array(Buffer.from(signal.signature as string, 'base64'))
+      : signal.signature;
+    if (!sigBytes || sigBytes.length === 0) {
+      console.warn(`[Call] Dropping unsigned signal from ${signal.from}`);
+      return;
+    }
+    const dataToVerify = new TextEncoder().encode(
+      JSON.stringify({ ...signal, signature: undefined })
+    );
+    if (!verify(dataToVerify, sigBytes, senderProfile.publicKey)) {
+      console.warn(`[Call] Invalid signature on call signal from ${signal.from} — dropping`);
       return;
     }
 

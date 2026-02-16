@@ -3024,10 +3024,14 @@ async function submitDeadDrop() {
   powStatus.classList.remove('hidden');
 
   try {
-    await send('create_dead_drop', { content: text });
+    const result = await send('create_dead_drop', { content: text });
     input.value = '';
     document.getElementById('deaddrop-char-counter').textContent = '0/1000';
-    showToast('Drop submitted', 'Your anonymous message is being routed...');
+    if (result && result.warning) {
+      showToast('Anonymity Warning', result.warning);
+    } else {
+      showToast('Drop submitted', 'Your anonymous message is being routed...');
+    }
   } catch (e) {
     showToast('Drop failed', e.message || 'Unknown error');
   } finally {

@@ -151,9 +151,44 @@ export class MessagingService {
   }
 
   private async storeAndForward(recipientId: PeerId, envelope: MessageEnvelope): Promise<void> {
-    await this.store.queuePendingMessage(recipientId, envelope);
+    // Sealed sender: encrypt the entire envelope for the recipient so relay peers
+    // see NOTHING — no from, no to, no contentTypeHint, no fingerprint. Just an opaque blob.
+    const recipientProfile = await this.store.getPeerProfile(recipientId)
+      || this.node.getKnownPeer(recipientId);
 
-    // Forward to nearby connected peers for redundancy
+    if (!recipientProfile) {
+      // Can't seal without recipient key — fall back to legacy (rare edge case)
+      await this.store.queuePendingMessage(recipientId, envelope);
+      const connectedPeers = this.node.getConnectedPeers();
+      let forwarded = 0;
+      for (const peer of connectedPeers) {
+        if (!peer.decentraId || peer.decentraId === recipientId) continue;
+        if (forwarded >= FORWARD_REDUNDANCY) break;
+        const forwardData = new TextEncoder().encode(JSON.stringify({
+          type: 'store_forward',
+          recipientId,
+          envelope: serializeEnvelopeForWire(envelope),
+        }));
+        const response = await this.node.sendToPeer(peer.decentraId, PROTOCOLS.MESSAGE, forwardData);
+        if (response) forwarded++;
+      }
+      return;
+    }
+
+    // Seal: encrypt the entire serialized envelope for the recipient
+    const envelopeJson = JSON.stringify(serializeEnvelopeForWire(envelope));
+    const sealed = encryptForPeer(new TextEncoder().encode(envelopeJson), recipientProfile.encryptionPublicKey);
+    const sealedStr = JSON.stringify({
+      ciphertext: Buffer.from(sealed.ciphertext).toString('base64'),
+      nonce: Buffer.from(sealed.nonce).toString('base64'),
+      ephemeralPublicKey: Buffer.from(sealed.ephemeralPublicKey).toString('base64'),
+      authTag: Buffer.from(sealed.authTag).toString('base64'),
+    });
+
+    // Store locally as sealed
+    await this.store.queueSealedMessage(recipientId, envelope.messageId, sealedStr);
+
+    // Forward sealed blob to relay peers — they see only recipientId + opaque blob
     const connectedPeers = this.node.getConnectedPeers();
     let forwarded = 0;
 
@@ -162,9 +197,10 @@ export class MessagingService {
       if (forwarded >= FORWARD_REDUNDANCY) break;
 
       const forwardData = new TextEncoder().encode(JSON.stringify({
-        type: 'store_forward',
+        type: 'store_forward_sealed',
         recipientId,
-        envelope: serializeEnvelopeForWire(envelope),
+        messageId: envelope.messageId,
+        sealed: sealedStr,
       }));
 
       const response = await this.node.sendToPeer(peer.decentraId, PROTOCOLS.MESSAGE, forwardData);
@@ -172,7 +208,7 @@ export class MessagingService {
     }
 
     if (forwarded > 0) {
-      console.log(`[Messaging] Forwarded to ${forwarded} peers for store-and-forward`);
+      console.log(`[Messaging] Forwarded sealed message to ${forwarded} peers for store-and-forward`);
     }
   }
 
@@ -187,6 +223,10 @@ export class MessagingService {
     try {
       const raw = JSON.parse(new TextDecoder().decode(data));
 
+      if (raw.type === 'store_forward_sealed') {
+        await this.handleSealedStoreForward(raw);
+        return;
+      }
       if (raw.type === 'store_forward') {
         await this.handleStoreForwardRequest(raw);
         return;
@@ -204,25 +244,35 @@ export class MessagingService {
         return;
       }
 
-      // Verify sender signature
+      // Verify sender signature — reject messages from unknown or unverifiable senders
       const senderProfile = this.node.getKnownPeer(envelope.from);
-      if (senderProfile && envelope.signature.length > 0) {
-        const dataToVerify = new TextEncoder().encode(JSON.stringify({
-          messageId: envelope.messageId,
-          from: envelope.from,
-          to: envelope.to,
-          encryptedPayload: Buffer.from(envelope.encryptedPayload).toString('base64'),
-          nonce: Buffer.from(envelope.nonce).toString('base64'),
-          ephemeralPublicKey: Buffer.from(envelope.ephemeralPublicKey).toString('base64'),
-          authTag: Buffer.from(envelope.authTag).toString('base64'),
-          timestamp: envelope.timestamp,
-          ttl: envelope.ttl,
-          contentTypeHint: envelope.contentTypeHint,
-        }));
-        if (!verify(dataToVerify, envelope.signature, senderProfile.publicKey)) {
-          console.warn(`[Messaging] Invalid signature from ${envelope.from} — dropping message`);
-          return;
-        }
+      if (!senderProfile) {
+        console.warn(`[Messaging] Dropping message from unknown sender ${envelope.from} — PEER_EXCHANGE required first`);
+        return;
+      }
+      if (envelope.signature.length === 0) {
+        console.warn(`[Messaging] Dropping unsigned message from ${envelope.from}`);
+        return;
+      }
+      const verifyObj: Record<string, unknown> = {
+        messageId: envelope.messageId,
+        from: envelope.from,
+        to: envelope.to,
+        encryptedPayload: Buffer.from(envelope.encryptedPayload).toString('base64'),
+        nonce: Buffer.from(envelope.nonce).toString('base64'),
+        ephemeralPublicKey: Buffer.from(envelope.ephemeralPublicKey).toString('base64'),
+        authTag: Buffer.from(envelope.authTag).toString('base64'),
+        timestamp: envelope.timestamp,
+        ttl: envelope.ttl,
+        contentTypeHint: envelope.contentTypeHint,
+      };
+      if (envelope.senderKeyFingerprint) {
+        verifyObj.senderKeyFingerprint = envelope.senderKeyFingerprint;
+      }
+      const dataToVerify = new TextEncoder().encode(JSON.stringify(verifyObj));
+      if (!verify(dataToVerify, envelope.signature, senderProfile.publicKey)) {
+        console.warn(`[Messaging] Invalid signature from ${envelope.from} — dropping message`);
+        return;
       }
 
       await this.store.storeMessage(envelope);
@@ -267,42 +317,113 @@ export class MessagingService {
     if (!recipientId || typeof recipientId !== 'string') return;
     const envelope = deserializeEnvelopeFromWire(raw.envelope);
 
-    // Verify envelope signature before storing
-    const senderProfile = this.node.getKnownPeer(envelope.from);
-    if (senderProfile && envelope.signature.length > 0) {
-      const dataToVerify = new TextEncoder().encode(JSON.stringify({
-        messageId: envelope.messageId,
-        from: envelope.from,
-        to: envelope.to,
-        encryptedPayload: Buffer.from(envelope.encryptedPayload).toString('base64'),
-        nonce: Buffer.from(envelope.nonce).toString('base64'),
-        ephemeralPublicKey: Buffer.from(envelope.ephemeralPublicKey).toString('base64'),
-        authTag: Buffer.from(envelope.authTag).toString('base64'),
-        timestamp: envelope.timestamp,
-        ttl: envelope.ttl,
-        contentTypeHint: envelope.contentTypeHint,
-      }));
-      if (!verify(dataToVerify, envelope.signature, senderProfile.publicKey)) {
-        console.warn(`[Messaging] Rejected store-forward: invalid signature from ${envelope.from}`);
-        return;
+    // Verify envelope signature before storing — reject unverifiable senders
+    // When `from` is redacted, use the senderKeyFingerprint to find the sender
+    let senderProfile = this.node.getKnownPeer(envelope.from);
+    if (!senderProfile && envelope.senderKeyFingerprint && envelope.from === 'redacted') {
+      // Look up sender by fingerprint match against known peers
+      for (const peer of this.node.getAllKnownPeers()) {
+        const fp = crypto.createHash('sha256').update(peer.publicKey).digest('hex').slice(0, 16);
+        if (fp === envelope.senderKeyFingerprint) {
+          senderProfile = peer;
+          break;
+        }
       }
     }
+    if (!senderProfile || envelope.signature.length === 0) {
+      console.warn(`[Messaging] Rejected store-forward: unverifiable sender (fingerprint: ${envelope.senderKeyFingerprint || 'none'})`);
+      return;
+    }
+    // Reconstruct the original signed data (with real sender PeerId, not 'redacted')
+    const dataToVerify = new TextEncoder().encode(JSON.stringify({
+      messageId: envelope.messageId,
+      from: senderProfile.peerId,
+      to: envelope.to,
+      encryptedPayload: Buffer.from(envelope.encryptedPayload).toString('base64'),
+      nonce: Buffer.from(envelope.nonce).toString('base64'),
+      ephemeralPublicKey: Buffer.from(envelope.ephemeralPublicKey).toString('base64'),
+      authTag: Buffer.from(envelope.authTag).toString('base64'),
+      timestamp: envelope.timestamp,
+      ttl: envelope.ttl,
+      contentTypeHint: envelope.contentTypeHint,
+      senderKeyFingerprint: envelope.senderKeyFingerprint,
+    }));
+    if (!verify(dataToVerify, envelope.signature, senderProfile.publicKey)) {
+      console.warn(`[Messaging] Rejected store-forward: invalid signature (fingerprint: ${envelope.senderKeyFingerprint})`);
+      return;
+    }
+    // Restore the real sender PeerId before storing for later delivery
+    envelope.from = senderProfile.peerId;
 
     await this.store.queuePendingMessage(recipientId, envelope);
     console.log(`[Messaging] Holding message ${envelope.messageId} for ${recipientId}`);
   }
 
+  /**
+   * Handle sealed store-forward: relay stores an opaque encrypted blob.
+   * The relay cannot see sender, recipient metadata, content type — only the routing recipientId.
+   */
+  private async handleSealedStoreForward(raw: any): Promise<void> {
+    const recipientId = raw.recipientId;
+    const messageId = raw.messageId;
+    const sealed = raw.sealed;
+    if (!recipientId || !messageId || !sealed) return;
+
+    // If WE are the recipient, unseal and process directly
+    if (recipientId === this.node.getPeerId()) {
+      try {
+        const sealedObj = typeof sealed === 'string' ? JSON.parse(sealed) : sealed;
+        const decrypted = decryptFromPeer(
+          {
+            ciphertext: new Uint8Array(Buffer.from(sealedObj.ciphertext, 'base64')),
+            nonce: new Uint8Array(Buffer.from(sealedObj.nonce, 'base64')),
+            ephemeralPublicKey: new Uint8Array(Buffer.from(sealedObj.ephemeralPublicKey, 'base64')),
+            authTag: new Uint8Array(Buffer.from(sealedObj.authTag, 'base64')),
+          },
+          this.identity.encryptionPrivateKey,
+        );
+        const envelopeRaw = JSON.parse(new TextDecoder().decode(decrypted));
+        // Re-process as a normal incoming message
+        await this.handleIncomingMessage(new TextEncoder().encode(JSON.stringify(envelopeRaw)));
+      } catch (e) {
+        console.warn(`[Messaging] Failed to unseal message: ${(e as Error).message}`);
+      }
+      return;
+    }
+
+    // We are a relay — store the sealed blob without inspecting it
+    await this.store.queueSealedMessage(recipientId, messageId, typeof sealed === 'string' ? sealed : JSON.stringify(sealed));
+    console.log(`[Messaging] Holding sealed message ${messageId} for ${recipientId}`);
+  }
+
   private async deliverPendingMessages(decentraId: PeerId): Promise<void> {
+    // Deliver legacy pending messages
     const pending = await this.store.getPendingMessages(decentraId);
-    if (pending.length === 0) return;
-
-    console.log(`[Messaging] Delivering ${pending.length} pending messages to ${decentraId}`);
-
     for (const envelope of pending) {
       const delivered = await this.tryDirectDelivery(decentraId, envelope);
       if (delivered) {
         await this.store.removePendingMessage(decentraId, envelope.messageId);
       }
+    }
+
+    // Deliver sealed messages — send the sealed blob, recipient unseals it
+    const sealed = await this.store.getSealedMessages(decentraId);
+    for (const msg of sealed) {
+      const deliveryData = new TextEncoder().encode(JSON.stringify({
+        type: 'store_forward_sealed',
+        recipientId: decentraId,
+        messageId: msg.messageId,
+        sealed: msg.sealed,
+      }));
+      const response = await this.node.sendToPeer(decentraId, PROTOCOLS.MESSAGE, deliveryData);
+      if (response && new TextDecoder().decode(response) === 'ACK') {
+        await this.store.removeSealedMessage(decentraId, msg.messageId);
+      }
+    }
+
+    const total = pending.length + sealed.length;
+    if (total > 0) {
+      console.log(`[Messaging] Delivered ${total} pending messages to ${decentraId} (${sealed.length} sealed)`);
     }
   }
 
@@ -311,6 +432,12 @@ export class MessagingService {
     encrypted: EncryptedPayload,
     recipientId: PeerId,
   ): MessageEnvelope {
+    // Compute sender key fingerprint (truncated SHA-256 of public key)
+    const fingerprint = crypto.createHash('sha256')
+      .update(this.identity.publicKey)
+      .digest('hex')
+      .slice(0, 16);
+
     const envelopeData: Omit<MessageEnvelope, 'signature'> = {
       messageId: message.messageId,
       from: this.node.getPeerId(),
@@ -322,6 +449,7 @@ export class MessagingService {
       timestamp: Date.now(),
       ttl: DEFAULT_TTL,
       contentTypeHint: message.type,
+      senderKeyFingerprint: fingerprint,
     };
 
     const dataToSign = new TextEncoder().encode(JSON.stringify({

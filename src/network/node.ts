@@ -58,6 +58,7 @@ export const PROTOCOLS = {
   POLL_VOTE: `${PROTOCOL_PREFIX}/poll-vote/1.0.0`,
   HUB_SYNC: `${PROTOCOL_PREFIX}/hub-sync/1.0.0`,
   HUB_DISCOVERY: `${PROTOCOL_PREFIX}/hub-discovery/1.0.0`,
+  ONION_RELAY: `${PROTOCOL_PREFIX}/onion-relay/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -90,6 +91,7 @@ export class DecentraNode {
   private pollVoteHandler?: (data: string) => Promise<void>;
   private hubSyncHandler?: (data: string) => Promise<string | void>;
   private hubDiscoveryHandler?: (data: string) => Promise<string | void>;
+  private onionRelayHandler?: (data: string) => Promise<void>;
   private passphrase: string;
 
   // Rate limiting: 100 messages per 60-second window per peer
@@ -119,7 +121,7 @@ export class DecentraNode {
     const wsPort = this.config.wsPort || this.config.port + 1;
     const isPublic = this.config.isPublic || false;
 
-    console.log(`[Node] Starting on TCP:${this.config.port} WS:${wsPort}${isPublic ? ' (PUBLIC mode)' : ''}...`);
+    console.log(`[Node] Starting on TCP:${this.config.port} WS:${wsPort}${isPublic ? ' (PUBLIC mode)' : ''}${this.config.disableMdns ? ' (mDNS disabled)' : ''}...`);
 
     // Merge default + user-supplied bootstrap peers
     const allBootstrapPeers = [
@@ -157,7 +159,7 @@ export class DecentraNode {
         }),
         dcutr: dcutr(),
       },
-      peerDiscovery: [mdns()],
+      peerDiscovery: this.config.disableMdns ? [] : [mdns()],
     };
 
     if (allBootstrapPeers.length > 0) {
@@ -231,6 +233,11 @@ export class DecentraNode {
 
   getProfile(): PeerProfile {
     return createPeerProfile(this.identity, this.getAddresses());
+  }
+
+  /** Profile for PEER_EXCHANGE — omits addresses to avoid leaking IPs to all peers */
+  getExchangeProfile(): PeerProfile {
+    return createPeerProfile(this.identity, []);
   }
 
   setDisplayName(name: string): void {
@@ -401,6 +408,11 @@ export class DecentraNode {
   /** Register handler for hub discovery messages */
   setHubDiscoveryHandler(handler: (data: string) => Promise<string | void>): void {
     this.hubDiscoveryHandler = handler;
+  }
+
+  /** Register handler for onion relay cells */
+  setOnionRelayHandler(handler: (data: string) => Promise<void>): void {
+    this.onionRelayHandler = handler;
   }
 
   /** Broadcast data to all connected peers on a given protocol */
@@ -584,7 +596,7 @@ export class DecentraNode {
     this.exchangeInProgress.add(libp2pId);
 
     try {
-      const ourProfile = this.getProfile();
+      const ourProfile = this.getExchangeProfile();
       const profileData = serializeProfile(ourProfile);
       const data = new TextEncoder().encode(JSON.stringify(profileData));
 
@@ -709,8 +721,8 @@ export class DecentraNode {
           console.warn(`[Exchange] Profile from ${libp2pId} failed verification`);
         }
 
-        // Send our profile back
-        const ourProfile = this.getProfile();
+        // Send our profile back (without addresses to avoid IP leakage)
+        const ourProfile = this.getExchangeProfile();
         const responseData = new TextEncoder().encode(JSON.stringify(serializeProfile(ourProfile)));
         await writeToSink(stream, responseData);
       } catch (error) {
@@ -812,7 +824,13 @@ export class DecentraNode {
         const data = await readFromSource(stream.source);
         const request = JSON.parse(new TextDecoder().decode(data));
         const libp2pId = connection.remotePeer.toString();
-        const requesterId = this.libp2pToDecentra.get(libp2pId) || request.peerId;
+        const requesterId = this.libp2pToDecentra.get(libp2pId);
+
+        if (!requesterId) {
+          console.warn(`[HistorySync] Rejected: no verified identity for ${libp2pId} (PEER_EXCHANGE not complete)`);
+          await writeToSink(stream, new TextEncoder().encode('UNAUTHORIZED'));
+          return;
+        }
 
         if (this.historySyncHandler) {
           const history = await this.historySyncHandler(requesterId, request.since || 0);
@@ -1018,6 +1036,21 @@ export class DecentraNode {
         }
       } catch (error) {
         console.error(`[Protocol] Error handling hub discovery:`, error);
+      }
+    });
+
+    // Onion relay (general-purpose onion routing)
+    await this.node.handle(PROTOCOLS.ONION_RELAY, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.onionRelayHandler) {
+          await this.onionRelayHandler(text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('OK'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling onion relay:`, error);
       }
     });
 

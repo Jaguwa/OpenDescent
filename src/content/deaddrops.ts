@@ -61,7 +61,7 @@ export class DeadDropService {
 
   // ─── Create & Submit ────────────────────────────────────────────────────
 
-  async createDeadDrop(content: string): Promise<DeadDrop> {
+  async createDeadDrop(content: string): Promise<{ drop: DeadDrop; warning?: string }> {
     if (!content || content.length > MAX_DROP_LENGTH) {
       throw new Error(`Drop content must be 1-${MAX_DROP_LENGTH} characters`);
     }
@@ -97,7 +97,7 @@ export class DeadDropService {
       .filter(p => p.decentraId && p.profile?.encryptionPublicKey);
 
     if (connectedPeers.length === 0) {
-      // No peers — stamp ourselves and store directly
+      // No peers — stamp ourselves and store directly (NO anonymity)
       drop.timestamp = Date.now();
       drop.expiresAt = drop.timestamp + DROP_EXPIRY_MS;
       await this.store.storeDeadDrop(drop);
@@ -106,11 +106,11 @@ export class DeadDropService {
       if (decrypted) {
         for (const cb of this.onNewDrop) cb(drop, decrypted);
       }
-      return drop;
+      return { drop, warning: 'No connected peers — your drop was stored locally with no anonymity protection.' };
     }
 
     if (connectedPeers.length < RELAY_HOP_COUNT) {
-      // Not enough peers for full onion — broadcast directly via first peer as exit
+      // Not enough peers for full onion — broadcast directly (REDUCED anonymity)
       drop.timestamp = Date.now();
       drop.expiresAt = drop.timestamp + DROP_EXPIRY_MS;
       const dropData = new TextEncoder().encode(JSON.stringify(drop));
@@ -121,7 +121,7 @@ export class DeadDropService {
       if (decrypted) {
         for (const cb of this.onNewDrop) cb(drop, decrypted);
       }
-      return drop;
+      return { drop, warning: `Only ${connectedPeers.length} peer(s) connected (need ${RELAY_HOP_COUNT} for anonymous routing). Your drop may be traceable.` };
     }
 
     // Pick 3 random distinct relay peers
@@ -140,7 +140,7 @@ export class DeadDropService {
     const data = new TextEncoder().encode(onionPacket);
     await this.node.sendToPeer(entryId, PROTOCOLS.DEAD_DROP_RELAY, data);
 
-    return drop;
+    return { drop };
   }
 
   // ─── Onion Construction ─────────────────────────────────────────────────

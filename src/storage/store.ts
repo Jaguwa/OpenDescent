@@ -65,6 +65,7 @@ const NS = {
   HUB_MEMBER: 'hubmem:',
   HUB_INVITE: 'hubinv:',
   HUB_LISTING: 'hublst:',
+  SEALED: 'sealed:',
 } as const;
 
 export class LocalStore {
@@ -234,6 +235,28 @@ export class LocalStore {
 
     if (cleaned > 0) console.log(`[Store] Cleaned ${cleaned} expired pending messages`);
     return cleaned;
+  }
+
+  // ─── Sealed Message Queue (Sealed Sender Store-and-Forward) ────────────
+
+  async queueSealedMessage(recipientId: PeerId, messageId: string, sealedData: string): Promise<void> {
+    const key = NS.SEALED + recipientId + ':' + messageId;
+    await this.db.put(key, JSON.stringify({ sealed: sealedData, queuedAt: Date.now() }));
+  }
+
+  async getSealedMessages(recipientId: PeerId): Promise<{ messageId: string; sealed: string }[]> {
+    const prefix = NS.SEALED + recipientId + ':';
+    const messages: { messageId: string; sealed: string }[] = [];
+    for await (const [key, value] of this.db.iterator({ gte: prefix, lt: prefix + '\xFF' })) {
+      const messageId = key.slice(prefix.length);
+      const parsed = JSON.parse(value);
+      messages.push({ messageId, sealed: parsed.sealed });
+    }
+    return messages;
+  }
+
+  async removeSealedMessage(recipientId: PeerId, messageId: string): Promise<void> {
+    await this.db.del(NS.SEALED + recipientId + ':' + messageId);
   }
 
   // ─── Peer Profile Storage ──────────────────────────────────────────────

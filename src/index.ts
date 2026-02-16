@@ -25,6 +25,7 @@ import { DeadDropService } from './content/deaddrops.js';
 import { PollService } from './content/polls.js';
 import { HubManager } from './messaging/hubs.js';
 import { APIServer } from './api/server.js';
+import { OnionTransport } from './network/onion-transport.js';
 import type { NodeConfig, Message, PeerProfile, ContentType } from './types/index.js';
 
 // ─── Parse CLI Arguments ─────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ interface ParsedArgs extends Partial<NodeConfig> {
   passphrase?: string;
   webPort?: number;
   connect?: string;
+  onionRouting?: boolean;
 }
 
 function parseArgs(): ParsedArgs {
@@ -73,6 +75,12 @@ function parseArgs(): ParsedArgs {
         break;
       case '--announce-ip':
         config.announceIp = args[++i];
+        break;
+      case '--no-mdns':
+        config.disableMdns = true;
+        break;
+      case '--onion-routing':
+        config.onionRouting = true;
         break;
       case '--connect':
       case '-c':
@@ -697,6 +705,8 @@ Options:
   --data, -d <path>        Data directory (default: ./data-<port>)
   --passphrase <string>    Passphrase for identity encryption
   --public                  Run as public node (DHT server + relay)
+  --no-mdns                Disable mDNS discovery (hides node from LAN)
+  --onion-routing          Enable onion-routed transport (3-hop circuits)
   --connect, -c <code>     Connect to peer using invite code on startup
   --help, -h               Show this help
     `);
@@ -739,6 +749,7 @@ Options:
     maxShards: 10000,
     enableRelay: true,
     messageRetentionSeconds: 7 * 24 * 60 * 60,
+    disableMdns: args.disableMdns || false,
   };
 
   console.log('Starting DecentraNet node...\n');
@@ -769,6 +780,13 @@ Options:
   const deadDrops = new DeadDropService(node, store);
   const polls = new PollService(node, store);
   const hubs = new HubManager(node, store);
+
+  // Start onion transport if enabled
+  let onionTransport: OnionTransport | null = null;
+  if (args.onionRouting) {
+    onionTransport = new OnionTransport(node);
+    await onionTransport.start();
+  }
 
   // Wire poll handlers
   node.setPollBroadcastHandler(async (data) => {
@@ -1071,6 +1089,7 @@ Options:
     shuttingDown = true;
     console.log(`\n[Shutdown] ${signal} received, cleaning up...`);
     try {
+      if (onionTransport) onionTransport.stop();
       await node.stop();
       await store.close();
       console.log('[Shutdown] Clean shutdown complete.');

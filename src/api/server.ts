@@ -116,7 +116,7 @@ export class APIServer {
     // Wire up events from the backend
     this.wireBackendEvents();
 
-    this.httpServer.listen(port, () => {
+    this.httpServer.listen(port, '127.0.0.1', () => {
       console.log(`[API] Frontend: http://localhost:${port}`);
       console.log(`[API] WebSocket: ws://localhost:${port}/ws`);
     });
@@ -888,8 +888,8 @@ export class APIServer {
           if (!data.content || typeof data.content !== 'string' || data.content.length > 1000) {
             return this.err(id, 'Drop content too long (max 1,000 chars)');
           }
-          const drop = await this.deps.deadDrops.createDeadDrop(data.content);
-          return this.ok(id, { drop });
+          const result = await this.deps.deadDrops.createDeadDrop(data.content);
+          return this.ok(id, { drop: result.drop, warning: result.warning });
         }
 
         case 'get_dead_drops': {
