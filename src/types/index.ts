@@ -672,6 +672,44 @@ export interface HubListing {
   signature: string;
   hopCount: number;
   maxHops: number;
+  // Ranking fields (optional, propagated via gossip)
+  powerScore?: number;
+  tier?: HubTier;
+  level?: number;
+  activeMembersWeek?: number;
+  messagesPerDay?: number;
+  dailyMessageCounts?: number[];
+  achievements?: HubAchievementId[];
+}
+
+// ─── Hub Rankings ────────────────────────────────────────────────────────────
+
+export type HubAchievementId = 'rising_star' | 'tight_knit' | 'chatterbox' | 'voice_hub' | 'trusted_circle' | 'veteran' | 'crowded_house';
+export type HubTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond';
+
+export interface HubContributor {
+  peerId: PeerId;
+  displayName: string;
+  messageCount: number;
+}
+
+export interface HubStats {
+  hubId: string;
+  totalMembers: number;
+  activeMembersWeek: number;
+  messagesToday: number;
+  messagesThisWeek: number;
+  messagesPerDay: number;
+  dailyMessageCounts: number[];
+  voiceMinutesTotal: number;
+  memberCountWeekAgo: number;
+  trustDensity: number;
+  topContributors: HubContributor[];
+  achievements: HubAchievementId[];
+  powerScore: number;
+  tier: HubTier;
+  level: number;
+  computedAt: number;
 }
 
 // ─── Onion Transport ─────────────────────────────────────────────────────────

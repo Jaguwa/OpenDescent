@@ -26,6 +26,7 @@ import type { TrustWebService } from '../trust/web.js';
 import type { DeadDropService } from '../content/deaddrops.js';
 import type { PollService } from '../content/polls.js';
 import type { HubManager } from '../messaging/hubs.js';
+import type { HubStatsService } from '../messaging/hub-stats.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,7 @@ export interface APIServerDeps {
   deadDrops?: DeadDropService;
   polls?: PollService;
   hubs?: HubManager;
+  hubStats?: HubStatsService;
   /** Override frontend static files directory (default: <cwd>/frontend) */
   frontendDir?: string;
   /** Override temp directory for file shares/downloads (default: cwd) */
@@ -1153,6 +1155,64 @@ export class APIServer {
         case 'browse_hubs': {
           const hubListings = await this.deps.store.getPublicHubListings();
           return this.ok(id, hubListings.slice(0, data?.limit || 50));
+        }
+
+        case 'get_hub_stats': {
+          if (!this.deps.hubStats) return this.err(id, 'Hub stats not available');
+          if (!data?.hubId) return this.err(id, 'hubId required');
+          const hubStatsResult = await this.deps.hubStats.getStats(data.hubId);
+          return this.ok(id, hubStatsResult);
+        }
+
+        case 'get_hub_leaderboard': {
+          const allStats = await this.deps.store.getAllHubStats();
+          const allListings = await this.deps.store.getPublicHubListings();
+          const myHubs = this.deps.hubs ? this.deps.hubs.getHubs().map(h => h.hubId) : [];
+
+          // Merge: use local stats for own hubs, listing stats for discovered hubs
+          const entries: any[] = [];
+          const seen = new Set<string>();
+
+          for (const s of allStats) {
+            seen.add(s.hubId);
+            const listing = allListings.find(l => l.hubId === s.hubId);
+            entries.push({
+              hubId: s.hubId,
+              name: listing?.name || s.hubId.slice(0, 8),
+              icon: listing?.icon,
+              memberCount: s.totalMembers,
+              powerScore: s.powerScore,
+              tier: s.tier,
+              level: s.level,
+              activeMembersWeek: s.activeMembersWeek,
+              messagesPerDay: s.messagesPerDay,
+              dailyMessageCounts: s.dailyMessageCounts,
+              achievements: s.achievements,
+              isJoined: myHubs.includes(s.hubId),
+            });
+          }
+
+          // Add discovered listings with stats that we don't have locally
+          for (const l of allListings) {
+            if (seen.has(l.hubId) || !l.powerScore) continue;
+            entries.push({
+              hubId: l.hubId,
+              name: l.name,
+              icon: l.icon,
+              memberCount: l.memberCount,
+              powerScore: l.powerScore,
+              tier: l.tier,
+              level: l.level,
+              activeMembersWeek: l.activeMembersWeek,
+              messagesPerDay: l.messagesPerDay,
+              dailyMessageCounts: l.dailyMessageCounts,
+              achievements: l.achievements,
+              isJoined: myHubs.includes(l.hubId),
+            });
+          }
+
+          entries.sort((a, b) => (b.powerScore || 0) - (a.powerScore || 0));
+          return this.ok(id, entries.slice(0, data?.limit || 50));
         }
 
         // ─── GIF Library (Klipy) ──────────────────────────────

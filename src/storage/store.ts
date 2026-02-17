@@ -12,7 +12,7 @@ import { Level } from 'level';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote, Poll, EncryptedVote, PollResults, PollVoteReceipt, Hub, HubCategory, HubChannel, HubMember, HubInvite, HubListing } from '../types/index.js';
+import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote, Poll, EncryptedVote, PollResults, PollVoteReceipt, Hub, HubCategory, HubChannel, HubMember, HubInvite, HubListing, HubStats } from '../types/index.js';
 
 /** Decrypted message for conversation history */
 export interface StoredMessage {
@@ -65,6 +65,7 @@ const NS = {
   HUB_MEMBER: 'hubmem:',
   HUB_INVITE: 'hubinv:',
   HUB_LISTING: 'hublst:',
+  HUB_STATS: 'hubstats:',
   SEALED: 'sealed:',
 } as const;
 
@@ -1172,6 +1173,68 @@ export class LocalStore {
     return listings
       .sort((a, b) => b.memberCount - a.memberCount)
       .slice(0, limit);
+  }
+
+  // ─── Hub Stats ─────────────────────────────────────────────────────────
+
+  async storeHubStats(stats: HubStats): Promise<void> {
+    await this.db.put(NS.HUB_STATS + stats.hubId, JSON.stringify(stats));
+  }
+
+  async getHubStats(hubId: string): Promise<HubStats | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.HUB_STATS + hubId)) as HubStats;
+    } catch { return null; }
+  }
+
+  async getAllHubStats(): Promise<HubStats[]> {
+    const results: HubStats[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.HUB_STATS, lt: NS.HUB_STATS + '\xFF' })) {
+      results.push(JSON.parse(value) as HubStats);
+    }
+    return results;
+  }
+
+  async countHubMessages(hubId: string, channelIds: string[], since: number): Promise<number> {
+    let count = 0;
+    for (const chId of channelIds) {
+      const prefix = NS.HISTORY + 'hub:' + hubId + ':' + chId + ':';
+      const sinceKey = prefix + since.toString().padStart(15, '0');
+      for await (const [,] of this.db.iterator({ gte: sinceKey, lt: prefix + '\xFF' })) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  async countHubMessagesByMember(hubId: string, channelIds: string[], since: number): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    for (const chId of channelIds) {
+      const prefix = NS.HISTORY + 'hub:' + hubId + ':' + chId + ':';
+      const sinceKey = prefix + since.toString().padStart(15, '0');
+      for await (const [, value] of this.db.iterator({ gte: sinceKey, lt: prefix + '\xFF' })) {
+        const msg = JSON.parse(value) as StoredMessage;
+        counts.set(msg.from, (counts.get(msg.from) || 0) + 1);
+      }
+    }
+    return counts;
+  }
+
+  async countHubDailyMessages(hubId: string, channelIds: string[], days: number = 7): Promise<number[]> {
+    const now = Date.now();
+    const dayMs = 86400000;
+    const buckets = new Array(days).fill(0);
+    const startTime = now - days * dayMs;
+    for (const chId of channelIds) {
+      const prefix = NS.HISTORY + 'hub:' + hubId + ':' + chId + ':';
+      const sinceKey = prefix + startTime.toString().padStart(15, '0');
+      for await (const [, value] of this.db.iterator({ gte: sinceKey, lt: prefix + '\xFF' })) {
+        const msg = JSON.parse(value) as StoredMessage;
+        const dayIndex = Math.floor((msg.timestamp - startTime) / dayMs);
+        if (dayIndex >= 0 && dayIndex < days) buckets[dayIndex]++;
+      }
+    }
+    return buckets;
   }
 
   // ─── Stats ─────────────────────────────────────────────────────────────

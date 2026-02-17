@@ -215,6 +215,38 @@
         </div>
       </div>
 
+      <!-- Hub Overview View -->
+      <div id="hub-overview" class="hidden">
+        <div id="hub-overview-header">
+          <div id="hub-overview-icon"></div>
+          <div id="hub-overview-info">
+            <h2 id="hub-overview-name"></h2>
+            <p id="hub-overview-desc" class="subtle"></p>
+            <div id="hub-overview-rank"></div>
+          </div>
+        </div>
+        <div id="hub-overview-xp-bar"><div id="hub-overview-xp-fill"></div></div>
+        <div id="hub-overview-xp-label" class="subtle"></div>
+        <div id="hub-overview-stats-row">
+          <div class="hub-stat-card"><div class="hub-stat-value" id="stat-members">-</div><div class="hub-stat-label">Members</div></div>
+          <div class="hub-stat-card"><div class="hub-stat-value" id="stat-active">-</div><div class="hub-stat-label">Active This Week</div></div>
+          <div class="hub-stat-card"><div class="hub-stat-value" id="stat-mpd">-</div><div class="hub-stat-label">Msgs / Day</div></div>
+          <div class="hub-stat-card"><div class="hub-stat-value" id="stat-voice">-</div><div class="hub-stat-label">Voice Hours</div></div>
+        </div>
+        <div id="hub-overview-achievements">
+          <h3>Achievements</h3>
+          <div id="hub-achievements-list"></div>
+        </div>
+        <div id="hub-overview-contributors">
+          <h3>Top Contributors</h3>
+          <div id="hub-contributors-list"></div>
+        </div>
+        <div id="hub-overview-activity">
+          <h3>7-Day Activity</h3>
+          <canvas id="hub-sparkline-canvas" width="400" height="120"></canvas>
+        </div>
+      </div>
+
       <!-- Profile View -->
       <div id="profile-view" class="hidden">
         <div id="profile-header">
@@ -784,18 +816,25 @@
     <div id="browse-hubs-modal" class="modal hidden">
       <div class="modal-content browse-hubs-content">
         <h3>Discover Hubs</h3>
-        <div class="discover-search">
-          <input type="text" id="hub-search-input" placeholder="Search hubs..." autocomplete="off">
-          <button class="btn-primary" onclick="searchHubs()">Search</button>
+        <div class="hub-browse-tabs">
+          <button class="hub-browse-tab active" onclick="switchHubBrowseTab('browse')">Browse</button>
+          <button class="hub-browse-tab" onclick="switchHubBrowseTab('leaderboard')">Leaderboard</button>
         </div>
-        <div class="settings-section">
-          <label>Or join with invite code:</label>
-          <div style="display:flex;gap:8px">
-            <input type="text" id="hub-invite-code-input" placeholder="Paste hub invite code...">
-            <button class="btn-primary" onclick="joinHubViaCode()">Join</button>
+        <div id="hub-browse-content">
+          <div class="discover-search">
+            <input type="text" id="hub-search-input" placeholder="Search hubs..." autocomplete="off">
+            <button class="btn-primary" onclick="searchHubs()">Search</button>
           </div>
+          <div class="settings-section">
+            <label>Or join with invite code:</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="hub-invite-code-input" placeholder="Paste hub invite code...">
+              <button class="btn-primary" onclick="joinHubViaCode()">Join</button>
+            </div>
+          </div>
+          <div id="hub-listings"></div>
         </div>
-        <div id="hub-listings"></div>
+        <div id="hub-leaderboard" class="hidden"></div>
         <div class="modal-actions" style="margin-top:16px">
           <button class="btn-secondary" onclick="closeBrowseHubsModal()">Close</button>
         </div>

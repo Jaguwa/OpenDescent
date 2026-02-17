@@ -176,6 +176,26 @@ const state = {
   voiceLocalStream: null,
 };
 
+// ─── Hub Ranking Constants ──────────────────────────────────────────────────
+
+const ACHIEVEMENT_META = {
+  rising_star:    { label: 'Rising Star',    icon: '\u{1F31F}', desc: '10+ new members this week' },
+  tight_knit:     { label: 'Tight Knit',     icon: '\u{1F91D}', desc: '>80% weekly active retention' },
+  chatterbox:     { label: 'Chatterbox',     icon: '\u{1F4AC}', desc: '1000+ messages this week' },
+  voice_hub:      { label: 'Voice Hub',      icon: '\u{1F399}', desc: '100+ voice hours total' },
+  trusted_circle: { label: 'Trusted Circle', icon: '\u{1F6E1}', desc: '>50% members have trust vouches' },
+  veteran:        { label: 'Veteran',        icon: '\u{1F3C6}', desc: 'Hub older than 30 days' },
+  crowded_house:  { label: 'Crowded House',  icon: '\u{1F3E0}', desc: '50+ members' },
+};
+
+const TIER_COLORS = {
+  Bronze:   '#8d6e3f',
+  Silver:   '#6b7b8d',
+  Gold:     '#c9a030',
+  Platinum: '#5a8fa8',
+  Diamond:  '#7c4dff',
+};
+
 // ─── Theme Presets ──────────────────────────────────────────────────────────
 
 const THEME_PRESETS = [
@@ -839,6 +859,7 @@ function showView(view) {
   document.getElementById('empty-state').classList.toggle('hidden', view !== 'empty');
   document.getElementById('profile-view').classList.toggle('hidden', view !== 'profile');
   document.getElementById('deaddrops-view').classList.toggle('hidden', view !== 'deaddrops');
+  document.getElementById('hub-overview').classList.toggle('hidden', view !== 'hub-overview');
 }
 
 // ─── Chat Navigation ────────────────────────────────────────────────────────
@@ -3509,10 +3530,13 @@ async function selectHub(hubId) {
     document.getElementById('member-panel').classList.remove('hidden');
     renderHubMemberPanel();
 
-    // Auto-select first text channel
-    const firstText = state.hubChannels.find(c => c.type === 'text');
-    if (firstText) openChannel(hubId, firstText.channelId, firstText.name);
-    else showView('empty');
+    // Show hub overview as default landing
+    showHubOverview(hubId);
+
+    // Make hub name clickable to return to overview
+    const sidebarNameClick = document.getElementById('hub-sidebar-name');
+    if (sidebarNameClick) sidebarNameClick.style.cursor = 'pointer';
+    if (sidebarNameClick) sidebarNameClick.onclick = () => showHubOverview(hubId);
 
     // Mark DM button as inactive
     document.getElementById('hub-dm-btn').classList.remove('active');
@@ -3980,6 +4004,8 @@ function showBrowseHubsModal() {
   document.getElementById('hub-invite-code-input').value = '';
   document.getElementById('hub-listings').innerHTML = '<div class="subtle">Loading...</div>';
   document.getElementById('browse-hubs-modal').classList.remove('hidden');
+  // Reset to browse tab
+  switchHubBrowseTab('browse');
   browseHubs();
 }
 
@@ -4042,6 +4068,205 @@ async function joinHubViaCode() {
     if (result.hubId) selectHub(result.hubId);
     showToast(`Joined hub "${result.hubName || 'Hub'}"!`);
   } catch (e) { showToast('Failed to join hub', e.message); }
+}
+
+// ─── Hub Overview & Leaderboard ─────────────────────────────────────────────
+
+async function showHubOverview(hubId) {
+  showView('hub-overview');
+  // Deselect any channel highlight
+  document.querySelectorAll('.hub-channel-item').forEach(el => el.classList.remove('active'));
+
+  const hub = state.activeHub;
+  if (!hub) return;
+
+  // Icon
+  const iconEl = document.getElementById('hub-overview-icon');
+  if (hub.icon && /^https?:\/\//.test(hub.icon)) {
+    iconEl.innerHTML = `<img src="${escapeAttr(hub.icon)}" alt="">`;
+  } else {
+    iconEl.textContent = hub.icon || hub.name.charAt(0).toUpperCase();
+  }
+
+  document.getElementById('hub-overview-name').textContent = hub.name;
+  document.getElementById('hub-overview-desc').textContent = hub.description || 'No description';
+
+  // Fetch stats
+  try {
+    const stats = await send('get_hub_stats', { hubId });
+    if (!stats) {
+      document.getElementById('hub-overview-rank').innerHTML = '<span class="subtle">No stats yet</span>';
+      return;
+    }
+    renderHubOverviewStats(stats);
+  } catch (e) {
+    document.getElementById('hub-overview-rank').innerHTML = '<span class="subtle">Stats unavailable</span>';
+  }
+}
+
+function renderHubOverviewStats(stats) {
+  // Rank badge
+  const tierClass = 'tier-' + (stats.tier || 'Bronze').toLowerCase();
+  const rankEl = document.getElementById('hub-overview-rank');
+  rankEl.innerHTML = `
+    <span class="tier-badge ${tierClass}">${stats.tier || 'Bronze'}</span>
+    <span class="level-badge">Lv. ${stats.level || 1}</span>
+    <span class="power-score-label">${(stats.powerScore || 0).toLocaleString()} Power</span>
+  `;
+
+  // XP bar (progress within current level)
+  const levelProgress = ((stats.powerScore || 0) % 100);
+  document.getElementById('hub-overview-xp-fill').style.width = levelProgress + '%';
+  document.getElementById('hub-overview-xp-label').textContent =
+    `${stats.powerScore || 0} / ${(stats.level || 1) * 100} XP to next level`;
+
+  // Stat cards
+  document.getElementById('stat-members').textContent = stats.totalMembers || 0;
+  document.getElementById('stat-active').textContent = stats.activeMembersWeek || 0;
+  document.getElementById('stat-mpd').textContent = stats.messagesPerDay || 0;
+  document.getElementById('stat-voice').textContent = Math.round((stats.voiceMinutesTotal || 0) / 60);
+
+  // Achievements
+  const achList = document.getElementById('hub-achievements-list');
+  if (stats.achievements && stats.achievements.length > 0) {
+    achList.innerHTML = stats.achievements.map(id => {
+      const meta = ACHIEVEMENT_META[id] || { label: id, icon: '\u2B50', desc: '' };
+      return `<span class="achievement-badge" title="${escapeAttr(meta.desc)}"><span class="ach-icon">${meta.icon}</span> ${escapeHtml(meta.label)}</span>`;
+    }).join('');
+    document.getElementById('hub-overview-achievements').classList.remove('hidden');
+  } else {
+    achList.innerHTML = '<span class="subtle">No achievements yet</span>';
+  }
+
+  // Top contributors
+  const contList = document.getElementById('hub-contributors-list');
+  if (stats.topContributors && stats.topContributors.length > 0) {
+    contList.innerHTML = stats.topContributors.map((c, i) => {
+      const initial = (c.displayName || '?').charAt(0).toUpperCase();
+      return `<div class="contributor-row">
+        <span class="contributor-rank">#${i + 1}</span>
+        <span class="contributor-avatar">${initial}</span>
+        <span class="contributor-name">${escapeHtml(c.displayName || c.peerId.slice(0, 8))}</span>
+        <span class="contributor-count">${c.messageCount} msgs</span>
+      </div>`;
+    }).join('');
+    document.getElementById('hub-overview-contributors').classList.remove('hidden');
+  } else {
+    contList.innerHTML = '<span class="subtle">No contributors yet</span>';
+  }
+
+  // Sparkline
+  if (stats.dailyMessageCounts && stats.dailyMessageCounts.length > 0) {
+    drawHubSparkline(document.getElementById('hub-sparkline-canvas'), stats.dailyMessageCounts);
+    document.getElementById('hub-overview-activity').classList.remove('hidden');
+  }
+}
+
+function drawHubSparkline(canvas, data) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = 400, h = 120;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  const max = Math.max(...data, 1);
+  const barW = Math.floor((w - 20) / data.length) - 6;
+  const startX = 10;
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const today = new Date().getDay(); // 0=Sun
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6c5ce7';
+
+  for (let i = 0; i < data.length; i++) {
+    const barH = (data[i] / max) * (h - 30);
+    const x = startX + i * (barW + 6);
+    const y = h - 20 - barH;
+
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.4 + 0.6 * (data[i] / max);
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, barH, 3);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Value label
+    if (data[i] > 0) {
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || '#fff';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(data[i].toString(), x + barW / 2, y - 4);
+    }
+
+    // Day label
+    const dayIdx = (today - data.length + i + 8) % 7; // map to day of week
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#999';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(dayLabels[dayIdx] || '', x + barW / 2, h - 6);
+  }
+}
+
+function switchHubBrowseTab(tab) {
+  document.querySelectorAll('.hub-browse-tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'leaderboard') {
+    document.querySelectorAll('.hub-browse-tab')[1].classList.add('active');
+    document.getElementById('hub-browse-content').classList.add('hidden');
+    document.getElementById('hub-leaderboard').classList.remove('hidden');
+    loadHubLeaderboard();
+  } else {
+    document.querySelectorAll('.hub-browse-tab')[0].classList.add('active');
+    document.getElementById('hub-browse-content').classList.remove('hidden');
+    document.getElementById('hub-leaderboard').classList.add('hidden');
+  }
+}
+
+async function loadHubLeaderboard() {
+  const el = document.getElementById('hub-leaderboard');
+  el.innerHTML = '<div class="subtle" style="padding:12px">Loading leaderboard...</div>';
+  try {
+    const entries = await send('get_hub_leaderboard', { limit: 30 });
+    if (!entries || entries.length === 0) {
+      el.innerHTML = '<div class="subtle" style="padding:12px">No hubs ranked yet. Create a hub and start chatting!</div>';
+      return;
+    }
+    el.innerHTML = entries.map((e, i) => {
+      const rank = i + 1;
+      const rankClass = rank <= 3 ? ` leaderboard-rank-${rank}` : '';
+      const tierClass = 'tier-' + (e.tier || 'Bronze').toLowerCase();
+      let iconHtml;
+      if (e.icon && /^https?:\/\//.test(e.icon)) {
+        iconHtml = `<img src="${escapeAttr(e.icon)}" alt="">`;
+      } else {
+        iconHtml = e.icon || (e.name || '?').charAt(0).toUpperCase();
+      }
+      const joined = e.isJoined ? ' \u2713' : '';
+      const trend = (e.dailyMessageCounts || []).slice(-7);
+      const trendMax = Math.max(...trend, 1);
+      const trendBars = trend.map(v => {
+        const h = Math.max(2, Math.round((v / trendMax) * 22));
+        return `<div class="leaderboard-trend-bar" style="height:${h}px"></div>`;
+      }).join('');
+      const achIcons = (e.achievements || []).slice(0, 3).map(a => (ACHIEVEMENT_META[a] || {}).icon || '').join('');
+      return `<div class="leaderboard-row">
+        <span class="leaderboard-rank${rankClass}">${rank}</span>
+        <span class="leaderboard-icon">${iconHtml}</span>
+        <div class="leaderboard-info">
+          <div class="leaderboard-name">${escapeHtml(e.name || 'Unknown')}${joined}</div>
+          <div class="leaderboard-meta">${e.memberCount || 0} members &middot; ${e.activeMembersWeek || 0} active &middot; ${(e.messagesPerDay || 0).toFixed(1)} msg/d ${achIcons}</div>
+        </div>
+        <div class="leaderboard-trend">${trendBars}</div>
+        <div class="leaderboard-score">
+          <div class="leaderboard-score-value">${(e.powerScore || 0).toLocaleString()}</div>
+          <span class="tier-badge tier-badge-sm ${tierClass}">${e.tier || 'Bronze'}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="subtle" style="padding:12px">Failed to load leaderboard</div>';
+  }
 }
 
 // ─── Display Name ───────────────────────────────────────────────────────────

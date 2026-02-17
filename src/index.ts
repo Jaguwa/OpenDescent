@@ -24,6 +24,7 @@ import { TrustWebService } from './trust/web.js';
 import { DeadDropService } from './content/deaddrops.js';
 import { PollService } from './content/polls.js';
 import { HubManager } from './messaging/hubs.js';
+import { HubStatsService } from './messaging/hub-stats.js';
 import { APIServer } from './api/server.js';
 import { OnionTransport } from './network/onion-transport.js';
 import type { NodeConfig, Message, PeerProfile, ContentType } from './types/index.js';
@@ -818,6 +819,10 @@ Options:
   });
   await hubs.loadHubs();
 
+  // Start hub stats computation
+  const hubStats = new HubStatsService(store, hubs);
+  hubStats.start();
+
   // Wire group message handler into the messaging layer
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
   await groups.loadGroups();
@@ -1014,6 +1019,7 @@ Options:
     deadDrops,
     polls,
     hubs,
+    hubStats,
   });
 
   // Periodic cleanup of expired dead drops (every 30 minutes)
@@ -1089,6 +1095,7 @@ Options:
     shuttingDown = true;
     console.log(`\n[Shutdown] ${signal} received, cleaning up...`);
     try {
+      hubStats.stop();
       if (onionTransport) onionTransport.stop();
       await node.stop();
       await store.close();

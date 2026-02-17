@@ -26,6 +26,7 @@ import type {
   HubListing,
   HubRoleType,
   HubChannelType,
+  HubStats,
   HUB_ROLE_PERMISSIONS,
 } from '../types/index.js';
 import {
@@ -685,6 +686,18 @@ export class HubManager {
       hopCount: 0,
       maxHops: 3,
     };
+
+    // Attach ranking fields from stats if available
+    const stats = await this.store.getHubStats(hubId);
+    if (stats) {
+      listing.powerScore = stats.powerScore;
+      listing.tier = stats.tier;
+      listing.level = stats.level;
+      listing.activeMembersWeek = stats.activeMembersWeek;
+      listing.messagesPerDay = stats.messagesPerDay;
+      listing.dailyMessageCounts = stats.dailyMessageCounts;
+      listing.achievements = stats.achievements;
+    }
 
     await this.store.storeHubListing(listing);
 
