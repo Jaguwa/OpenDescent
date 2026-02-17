@@ -595,8 +595,24 @@ export class HubManager {
 
   getHubInviteCode(invite: HubInvite): string {
     const hub = this.hubs.get(invite.hubId);
-    const addrs = this.node.getAddresses()
-      .filter(a => !a.includes('/127.0.0.1/') && !a.includes('/::1/'));
+    // Use the node's filtered public/relay addresses
+    const allAddrs = this.node.getAddresses()
+      .filter(a => !a.includes('/::1/'));
+    // Filter to only routable addresses (public IPs + relay circuits)
+    const addrs = allAddrs.filter(addr => {
+      if (addr.includes('/p2p-circuit/')) return true;
+      const match = addr.match(/\/ip4\/([^/]+)\//);
+      if (!match) return false;
+      const ip = match[1];
+      if (ip === '0.0.0.0' || ip === '127.0.0.1') return false;
+      if (ip.startsWith('192.168.') || ip.startsWith('10.')) return false;
+      if (ip.startsWith('172.')) {
+        const second = parseInt(ip.split('.')[1], 10);
+        if (second >= 16 && second <= 31) return false;
+      }
+      if (ip.startsWith('169.254.')) return false;
+      return true;
+    });
     const payload = {
       v: 1,
       t: 'hub',
@@ -605,6 +621,7 @@ export class HubManager {
       n: hub?.name || '',
       a: addrs,
       d: this.node.getPeerId(),
+      l: this.node.getLibp2pPeerId(), // libp2p PeerId for relay fallback
     };
     const json = JSON.stringify(payload);
     return Buffer.from(json).toString('base64')
@@ -618,11 +635,13 @@ export class HubManager {
 
     if (payload.t !== 'hub') throw new Error('Not a hub invite code');
 
-    // Connect to the inviter
+    // Connect to the inviter (include libp2p PeerId for relay fallback)
     if (payload.a && payload.a.length > 0) {
       try {
+        const connectPayload: any = { v: 1, a: payload.a, d: payload.d, n: '' };
+        if (payload.l) connectPayload.l = payload.l;
         await this.node.connectWithInvite(
-          Buffer.from(JSON.stringify({ v: 1, a: payload.a, d: payload.d, n: '' }))
+          Buffer.from(JSON.stringify(connectPayload))
             .toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
         );
       } catch {

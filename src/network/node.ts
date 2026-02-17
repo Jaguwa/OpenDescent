@@ -37,6 +37,29 @@ const DEFAULT_BOOTSTRAP_PEERS: string[] = [
   '/ip4/188.166.151.203/tcp/6002/ws/p2p/12D3KooWStM6ett7nNXKdSy7kTqxdYmYni2jcmvNSpAs9Pbfo1tA',
 ];
 
+/** Check if an IPv4 address is private, loopback, or otherwise non-routable */
+function isPrivateOrUnroutableIP(ip: string): boolean {
+  if (ip === '0.0.0.0' || ip === '127.0.0.1') return true;
+  if (ip.startsWith('192.168.')) return true;
+  if (ip.startsWith('10.')) return true;
+  if (ip.startsWith('172.')) {
+    const second = parseInt(ip.split('.')[1], 10);
+    if (second >= 16 && second <= 31) return true;
+  }
+  if (ip.startsWith('169.254.')) return true; // link-local
+  return false;
+}
+
+/** Filter multiaddrs to only include addresses routable by remote peers */
+function getRoutableAddresses(addrs: string[]): string[] {
+  return addrs.filter(addr => {
+    // Extract the first IP — for circuit addresses this is the relay's IP
+    const match = addr.match(/\/ip4\/([^/]+)\//);
+    if (!match) return false;
+    return !isPrivateOrUnroutableIP(match[1]);
+  });
+}
+
 const PROTOCOL_PREFIX = '/decentranet';
 export const PROTOCOLS = {
   MESSAGE: `${PROTOCOL_PREFIX}/message/1.0.0`,
@@ -136,11 +159,25 @@ export class DecentraNode {
       announce.push(`/ip4/${this.config.announceIp}/tcp/${wsPort}/ws`);
     }
 
+    // Build circuit relay listen addresses — explicitly target public bootstrap relays
+    // so we get a reservation on a publicly-routable relay, not just a LAN peer
+    const circuitListenAddrs: string[] = [];
+    if (!isPublic) {
+      // Pick the first TCP (non-WS) bootstrap peer for an explicit relay reservation
+      const tcpBootstrap = allBootstrapPeers.find(a => !a.includes('/ws/'));
+      if (tcpBootstrap) {
+        circuitListenAddrs.push(`${tcpBootstrap}/p2p-circuit`);
+      } else {
+        circuitListenAddrs.push('/p2p-circuit'); // fallback: discover any relay
+      }
+    }
+
     const libp2pConfig: any = {
       addresses: {
         listen: [
           `/ip4/0.0.0.0/tcp/${this.config.port}`,
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
+          ...circuitListenAddrs,
         ],
         ...(announce.length > 0 ? { announce } : {}),
       },
@@ -449,21 +486,30 @@ export class DecentraNode {
   /**
    * Generate a base64url invite code containing our multiaddrs and identity.
    * Other peers can use this to connect to us directly.
+   * Filters out private/non-routable IPs so the code works across the internet.
    */
   getInviteCode(): string {
-    const addrs = this.getAddresses()
-      // Filter out loopback/localhost — not useful for remote peers
-      .filter((a) => !a.includes('/127.0.0.1/') && !a.includes('/::1/'));
+    const allAddrs = this.getAddresses()
+      .filter((a) => !a.includes('/::1/'));
+
+    // Filter to only public + relay addresses (remove 0.0.0.0, 192.168.x, 10.x, etc.)
+    const addrs = getRoutableAddresses(allAddrs);
+
+    if (addrs.length === 0) {
+      console.warn('[Invite] WARNING: No public or relay addresses available');
+      console.warn('[Invite] This invite code will only work on the local network');
+      console.warn('[Invite] To fix: ensure connection to a relay node, or use --announce-ip <your-public-ip>');
+    }
 
     const payload = {
       v: 1,
       a: addrs,
       d: this.getPeerId(),
+      l: this.node ? this.node.peerId.toString() : undefined, // libp2p PeerId for relay fallback
       n: this.identity.displayName || undefined,
     };
 
     const json = JSON.stringify(payload);
-    // base64url: standard base64 with + -> -, / -> _, strip =
     const b64 = Buffer.from(json).toString('base64')
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     return b64;
@@ -472,6 +518,7 @@ export class DecentraNode {
   /**
    * Connect to a peer using their invite code.
    * Decodes the code, dials their multiaddrs, and returns their DecentraNet ID on success.
+   * Tries relay circuit addresses first, then direct, then relay fallback.
    */
   async connectWithInvite(code: string): Promise<{ peerId: string; name?: string }> {
     if (!this.node) throw new Error('Node not started');
@@ -480,7 +527,7 @@ export class DecentraNode {
     const padded = code.replace(/-/g, '+').replace(/_/g, '/');
     const json = Buffer.from(padded, 'base64').toString('utf-8');
 
-    let payload: { v: number; a: string[]; d: string; n?: string };
+    let payload: { v: number; a: string[]; d: string; l?: string; n?: string };
     try {
       payload = JSON.parse(json);
     } catch {
@@ -492,24 +539,71 @@ export class DecentraNode {
     }
 
     console.log(`[Invite] Connecting to ${payload.n || payload.d}...`);
-    console.log(`[Invite] Trying ${payload.a.length} address(es)`);
 
-    // Try each multiaddr in order
+    // Sort: relay addresses first (most likely to work across NAT), then direct
+    const sortedAddrs = [...payload.a].sort((a, b) => {
+      const aRelay = a.includes('/p2p-circuit/') ? 0 : 1;
+      const bRelay = b.includes('/p2p-circuit/') ? 0 : 1;
+      return aRelay - bRelay;
+    });
+
+    console.log(`[Invite] Trying ${sortedAddrs.length} address(es)...`);
+
+    // Try each multiaddr with a 10-second timeout
     let connected = false;
-    for (const addr of payload.a) {
+    for (const addr of sortedAddrs) {
       try {
         console.log(`[Invite] Dialing ${addr}...`);
-        await this.node.dial(multiaddr(addr));
-        connected = true;
-        console.log(`[Invite] Connected via ${addr}`);
-        break;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
+        try {
+          await this.node.dial(multiaddr(addr), { signal: controller.signal });
+          connected = true;
+          console.log(`[Invite] Connected via ${addr}`);
+          break;
+        } finally {
+          clearTimeout(timeout);
+        }
       } catch (error: any) {
-        console.log(`[Invite] Failed: ${addr} (${error.message || error.code || 'unknown'})`);
+        const msg = error.message || error.code || 'unknown';
+        console.log(`[Invite] Failed: ${addr} (${msg.includes('abort') ? 'timeout' : msg})`);
+      }
+    }
+
+    // Relay fallback: if direct dials failed and we have the libp2p PeerId,
+    // try connecting through known relay nodes via circuit relay
+    if (!connected && payload.l) {
+      console.log(`[Invite] Direct dials failed — trying relay fallback...`);
+
+      for (const relayAddr of DEFAULT_BOOTSTRAP_PEERS) {
+        // Skip WS duplicates (only need one transport per relay)
+        if (relayAddr.includes('/ws/')) continue;
+
+        const circuitAddr = `${relayAddr}/p2p-circuit/p2p/${payload.l}`;
+        try {
+          console.log(`[Invite] Trying relay: ${circuitAddr}`);
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 15_000);
+          try {
+            await this.node.dial(multiaddr(circuitAddr), { signal: controller.signal });
+            connected = true;
+            console.log(`[Invite] Connected via circuit relay!`);
+            break;
+          } finally {
+            clearTimeout(timeout);
+          }
+        } catch (error: any) {
+          const msg = error.message || error.code || 'unknown';
+          console.log(`[Invite] Relay failed: ${msg.includes('abort') ? 'timeout' : msg}`);
+        }
       }
     }
 
     if (!connected) {
-      throw new Error('Could not connect to any of the peer\'s addresses');
+      const hint = payload.l
+        ? 'Neither direct nor relay connections worked. Ensure both peers can reach the relay node.'
+        : 'Invite code has no relay info. Ask the peer to regenerate their invite code after connecting to the network.';
+      throw new Error(`Could not connect to peer — ${hint}`);
     }
 
     return { peerId: payload.d, name: payload.n };
