@@ -1,5 +1,5 @@
 /**
- * Hub Manager — Discord-like community spaces for DecentraNet
+ * Hub Manager — Community spaces for DecentraNet
  *
  * Hubs extend the existing group chat model with:
  * - Categories and channels (text + voice)
