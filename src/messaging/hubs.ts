@@ -598,9 +598,8 @@ export class HubManager {
     // Use the node's filtered public/relay addresses
     const allAddrs = this.node.getAddresses()
       .filter(a => !a.includes('/::1/'));
-    // Filter to only routable addresses (public IPs + relay circuits)
+    // Filter to only routable addresses (public IPs + public relay circuits)
     const addrs = allAddrs.filter(addr => {
-      if (addr.includes('/p2p-circuit/')) return true;
       const match = addr.match(/\/ip4\/([^/]+)\//);
       if (!match) return false;
       const ip = match[1];

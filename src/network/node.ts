@@ -16,6 +16,7 @@
  */
 
 import { createLibp2p, type Libp2p } from 'libp2p';
+import { FaultTolerance } from '@libp2p/interface';
 import { tcp } from '@libp2p/tcp';
 import { webSockets } from '@libp2p/websockets';
 import { noise } from '@chainsafe/libp2p-noise';
@@ -197,6 +198,9 @@ export class DecentraNode {
         dcutr: dcutr(),
       },
       peerDiscovery: this.config.disableMdns ? [] : [mdns()],
+      transportManager: {
+        faultTolerance: FaultTolerance.NO_FATAL,
+      },
     };
 
     if (allBootstrapPeers.length > 0) {
@@ -551,14 +555,16 @@ export class DecentraNode {
 
     // Try each multiaddr with a 10-second timeout
     let connected = false;
+    let connectedLibp2pId: string | undefined;
     for (const addr of sortedAddrs) {
       try {
         console.log(`[Invite] Dialing ${addr}...`);
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10_000);
         try {
-          await this.node.dial(multiaddr(addr), { signal: controller.signal });
+          const conn = await this.node.dial(multiaddr(addr), { signal: controller.signal });
           connected = true;
+          connectedLibp2pId = conn.remotePeer.toString();
           console.log(`[Invite] Connected via ${addr}`);
           break;
         } finally {
@@ -585,8 +591,9 @@ export class DecentraNode {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 15_000);
           try {
-            await this.node.dial(multiaddr(circuitAddr), { signal: controller.signal });
+            const conn = await this.node.dial(multiaddr(circuitAddr), { signal: controller.signal });
             connected = true;
+            connectedLibp2pId = conn.remotePeer.toString();
             console.log(`[Invite] Connected via circuit relay!`);
             break;
           } finally {
@@ -604,6 +611,42 @@ export class DecentraNode {
         ? 'Neither direct nor relay connections worked. Ensure both peers can reach the relay node.'
         : 'Invite code has no relay info. Ask the peer to regenerate their invite code after connecting to the network.';
       throw new Error(`Could not connect to peer — ${hint}`);
+    }
+
+    // Immediately register the ID mapping so sendToPeer() works right away
+    const libp2pId = connectedLibp2pId || payload.l;
+    if (libp2pId && payload.d) {
+      if (!this.decentraToLibp2p.has(payload.d)) {
+        this.libp2pToDecentra.set(libp2pId, payload.d);
+        this.decentraToLibp2p.set(payload.d, libp2pId);
+        console.log(`[Invite] Registered ID mapping: ${payload.d.slice(0, 12)} ↔ ${libp2pId.slice(0, 12)}`);
+      }
+
+      // Wait for profile exchange to complete — this populates the real crypto keys
+      // needed for encryption. Without this, messaging/invites fail with DECODE_ERROR.
+      try {
+        await Promise.race([
+          this.initiateProfileExchange(libp2pId),
+          new Promise<void>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10_000)),
+        ]);
+        console.log(`[Invite] Profile exchange completed for ${payload.n || payload.d.slice(0, 12)}`);
+      } catch {
+        console.warn(`[Invite] Profile exchange timed out — registering minimal profile`);
+        // Fallback: register minimal profile so peer at least appears in contacts
+        // (crypto operations won't work until a successful exchange later)
+        if (!this.knownPeers.has(payload.d)) {
+          this.knownPeers.set(payload.d, {
+            peerId: payload.d,
+            publicKey: new Uint8Array(0),
+            encryptionPublicKey: new Uint8Array(0),
+            displayName: payload.n || payload.d.slice(0, 12),
+            addresses: payload.a || [],
+            lastSeen: Date.now(),
+            version: 0,
+            signature: new Uint8Array(0),
+          });
+        }
+      }
     }
 
     return { peerId: payload.d, name: payload.n };
