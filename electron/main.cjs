@@ -109,7 +109,22 @@ async function startApp() {
   );
 
   // 5. Build config (mirrors src/index.ts main())
-  const passphrase = 'decentranet-desktop-passphrase';
+  // Per-device passphrase: generate a random key on first run, reuse on subsequent runs
+  const deviceKeyFile = path.join(dataDir, '.device-key');
+  const identityFile = path.join(dataDir, 'identity.json');
+  let passphrase;
+  if (fs.existsSync(deviceKeyFile)) {
+    passphrase = fs.readFileSync(deviceKeyFile, 'utf8').trim();
+  } else if (fs.existsSync(identityFile)) {
+    // Existing identity from before device-key — use legacy default for backward compat
+    passphrase = 'decentranet-desktop-passphrase';
+    console.warn('[Security] Using legacy passphrase. Will migrate on next identity regeneration.');
+  } else {
+    // Fresh install — generate random device-specific key
+    passphrase = crypto.randomBytes(32).toString('hex');
+    fs.writeFileSync(deviceKeyFile, passphrase);
+    console.log('[Security] Generated device-specific encryption key.');
+  }
   const config = {
     port: tcpPort,
     wsPort,
@@ -145,6 +160,12 @@ async function startApp() {
   // Store own profile
   const ownProfile = backendNode.getProfile();
   await backendStore.storePeerProfile(ownProfile);
+
+  // Start DHT directory publishing if discoverable (default: true)
+  const discoverable = await backendStore.getMeta('discoverable');
+  if (discoverable !== 'false') {
+    backendNode.startDirectoryPublishing();
+  }
 
   const messaging = new MessagingService(backendNode, backendStore);
   const groups = new GroupManager(backendNode, backendStore);
@@ -339,12 +360,7 @@ async function startApp() {
 
   mainWindow.loadURL(`http://localhost:${apiPort}`);
 
-  // Open DevTools after page loads so early console messages are captured
-  mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.openDevTools({ mode: 'bottom' });
-  });
-
-  // Allow F12 to toggle DevTools
+  // Allow F12 to toggle DevTools (DevTools don't auto-open in production)
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'F12') {
       mainWindow.webContents.toggleDevTools();

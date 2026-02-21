@@ -96,7 +96,7 @@ export class APIServer {
   private frontendDir: string;
   private tempDir: string;
   private callSignals: Map<string, (signal: any) => void> = new Map();
-  private static readonly DEFAULT_GIF_API_KEY = '5fVUQujaNd2qvaw97xmsxBSjY0OJ1g4dHruLEmuh5vn76xeo5uVaXD9SMscmTT0w';
+  private static readonly DEFAULT_GIF_API_KEY = '';
 
   constructor(port: number, deps: APIServerDeps) {
     this.deps = deps;
@@ -1252,6 +1252,7 @@ export class APIServer {
 
         case 'gif_search': {
           const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          if (!apiKey) return this.err(id, 'No GIF API key configured — add one in Settings');
           const q = encodeURIComponent(data.q || '');
           const perPage = data.per_page || 24;
           const url = `https://api.klipy.com/api/v1/${apiKey}/gifs/search?q=${q}&per_page=${perPage}&content_filter=medium`;
@@ -1268,6 +1269,7 @@ export class APIServer {
 
         case 'gif_trending': {
           const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          if (!apiKey) return this.ok(id, { gifs: [] });
           const perPage = data?.per_page || 24;
           const url = `https://api.klipy.com/api/v1/${apiKey}/gifs/trending?per_page=${perPage}`;
           try {
@@ -1282,6 +1284,7 @@ export class APIServer {
 
         case 'gif_categories': {
           const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          if (!apiKey) return this.ok(id, { categories: [] });
           const url = `https://api.klipy.com/api/v1/${apiKey}/gifs/categories`;
           try {
             const result = await this.fetchExternal(url);
