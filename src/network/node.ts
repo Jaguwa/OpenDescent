@@ -50,8 +50,8 @@ async function getDirectoryCID(): Promise<CID> {
 
 /** Default bootstrap peers for the DecentraNet network */
 const DEFAULT_BOOTSTRAP_PEERS: string[] = [
-  '/ip4/188.166.151.203/tcp/6001/p2p/12D3KooWF6ZmgZee3qoB3hR8GmRpToDePrrC7SoNHaQmXZgszHGE',
-  '/ip4/188.166.151.203/tcp/6002/ws/p2p/12D3KooWF6ZmgZee3qoB3hR8GmRpToDePrrC7SoNHaQmXZgszHGE',
+  '/ip4/188.166.151.203/tcp/6001/p2p/12D3KooWGoSh2awF3bJD7Y6a5Pwz4EPhwSFctPSjLyGEpuyt7Nx1',
+  '/ip4/188.166.151.203/tcp/6002/ws/p2p/12D3KooWGoSh2awF3bJD7Y6a5Pwz4EPhwSFctPSjLyGEpuyt7Nx1',
 ];
 
 /** Check if an IPv4 address is private, loopback, or otherwise non-routable */
