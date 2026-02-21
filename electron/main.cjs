@@ -221,7 +221,15 @@ async function startApp() {
   // Wire peer search handler (Phase 3)
   backendNode.setPeerSearchHandler(async (queryStr) => {
     try {
-      const { searchTerm, maxResults } = JSON.parse(queryStr);
+      const parsed = JSON.parse(queryStr);
+
+      // Handle GIF API key requests — relay distributes its key to the network
+      if (parsed.action === 'get_gif_key') {
+        const key = process.env.KLIPY_API_KEY || await backendStore.getMeta('gif_api_key') || '';
+        return JSON.stringify({ gifApiKey: key });
+      }
+
+      const { searchTerm, maxResults } = parsed;
       const term = (searchTerm || '').toLowerCase();
       const allPeers = backendNode.getAllKnownPeers();
       const myId = backendNode.getPeerId();

@@ -96,7 +96,7 @@ export class APIServer {
   private frontendDir: string;
   private tempDir: string;
   private callSignals: Map<string, (signal: any) => void> = new Map();
-  private static readonly DEFAULT_GIF_API_KEY = '';
+  private static readonly DEFAULT_GIF_API_KEY = process.env.KLIPY_API_KEY || '';
 
   constructor(port: number, deps: APIServerDeps) {
     this.deps = deps;
@@ -1251,7 +1251,7 @@ export class APIServer {
         // ─── GIF Library (Klipy) ──────────────────────────────
 
         case 'gif_search': {
-          const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          const apiKey = await this.getGifApiKey();
           if (!apiKey) return this.err(id, 'No GIF API key configured — add one in Settings');
           const q = encodeURIComponent(data.q || '');
           const perPage = data.per_page || 24;
@@ -1268,7 +1268,7 @@ export class APIServer {
         }
 
         case 'gif_trending': {
-          const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          const apiKey = await this.getGifApiKey();
           if (!apiKey) return this.ok(id, { gifs: [] });
           const perPage = data?.per_page || 24;
           const url = `https://api.klipy.com/api/v1/${apiKey}/gifs/trending?per_page=${perPage}`;
@@ -1283,7 +1283,7 @@ export class APIServer {
         }
 
         case 'gif_categories': {
-          const apiKey = await this.deps.store.getMeta('gif_api_key') || APIServer.DEFAULT_GIF_API_KEY;
+          const apiKey = await this.getGifApiKey();
           if (!apiKey) return this.ok(id, { categories: [] });
           const url = `https://api.klipy.com/api/v1/${apiKey}/gifs/categories`;
           try {
@@ -1541,6 +1541,44 @@ export class APIServer {
         client.send(json);
       }
     }
+  }
+
+  /**
+   * Resolve the GIF API key: local store > env var > fetch from a connected peer (one-time).
+   * This lets the relay operator set KLIPY_API_KEY once, and all clients inherit it.
+   */
+  private async getGifApiKey(): Promise<string> {
+    // 1. Check local store (user-configured or previously fetched)
+    const local = await this.deps.store.getMeta('gif_api_key');
+    if (local) return local;
+
+    // 2. Check environment variable (set on relay server)
+    if (APIServer.DEFAULT_GIF_API_KEY) {
+      return APIServer.DEFAULT_GIF_API_KEY;
+    }
+
+    // 3. Ask a connected peer for the network key (relay distributes it)
+    const { PROTOCOLS } = await import('../network/node.js');
+    for (const peer of this.deps.node.getConnectedPeers()) {
+      if (!peer.decentraId) continue;
+      try {
+        const request = new TextEncoder().encode(JSON.stringify({ action: 'get_gif_key' }));
+        const response = await this.deps.node.sendToPeer(peer.decentraId, PROTOCOLS.PEER_SEARCH, request);
+        if (response) {
+          const text = new TextDecoder().decode(response);
+          try {
+            const parsed = JSON.parse(text);
+            if (parsed.gifApiKey) {
+              // Cache locally so we don't keep asking
+              await this.deps.store.setMeta('gif_api_key', parsed.gifApiKey);
+              return parsed.gifApiKey;
+            }
+          } catch {}
+        }
+      } catch {}
+    }
+
+    return '';
   }
 
   private resolveRecipient(input: string): string | null {
