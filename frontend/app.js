@@ -1449,8 +1449,11 @@ async function saveProfile() {
 async function searchPeers() {
   const term = document.getElementById('discover-search-input').value.trim();
   const isBrowse = !term;
+  const el = document.getElementById('discover-results');
+  // Show loading state
+  el.innerHTML = '<div class="list-item"><span class="subtle">Searching network...</span></div>';
   try {
-    const results = await send('search_peers', { searchTerm: term, maxResults: 50 });
+    const results = await send('search_peers', { searchTerm: term, maxResults: 50, dhtDiscovery: true });
     const friendIds = new Set((await send('get_friends')).map(f => f.peerId));
     renderDiscoverResults(results, friendIds, isBrowse);
   } catch (e) { showToast('Search failed', e.message); }
@@ -1469,8 +1472,12 @@ function renderDiscoverResults(results, friendIds, isBrowse) {
       : '<div class="list-item"><span class="subtle">No peers found matching your search</span></div>';
     return;
   }
-  // Sort: online first, then friends, then alphabetically
+  // Sort: local > gossip > dht, then online first, then friends, then alphabetically
+  const sourceOrder = { local: 0, gossip: 1, dht: 2 };
   results.sort((a, b) => {
+    const aSrc = sourceOrder[a.source] ?? 1;
+    const bSrc = sourceOrder[b.source] ?? 1;
+    if (aSrc !== bSrc) return aSrc - bSrc;
     if (a.isOnline !== b.isOnline) return a.isOnline ? -1 : 1;
     const aFriend = friendIds.has(a.peerId);
     const bFriend = friendIds.has(b.peerId);
@@ -1480,11 +1487,14 @@ function renderDiscoverResults(results, friendIds, isBrowse) {
   el.innerHTML = results.map(r => {
     const isFriend = friendIds.has(r.peerId);
     const safePeerId = escapeAttr(r.peerId);
+    const distanceLabel = r.source === 'dht'
+      ? '<span class="dht-badge">Network</span>'
+      : `${r.hopDistance} hop${r.hopDistance > 1 ? 's' : ''}`;
     return `<div class="discover-card">
       <canvas width="40" height="40" data-peerid="${safePeerId}"></canvas>
       <div class="discover-info">
         <div class="discover-name" onclick="openPeerProfile('${safePeerId}')" style="cursor:pointer">${escapeHtml(r.displayName)}</div>
-        <div class="discover-meta">${r.isOnline ? '<span class="online-dot"></span> Online' : 'Offline'} &middot; ${r.hopDistance} hop${r.hopDistance > 1 ? 's' : ''}${r.vouchCount ? ' &middot; <span class="vouch-count-badge">&#128737; ' + r.vouchCount + '</span>' : ''}</div>
+        <div class="discover-meta">${r.isOnline ? '<span class="online-dot"></span> Online' : 'Offline'} &middot; ${distanceLabel}${r.vouchCount ? ' &middot; <span class="vouch-count-badge">&#128737; ' + r.vouchCount + '</span>' : ''}</div>
       </div>
       ${isFriend
         ? '<span class="discover-action friend-badge">Friend</span>'
@@ -2685,7 +2695,7 @@ function switchTab(tabName) {
   // Show appropriate main view
   if (tabName === 'feed') { showView('feed'); loadFeed(); }
   else if (tabName === 'deaddrops') { showView('deaddrops'); loadDeadDrops(); }
-  else if (tabName === 'discover') { loadFriendRequests(); searchPeers(); }
+  else if (tabName === 'discover') { loadFriendRequests(); searchPeers(); send('discover_network', {}).catch(() => {}); }
   else if (tabName === 'chats' || tabName === 'contacts' || tabName === 'groups') {
     if (!state.activeChat) showView('empty');
   }

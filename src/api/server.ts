@@ -598,7 +598,7 @@ export class APIServer {
         // ─── Phase 3: Discovery & Friend Requests ───────────────
 
         case 'search_peers': {
-          const { searchTerm, maxResults } = data || {};
+          const { searchTerm, maxResults, dhtDiscovery } = data || {};
           const myId = this.deps.node.getPeerId();
           const allPeers = this.deps.node.getAllKnownPeers();
           const connectedIds = new Set(
@@ -615,7 +615,7 @@ export class APIServer {
                      p.peerId.toLowerCase().includes(term);
             });
           // Enrich with vouch counts
-          const localResults: { peerId: string; displayName: string; isOnline: boolean; hopDistance: number; vouchCount?: number }[] = [];
+          const localResults: { peerId: string; displayName: string; isOnline: boolean; hopDistance: number; vouchCount?: number; source?: string }[] = [];
           for (const p of localPeers) {
             const vc = await this.deps.store.getVouchCount(p.peerId);
             localResults.push({
@@ -624,6 +624,7 @@ export class APIServer {
               isOnline: connectedIds.has(p.peerId),
               hopDistance: 1,
               vouchCount: vc.received,
+              source: 'local',
             });
           }
           let results = localResults;
@@ -644,8 +645,29 @@ export class APIServer {
                 for (const r of remoteResults) {
                   if (!seenIds.has(r.peerId) && r.peerId !== myId) {
                     seenIds.add(r.peerId);
-                    results.push({ ...r, hopDistance: (r.hopDistance || 1) + 1 });
+                    results.push({ ...r, hopDistance: (r.hopDistance || 1) + 1, source: r.source || 'gossip' });
                   }
+                }
+              }
+            } catch {}
+          }
+
+          // DHT discovery — if requested or results are sparse
+          if (dhtDiscovery || (term && results.length < 3)) {
+            try {
+              const dhtResults = await this.deps.node.discoverPeers(term, maxResults || 20, 12_000);
+              for (const r of dhtResults) {
+                if (!seenIds.has(r.peerId) && r.peerId !== myId) {
+                  seenIds.add(r.peerId);
+                  const vc = await this.deps.store.getVouchCount(r.peerId);
+                  results.push({
+                    peerId: r.peerId,
+                    displayName: r.displayName,
+                    isOnline: r.isOnline,
+                    hopDistance: 0,
+                    vouchCount: vc.received,
+                    source: 'dht',
+                  });
                 }
               }
             } catch {}
@@ -729,7 +751,18 @@ export class APIServer {
 
         case 'set_discoverable': {
           await this.deps.store.setMeta('discoverable', data.discoverable ? 'true' : 'false');
+          if (data.discoverable) {
+            this.deps.node.startDirectoryPublishing();
+          } else {
+            this.deps.node.stopDirectoryPublishing();
+          }
           return this.ok(id, { discoverable: data.discoverable });
+        }
+
+        case 'discover_network': {
+          // Background DHT discovery to warm the peer cache
+          this.deps.node.discoverPeers('', 30, 15_000).catch(() => {});
+          return this.ok(id, { started: true });
         }
 
         // ─── Phase 4: Posts & Timeline ──────────────────────────

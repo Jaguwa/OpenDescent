@@ -922,6 +922,17 @@ body {
   cursor: default;
 }
 
+.dht-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.75em;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
 .online-dot {
   display: inline-block;
   width: 8px;

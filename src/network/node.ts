@@ -29,8 +29,21 @@ import { dcutr } from '@libp2p/dcutr';
 import { circuitRelayTransport, circuitRelayServer } from '@libp2p/circuit-relay-v2';
 
 import { multiaddr } from '@multiformats/multiaddr';
+import { CID } from 'multiformats/cid';
+import { sha256 } from 'multiformats/hashes/sha2';
+import * as raw from 'multiformats/codecs/raw';
 import type { NodeConfig, Identity, PeerProfile, NetworkEvent, NetworkEventType } from '../types/index.js';
 import { generateIdentity, loadIdentity, saveIdentity, publicKeyToPeerId, createPeerProfile, verifyPeerProfile } from '../crypto/identity.js';
+
+/** Cached CID for the peer directory — all peers derive the same key */
+let _directoryCID: CID | null = null;
+async function getDirectoryCID(): Promise<CID> {
+  if (_directoryCID) return _directoryCID;
+  const bytes = new TextEncoder().encode('decentranet-peer-directory-v1');
+  const hash = await sha256.digest(bytes);
+  _directoryCID = CID.createV1(raw.code, hash);
+  return _directoryCID;
+}
 
 /** Default bootstrap peers for the DecentraNet network */
 const DEFAULT_BOOTSTRAP_PEERS: string[] = [
@@ -121,6 +134,10 @@ export class DecentraNode {
   // Rate limiting: 100 messages per 60-second window per peer
   private rateLimiter: Map<string, { count: number; windowStart: number }> = new Map();
   private rateLimitCleanupTimer?: ReturnType<typeof setInterval>;
+
+  // DHT directory publishing
+  private directoryPublishTimer?: ReturnType<typeof setInterval>;
+  private directoryPublishing = false;
 
   constructor(config: NodeConfig, passphrase: string) {
     this.passphrase = passphrase;
@@ -236,6 +253,7 @@ export class DecentraNode {
   }
 
   async stop(): Promise<void> {
+    this.stopDirectoryPublishing();
     if (this.rateLimitCleanupTimer) {
       clearInterval(this.rateLimitCleanupTimer);
       this.rateLimitCleanupTimer = undefined;
@@ -650,6 +668,137 @@ export class DecentraNode {
     }
 
     return { peerId: payload.d, name: payload.n };
+  }
+
+  // ─── DHT Peer Directory ─────────────────────────────────────────────────
+
+  /** Publish ourselves as a provider of the directory CID so other peers can find us */
+  async publishToDirectory(): Promise<void> {
+    if (!this.node) return;
+    try {
+      const cid = await getDirectoryCID();
+      await this.node.contentRouting.provide(cid);
+      console.log(`[Directory] Published to DHT peer directory`);
+    } catch (error: any) {
+      // Graceful — DHT may not be ready yet, or no peers to publish to
+      const msg = error?.message || String(error);
+      if (!msg.includes('not started') && !msg.includes('No peers')) {
+        console.warn(`[Directory] Publish failed: ${msg}`);
+      }
+    }
+  }
+
+  /** Start periodic directory publishing (5s initial delay, then every 10 min) */
+  startDirectoryPublishing(): void {
+    if (this.directoryPublishing) return;
+    this.directoryPublishing = true;
+    console.log(`[Directory] Starting DHT directory publishing`);
+
+    // Initial publish after 5s delay (let connections stabilize)
+    setTimeout(() => {
+      if (!this.directoryPublishing) return;
+      this.publishToDirectory();
+    }, 5_000);
+
+    // Re-publish every 10 minutes to keep the DHT record alive
+    this.directoryPublishTimer = setInterval(() => {
+      this.publishToDirectory();
+    }, 10 * 60 * 1000);
+  }
+
+  /** Stop directory publishing */
+  stopDirectoryPublishing(): void {
+    if (!this.directoryPublishing) return;
+    this.directoryPublishing = false;
+    if (this.directoryPublishTimer) {
+      clearInterval(this.directoryPublishTimer);
+      this.directoryPublishTimer = undefined;
+    }
+    console.log(`[Directory] Stopped DHT directory publishing`);
+  }
+
+  /** Whether directory publishing is active */
+  isDirectoryPublishing(): boolean {
+    return this.directoryPublishing;
+  }
+
+  /**
+   * Discover peers via the DHT directory.
+   * Finds providers of the directory CID, connects to unknown ones (triggers profile exchange),
+   * waits briefly for profiles, then filters by search term.
+   */
+  async discoverPeers(searchTerm?: string, maxResults = 20, timeoutMs = 15_000): Promise<{ peerId: string; displayName: string; isOnline: boolean; source: string }[]> {
+    if (!this.node) return [];
+
+    const cid = await getDirectoryCID();
+    const myLibp2pId = this.node.peerId.toString();
+    const newPeerIds: string[] = [];
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        for await (const provider of this.node.contentRouting.findProviders(cid, { signal: controller.signal })) {
+          const providerLibp2pId = provider.id.toString();
+          if (providerLibp2pId === myLibp2pId) continue;
+
+          // Check if we already know this peer
+          const existingDecentraId = this.libp2pToDecentra.get(providerLibp2pId);
+          if (existingDecentraId) continue;
+
+          // Try to connect (this triggers profile exchange via peer:connect event)
+          const existingConns = this.node.getConnections().filter(
+            (c) => c.remotePeer.toString() === providerLibp2pId
+          );
+          if (existingConns.length === 0) {
+            try {
+              await this.node.dial(provider.id);
+              newPeerIds.push(providerLibp2pId);
+            } catch {
+              // Peer unreachable — skip
+            }
+          }
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
+    } catch (error: any) {
+      // AbortError is expected (timeout), other errors are worth logging
+      if (error?.name !== 'AbortError' && !error?.message?.includes('abort')) {
+        console.warn(`[Directory] Discovery error: ${error?.message || error}`);
+      }
+    }
+
+    // Wait for profile exchanges to complete for newly connected peers
+    if (newPeerIds.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, 2_000));
+    }
+
+    // Collect all known peers with source tag
+    const term = (searchTerm || '').toLowerCase();
+    const myId = this.getPeerId();
+    const connectedDecentraIds = new Set(
+      this.getConnectedLibp2pPeers()
+        .map((id) => this.libp2pToDecentra.get(id))
+        .filter(Boolean)
+    );
+
+    const results: { peerId: string; displayName: string; isOnline: boolean; source: string }[] = [];
+    for (const profile of this.knownPeers.values()) {
+      if (profile.peerId === myId) continue;
+      if (term && !(profile.displayName || '').toLowerCase().includes(term) && !profile.peerId.toLowerCase().includes(term)) continue;
+      results.push({
+        peerId: profile.peerId,
+        displayName: profile.displayName || profile.peerId.slice(0, 12),
+        isOnline: connectedDecentraIds.has(profile.peerId),
+        source: 'dht',
+      });
+      if (results.length >= maxResults) break;
+    }
+
+    console.log(`[Directory] Discovered ${newPeerIds.length} new peer(s), ${results.length} total result(s)`);
+    return results;
   }
 
   // ─── Events ─────────────────────────────────────────────────────────────

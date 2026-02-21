@@ -772,6 +772,12 @@ Options:
   const profile = node.getProfile();
   await store.storePeerProfile(profile);
 
+  // Start DHT directory publishing if discoverable (default: true)
+  const discoverable = await store.getMeta('discoverable');
+  if (discoverable !== 'false') {
+    node.startDirectoryPublishing();
+  }
+
   const messaging = new MessagingService(node, store);
   const calls = new CallManager(node);
   const groups = new GroupManager(node, store);
