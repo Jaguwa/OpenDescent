@@ -32,6 +32,9 @@ import { multiaddr } from '@multiformats/multiaddr';
 import { CID } from 'multiformats/cid';
 import { sha256 } from 'multiformats/hashes/sha2';
 import * as raw from 'multiformats/codecs/raw';
+import { generateKeyPair, privateKeyFromProtobuf, privateKeyToProtobuf } from '@libp2p/crypto/keys';
+import * as fs from 'fs';
+import * as path from 'path';
 import type { NodeConfig, Identity, PeerProfile, NetworkEvent, NetworkEventType } from '../types/index.js';
 import { generateIdentity, loadIdentity, saveIdentity, publicKeyToPeerId, createPeerProfile, verifyPeerProfile } from '../crypto/identity.js';
 
@@ -190,7 +193,23 @@ export class DecentraNode {
       }
     }
 
+    // Persist libp2p key so the PeerId stays stable across restarts
+    // (critical for bootstrap addresses to remain valid)
+    const libp2pKeyPath = path.join(this.config.dataDir, 'libp2p-key');
+    let libp2pPrivateKey;
+    try {
+      const raw = fs.readFileSync(libp2pKeyPath);
+      libp2pPrivateKey = privateKeyFromProtobuf(raw);
+      console.log(`[Node] Loaded persisted libp2p key`);
+    } catch {
+      libp2pPrivateKey = await generateKeyPair('Ed25519');
+      if (!fs.existsSync(this.config.dataDir)) fs.mkdirSync(this.config.dataDir, { recursive: true });
+      fs.writeFileSync(libp2pKeyPath, privateKeyToProtobuf(libp2pPrivateKey));
+      console.log(`[Node] Generated and saved new libp2p key`);
+    }
+
     const libp2pConfig: any = {
+      privateKey: libp2pPrivateKey,
       addresses: {
         listen: [
           `/ip4/0.0.0.0/tcp/${this.config.port}`,
