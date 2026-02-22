@@ -542,6 +542,8 @@ function connectWS() {
     console.warn('[DecentraNet] WS closed:', ev.code, ev.reason);
     setConnectionStatus('offline');
     state.connected = false;
+    if (state.refreshTimer) { clearInterval(state.refreshTimer); state.refreshTimer = null; }
+    if (state.callTimer) { clearInterval(state.callTimer); state.callTimer = null; }
     if (ev.code !== 1000) {
       showToast('Disconnected', 'Reconnecting...', 'error');
     }
@@ -764,7 +766,7 @@ function renderMessages(messages) {
   let lastDate = '';
   for (const m of messages) {
     const date = new Date(m.timestamp).toLocaleDateString();
-    if (date !== lastDate) { lastDate = date; el.innerHTML += `<div class="date-separator">${date}</div>`; }
+    if (date !== lastDate) { lastDate = date; el.innerHTML += `<div class="date-separator">${escapeHtml(date)}</div>`; }
     const isMine = m.from === state.myPeerId;
     const time = formatTime(m.timestamp);
     if (m.type === 'file') {
@@ -872,6 +874,15 @@ function showView(view) {
   document.getElementById('profile-view').classList.toggle('hidden', view !== 'profile');
   document.getElementById('deaddrops-view').classList.toggle('hidden', view !== 'deaddrops');
   document.getElementById('hub-overview').classList.toggle('hidden', view !== 'hub-overview');
+  // Mobile: toggle sidebar/chat visibility
+  document.getElementById('app').classList.toggle('chat-open', view === 'chat');
+}
+
+function mobileBackToSidebar() {
+  document.getElementById('app').classList.remove('chat-open');
+  state.activeChat = null;
+  state.activeChannel = null;
+  showView('empty');
 }
 
 // ─── Chat Navigation ────────────────────────────────────────────────────────
@@ -888,6 +899,8 @@ async function openConversation(conversationId, displayName, isGroup) {
   const callBtns = document.getElementById('chat-actions');
   callBtns.style.display = type === 'dm' ? 'flex' : 'none';
   document.querySelectorAll('.list-item').forEach((el) => el.classList.remove('active'));
+  const messagesEl = document.getElementById('messages');
+  messagesEl.innerHTML = '<div class="loading-state"><div class="spinner"></div>Loading messages...</div>';
   try {
     const messages = await send('get_history', { conversationId, limit: 100 });
     state.messages = messages;
@@ -1547,7 +1560,7 @@ async function searchPeers() {
   const isBrowse = !term;
   const el = document.getElementById('discover-results');
   // Show loading state
-  el.innerHTML = '<div class="list-item"><span class="subtle">Searching network...</span></div>';
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div>Searching network...</div>';
   try {
     const results = await send('search_peers', { searchTerm: term, maxResults: 50, dhtDiscovery: true });
     const friendIds = new Set((await send('get_friends')).map(f => f.peerId));
@@ -1615,7 +1628,11 @@ async function loadFriendRequests() {
     const requests = await send('get_friend_requests');
     const section = document.getElementById('friend-requests-section');
     const list = document.getElementById('friend-requests-list');
-    if (requests.length === 0) { section.classList.add('hidden'); return; }
+    if (requests.length === 0) {
+      section.classList.remove('hidden');
+      list.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#9996;</div><div class="empty-state-text"><strong>No pending requests</strong>You\'re all caught up!</div></div>';
+      return;
+    }
     section.classList.remove('hidden');
     list.innerHTML = requests.map(r => {
       const safeReqId = escapeAttr(r.requestId);
@@ -1693,6 +1710,10 @@ function renderTrustPath(pathResult) {
 // ─── Feed & Posts (Phase 4) ─────────────────────────────────────────────────
 
 const loadFeed = debounce(async () => {
+  const feedEl = document.getElementById('feed-posts');
+  if (!feedEl.children.length || feedEl.querySelector('.empty-state-rich')) {
+    feedEl.innerHTML = '<div class="loading-state"><div class="spinner"></div>Loading feed...</div>';
+  }
   try {
     const [posts, polls] = await Promise.all([
       send('get_timeline', { limit: 50 }),
@@ -1830,6 +1851,8 @@ async function createPost() {
   if (!content && state.postAttachments.length === 0) return;
   if (content.length > 2000) { showToast('Post too long (max 2000 chars)'); return; }
 
+  const btn = document.getElementById('btn-post');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;margin:0"></div>'; }
   try {
     await send('create_post', { content, attachments: state.postAttachments, visibility: postVisibility });
     input.value = '';
@@ -1840,6 +1863,7 @@ async function createPost() {
     loadFeed();
     showToast('Posted!');
   } catch (e) { showToast('Failed to post', e.message); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Post'; } }
 }
 
 async function deletePost(postId) {
@@ -1884,7 +1908,7 @@ async function openComments(postId) {
   state.commentPostId = postId;
   const modal = document.getElementById('comments-modal');
   const list = document.getElementById('comments-list');
-  list.innerHTML = '<span class="subtle">Loading...</span>';
+  list.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
   document.getElementById('comment-input').value = '';
   modal.classList.remove('hidden');
 
@@ -3761,7 +3785,7 @@ async function openChannel(hubId, channelId, name) {
 
 function renderHubMemberPanel() {
   const el = document.getElementById('member-panel-list');
-  if (!state.hubMembers.length) { el.innerHTML = '<div class="subtle" style="padding:12px">No members</div>'; return; }
+  if (!state.hubMembers.length) { el.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128101;</div><div class="empty-state-text"><strong>No members yet</strong>Invite friends to join!</div></div>'; return; }
 
   const roleOrder = { owner: 0, admin: 1, member: 2 };
   const sorted = [...state.hubMembers].sort((a, b) => (roleOrder[a.role] || 9) - (roleOrder[b.role] || 9));
@@ -4863,7 +4887,7 @@ document.addEventListener('DOMContentLoaded', () => {
   connectWS();
 
   // Periodic refresh
-  setInterval(() => {
+  state.refreshTimer = setInterval(() => {
     if (state.connected) {
       refreshContacts();
       refreshConversations();

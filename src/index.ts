@@ -1062,24 +1062,24 @@ Options:
   });
 
   // Periodic cleanup of expired dead drops (every 30 minutes)
-  setInterval(async () => {
+  const dropCleanupTimer = setInterval(async () => {
     const cleaned = await store.cleanExpiredDrops();
     if (cleaned > 0) console.log(`[DeadDrops] Cleaned ${cleaned} expired drops`);
   }, 30 * 60 * 1000);
 
   // Periodic cleanup of expired polls (every 15 minutes)
-  setInterval(async () => {
+  const pollCleanupTimer = setInterval(async () => {
     const closed = await store.closeExpiredPolls();
     if (closed > 0) console.log(`[Polls] Closed ${closed} expired polls`);
   }, 15 * 60 * 1000);
 
   // Periodic cleanup of expired pending messages (hourly)
-  setInterval(() => store.cleanExpiredMessages(config.messageRetentionSeconds), 60 * 60 * 1000);
+  const messageCleanupTimer = setInterval(() => store.cleanExpiredMessages(config.messageRetentionSeconds), 60 * 60 * 1000);
 
   // Periodic account bundle auto-save and distribution (every 5 minutes)
   // Bundles are encrypted before distribution so storing peers can't read contacts/groups
   const { sign: signData } = await import('./crypto/identity.js');
-  setInterval(async () => {
+  const bundleDistTimer = setInterval(async () => {
     try {
       const bundle = await store.buildAccountBundle(node.getPeerId(), (data) => signData(data, node.getIdentity().privateKey));
       const serialized = JSON.stringify({
@@ -1134,6 +1134,13 @@ Options:
     shuttingDown = true;
     console.log(`\n[Shutdown] ${signal} received, cleaning up...`);
     try {
+      clearInterval(dropCleanupTimer);
+      clearInterval(pollCleanupTimer);
+      clearInterval(messageCleanupTimer);
+      clearInterval(bundleDistTimer);
+      posts.stop();
+      polls.stop();
+      trustWeb.stop();
       hubStats.stop();
       if (onionTransport) onionTransport.stop();
       await node.stop();

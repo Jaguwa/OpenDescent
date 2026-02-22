@@ -49,6 +49,10 @@ export class PollService {
     }, 10 * 60 * 1000);
   }
 
+  stop(): void {
+    clearInterval(this.pruneTimer);
+  }
+
   // ─── Create Poll ──────────────────────────────────────────────────────
 
   async createPoll(

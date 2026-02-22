@@ -39,6 +39,7 @@ body {
 #app {
   display: flex;
   height: 100vh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .hidden {
@@ -3482,4 +3483,79 @@ body {
 @media (max-width: 600px) {
   #hub-overview-stats-row { grid-template-columns: repeat(2, 1fr); }
   #hub-overview { padding: 16px; }
+}
+
+/* ─── Spinner ──────────────────────────────────────────────────────────── */
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 0;
+  color: var(--text-secondary);
+  font-size: 0.85em;
+}
+
+/* ─── Mobile Back Button ───────────────────────────────────────────────── */
+
+.mobile-back-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-right: 4px;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .mobile-back-btn { display: inline-flex; }
+}
+
+/* ─── Tablet (1024px) ──────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  #member-panel { display: none; }
+  #sidebar { min-width: 220px; width: 260px; }
+}
+
+/* ─── Touch Targets ────────────────────────────────────────────────────── */
+
+@media (pointer: coarse) {
+  button, .list-item, .tab-btn, .icon-btn, .discover-action,
+  .friend-req-actions button, .hub-icon, .channel-item, .member-item {
+    min-height: 44px;
+  }
+}
+
+/* ─── Small Screen Modals ──────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .modal-content {
+    max-width: 95vw;
+    min-width: unset;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+/* ─── Prevent iOS Auto-Zoom ────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  input, textarea, select { font-size: 16px; }
 }

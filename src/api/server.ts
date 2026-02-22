@@ -96,6 +96,7 @@ export class APIServer {
   private frontendDir: string;
   private tempDir: string;
   private callSignals: Map<string, (signal: any) => void> = new Map();
+  private wsRateLimiter: Map<WebSocket, { count: number; windowStart: number }> = new Map();
   private static readonly DEFAULT_GIF_API_KEY = process.env.KLIPY_API_KEY || '';
 
   constructor(port: number, deps: APIServerDeps) {
@@ -203,7 +204,7 @@ export class APIServer {
         }
 
         if (msg.type === 'request') {
-          const response = await this.handleRequest(msg as WSRequest);
+          const response = await this.handleRequest(msg as WSRequest, ws);
           ws.send(JSON.stringify(response));
         }
       } catch (error: any) {
@@ -219,6 +220,7 @@ export class APIServer {
     ws.on('close', () => {
       this.clients.delete(ws);
       this.authenticatedClients.delete(ws);
+      this.wsRateLimiter.delete(ws);
       console.log(`[API] Browser disconnected (${this.clients.size} client(s))`);
     });
   }
@@ -228,10 +230,31 @@ export class APIServer {
     return this.authToken;
   }
 
+  // ─── Rate Limiting ──────────────────────────────────────────────────
+
+  private isWSRateLimited(ws: WebSocket): boolean {
+    const now = Date.now();
+    const entry = this.wsRateLimiter.get(ws);
+    if (!entry || now - entry.windowStart > 60_000) {
+      this.wsRateLimiter.set(ws, { count: 1, windowStart: now });
+      return false;
+    }
+    entry.count++;
+    if (entry.count > 200) {
+      console.warn(`[API] WebSocket client exceeded 200 req/60s — rate limited`);
+      return true;
+    }
+    return false;
+  }
+
   // ─── Request Handler ──────────────────────────────────────────────────
 
-  private async handleRequest(req: WSRequest): Promise<WSResponse> {
+  private async handleRequest(req: WSRequest, ws: WebSocket): Promise<WSResponse> {
     const { id, action, data } = req;
+
+    if (this.isWSRateLimited(ws)) {
+      return this.err(id, 'Rate limited');
+    }
 
     try {
       switch (action) {

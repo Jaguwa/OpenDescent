@@ -7,7 +7,7 @@
  * dynamic import() to load our ESM backend modules.
  */
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
@@ -389,6 +389,35 @@ async function startApp() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  // Auto-update (only in packaged builds)
+  if (app.isPackaged) {
+    try {
+      const { autoUpdater } = require('electron-updater');
+      autoUpdater.autoDownload = false;
+      autoUpdater.checkForUpdates().catch(() => {});
+      autoUpdater.on('update-available', (info) => {
+        if (!mainWindow) return;
+        dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'Update Available',
+          message: `Version ${info.version} is available. Download now?`,
+          buttons: ['Download', 'Later'],
+        }).then(r => { if (r.response === 0) autoUpdater.downloadUpdate(); });
+      });
+      autoUpdater.on('update-downloaded', () => {
+        if (!mainWindow) return;
+        dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'Update Ready',
+          message: 'Restart to install the update?',
+          buttons: ['Restart', 'Later'],
+        }).then(r => { if (r.response === 0) autoUpdater.quitAndInstall(); });
+      });
+    } catch (e) {
+      console.warn('[AutoUpdate] Failed to initialize:', e.message);
+    }
+  }
 }
 
 async function shutdown() {

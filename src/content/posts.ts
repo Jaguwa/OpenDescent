@@ -23,6 +23,7 @@ export class PostService {
   private seenPostIds: Map<string, number> = new Map(); // postId -> timestamp
   private onPostCallbacks: ((post: Post) => void)[] = [];
   private onInteractionCallbacks: ((data: { type: string; postId: string; authorId: string }) => void)[] = [];
+  private pruneTimer: ReturnType<typeof setInterval>;
 
   constructor(node: DecentraNode, store: LocalStore) {
     this.node = node;
@@ -38,7 +39,11 @@ export class PostService {
     });
 
     // Prune seen posts every 10 minutes
-    setInterval(() => this.pruneSeenPosts(), 10 * 60 * 1000);
+    this.pruneTimer = setInterval(() => this.pruneSeenPosts(), 10 * 60 * 1000);
+  }
+
+  stop(): void {
+    clearInterval(this.pruneTimer);
   }
 
   onPost(callback: (post: Post) => void): void {

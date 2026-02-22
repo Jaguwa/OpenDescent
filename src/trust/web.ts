@@ -21,13 +21,18 @@ export class TrustWebService {
   private node: DecentraNode;
   private store: LocalStore;
   private seenVouchIds: Map<string, number> = new Map();
+  private pruneTimer: ReturnType<typeof setInterval>;
 
   constructor(node: DecentraNode, store: LocalStore) {
     this.node = node;
     this.store = store;
 
     // Prune seen vouches every 10 minutes
-    setInterval(() => this.pruneSeenVouches(), 10 * 60 * 1000);
+    this.pruneTimer = setInterval(() => this.pruneSeenVouches(), 10 * 60 * 1000);
+  }
+
+  stop(): void {
+    clearInterval(this.pruneTimer);
   }
 
   /** Vouch for a peer (must be a friend) */
