@@ -726,9 +726,22 @@ Options:
   } else if (fs.existsSync(deviceKeyFile)) {
     passphrase = fs.readFileSync(deviceKeyFile, 'utf8').trim();
   } else if (fs.existsSync(identityFile)) {
-    // Existing identity without device key → use legacy default for backward compatibility
-    passphrase = 'decentranet-dev-passphrase';
-    console.warn('[Security] Using legacy default passphrase. Run with --passphrase to set a custom one.');
+    // Existing identity without device key → auto-migrate to random device key
+    const legacyPassphrase = 'decentranet-dev-passphrase';
+    try {
+      const { loadIdentity: loadId, saveIdentity: saveId } = await import('./crypto/identity.js');
+      const identity = loadId(identityFile, legacyPassphrase);
+      const newKey = crypto.randomBytes(32).toString('hex');
+      saveId(identity, identityFile, newKey);
+      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      fs.writeFileSync(deviceKeyFile, newKey);
+      passphrase = newKey;
+      console.log('[Security] Migrated legacy passphrase to device-specific key.');
+    } catch {
+      // Migration failed — fall back to legacy passphrase
+      passphrase = legacyPassphrase;
+      console.warn('[Security] Legacy passphrase migration failed. Using legacy default.');
+    }
   } else {
     // Fresh install → generate random device-specific key
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -866,12 +879,18 @@ Options:
   });
 
   // Wire peer search handler (Phase 3)
-  node.setPeerSearchHandler(async (queryStr) => {
+  node.setPeerSearchHandler(async (queryStr, requesterId) => {
     try {
       const parsed = JSON.parse(queryStr);
 
-      // Handle GIF API key requests — relay distributes its key to the network
+      // Handle GIF API key requests — only share with TOFU-verified peers
       if (parsed.action === 'get_gif_key') {
+        if (requesterId) {
+          const pinned = await store.getPinnedKey(requesterId);
+          if (!pinned) {
+            return JSON.stringify({ gifApiKey: '' });
+          }
+        }
         const key = process.env.KLIPY_API_KEY || await store.getMeta('gif_api_key') || '';
         return JSON.stringify({ gifApiKey: key });
       }
@@ -905,6 +924,12 @@ Options:
   node.setFriendRequestHandler(async (data) => {
     try {
       const msg = JSON.parse(data);
+
+      // Silently reject friend requests from blocked peers
+      if (msg.from && await store.isBlocked(msg.from)) {
+        return 'BLOCKED';
+      }
+
       if (msg.type === 'response') {
         // Response to our outbound request
         const req = await store.getFriendRequest(msg.requestId);

@@ -518,17 +518,17 @@ function connectWS() {
       document.getElementById('my-id').textContent = data.peerId;
       generateAvatar(data.peerId, document.getElementById('my-avatar'), 36);
       generateAvatar(data.peerId, document.getElementById('composer-avatar'), 36);
-    });
+    }).catch(() => showToast('Load Error', 'Failed to load identity', 'error'));
     send('get_account_status').then((status) => {
       if (status.mode === 'legacy') showMnemonicModal();
-    });
+    }).catch(() => showToast('Load Error', 'Failed to load account status', 'error'));
     // Load theme from backend
     send('get_theme').then((prefs) => {
       if (prefs) {
         state.themePrefs = prefs;
         applyTheme(prefs);
       }
-    });
+    }).catch(() => {});
     refreshAll();
     loadFeed();
 
@@ -542,11 +542,15 @@ function connectWS() {
     console.warn('[DecentraNet] WS closed:', ev.code, ev.reason);
     setConnectionStatus('offline');
     state.connected = false;
+    if (ev.code !== 1000) {
+      showToast('Disconnected', 'Reconnecting...', 'error');
+    }
     setTimeout(connectWS, 3000);
   };
 
   state.ws.onerror = (ev) => {
     console.error('[DecentraNet] WS error:', ev);
+    showToast('Connection Error', 'Lost connection to backend', 'error');
   };
 }
 
@@ -573,6 +577,7 @@ function send(action, data) {
     setTimeout(() => {
       if (state.pendingRequests[id]) {
         delete state.pendingRequests[id];
+        showToast('Request Timeout', `"${action}" took too long`, 'error');
         reject(new Error('Request timeout'));
       }
     }, 30000);
@@ -722,12 +727,18 @@ function renderContacts() {
     return;
   }
   el.innerHTML = state.contacts.map((c) => `
-    <div class="list-item" onclick="startDM('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')">
-      <div class="item-name">
-        ${c.online ? '<span class="online-dot"></span>' : ''}
-        ${escapeHtml(c.displayName || c.peerId.slice(0, 12))}
+    <div class="list-item contact-item" onclick="startDM('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')">
+      <div class="item-info">
+        <div class="item-name">
+          ${c.online ? '<span class="online-dot"></span>' : ''}
+          ${escapeHtml(c.displayName || c.peerId.slice(0, 12))}
+        </div>
+        <div class="item-preview">${c.peerId.slice(0, 20)}...</div>
       </div>
-      <div class="item-preview">${c.peerId.slice(0, 20)}...</div>
+      <div class="contact-actions">
+        <button class="btn-icon btn-remove" onclick="event.stopPropagation(); removeFriend('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')" title="Remove">&#10005;</button>
+        <button class="btn-icon btn-block" onclick="event.stopPropagation(); blockPeer('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')" title="Block">&#128683;</button>
+      </div>
     </div>`
   ).join('');
 }
@@ -742,6 +753,7 @@ function renderGroups() {
     <div class="list-item" onclick="openGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')">
       <div class="item-name">&#128101; ${escapeHtml(g.name)}</div>
       <div class="item-preview">${g.memberCount} members</div>
+      <button class="btn-icon btn-leave-group" onclick="event.stopPropagation(); leaveGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')" title="Leave group">&#10005;</button>
     </div>`
   ).join('');
 }
@@ -889,10 +901,91 @@ function startDM(peerId, displayName) {
   switchTab('chats');
 }
 
+async function removeFriend(peerId, name) {
+  if (!confirm(`Remove ${name} from contacts?`)) return;
+  try {
+    await send('remove_friend', { peerId });
+    showToast('Removed', `${name} removed from contacts`, 'info');
+    refreshAll();
+  } catch (e) {
+    showToast('Error', e.message, 'error');
+  }
+}
+
+async function blockPeer(peerId, name) {
+  if (!confirm(`Block ${name}? They will be removed from your contacts and their messages will be silently dropped.`)) return;
+  try {
+    await send('block_peer', { peerId });
+    showToast('Blocked', `${name} has been blocked`, 'info');
+    refreshAll();
+  } catch (e) {
+    showToast('Error', e.message, 'error');
+  }
+}
+
+async function unblockPeer(peerId) {
+  try {
+    await send('unblock_peer', { peerId });
+    showToast('Unblocked', 'Peer unblocked', 'info');
+    loadBlockedPeers();
+  } catch (e) {
+    showToast('Error', e.message, 'error');
+  }
+}
+
+async function loadBlockedPeers() {
+  try {
+    const blocked = await send('get_blocked');
+    const el = document.getElementById('blocked-peers-list');
+    if (!el) return;
+    if (!blocked || blocked.length === 0) {
+      el.innerHTML = '<p class="subtle">No blocked peers.</p>';
+      return;
+    }
+    el.innerHTML = blocked.map((peerId) => `
+      <div class="blocked-peer-item">
+        <span>${escapeHtml(peerId.slice(0, 20))}...</span>
+        <button class="btn-secondary" onclick="unblockPeer('${escapeAttr(peerId)}')">Unblock</button>
+      </div>`
+    ).join('');
+  } catch {}
+}
+
+async function deleteAccount() {
+  if (!confirm('Delete your account? This will permanently erase all data including your identity, messages, and contacts. This cannot be undone.')) return;
+  const typed = prompt('Type DELETE to confirm:');
+  if (typed !== 'DELETE') {
+    showToast('Cancelled', 'Account deletion cancelled', 'info');
+    return;
+  }
+  try {
+    await send('delete_account', { confirm: 'DELETE' });
+    document.getElementById('app').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)"><h2>Account Deleted</h2><p style="margin-top:12px;color:var(--text-secondary)">All data has been wiped. Please restart the application.</p></div>';
+    if (state.ws) state.ws.close();
+  } catch (e) {
+    showToast('Error', e.message, 'error');
+  }
+}
+
 function openGroup(groupId, name) {
   const conversationId = `group:${groupId}`;
   openConversation(conversationId, name, true);
   switchTab('chats');
+}
+
+async function leaveGroup(groupId, name) {
+  if (!confirm(`Leave group "${name}"?`)) return;
+  try {
+    await send('leave_group', { groupId });
+    showToast('Left Group', `You left "${name}"`, 'info');
+    if (state.activeChat && state.activeChat.id === `group:${groupId}`) {
+      state.activeChat = null;
+      showView('empty');
+    }
+    refreshAll();
+  } catch (e) {
+    showToast('Error', e.message, 'error');
+  }
 }
 
 // ─── Sending Messages ───────────────────────────────────────────────────────
@@ -1069,6 +1162,9 @@ function showSettingsModal() {
 
   // GIF API key
   loadGifApiKey();
+
+  // Blocked peers
+  loadBlockedPeers();
 
   modal.classList.remove('hidden');
 }

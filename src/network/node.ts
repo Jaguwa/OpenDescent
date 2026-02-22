@@ -120,7 +120,7 @@ export class DecentraNode {
   private historySyncHandler?: (requesterId: string, since: number) => Promise<Uint8Array | null>;
   private tofuHandler?: (peerId: string, publicKey: Uint8Array) => Promise<boolean>;
   private profileUpdateHandler?: (peerId: string, data: string) => Promise<void>;
-  private peerSearchHandler?: (query: string) => Promise<string>;
+  private peerSearchHandler?: (query: string, requesterId?: string) => Promise<string>;
   private friendRequestHandler?: (data: string) => Promise<string>;
   private postBroadcastHandler?: (data: string) => Promise<void>;
   private postInteractionHandler?: (data: string) => Promise<string>;
@@ -434,7 +434,7 @@ export class DecentraNode {
   }
 
   /** Register handler for peer search queries (Phase 3) */
-  setPeerSearchHandler(handler: (query: string) => Promise<string>): void {
+  setPeerSearchHandler(handler: (query: string, requesterId?: string) => Promise<string>): void {
     this.peerSearchHandler = handler;
   }
 
@@ -1175,8 +1175,9 @@ export class DecentraNode {
       try {
         const data = await readFromSource(stream.source);
         const query = new TextDecoder().decode(data);
+        const requesterId = this.libp2pToDecentra.get(connection.remotePeer.toString());
         if (this.peerSearchHandler) {
-          const results = await this.peerSearchHandler(query);
+          const results = await this.peerSearchHandler(query, requesterId);
           await writeToSink(stream, new TextEncoder().encode(results));
         } else {
           await writeToSink(stream, new TextEncoder().encode('[]'));

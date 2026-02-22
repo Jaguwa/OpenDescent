@@ -213,6 +213,57 @@ body {
   font-size: 0.8em;
 }
 
+/* Contact actions (hover-reveal) */
+.contact-item {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.contact-item .item-info { flex: 1; min-width: 0; }
+.contact-actions {
+  display: none;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.contact-item:hover .contact-actions { display: flex; }
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius);
+  font-size: 0.85em;
+  line-height: 1;
+}
+.btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); }
+.btn-block:hover { color: var(--red); }
+.btn-leave-group {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius);
+  font-size: 0.85em;
+}
+.list-item:hover .btn-leave-group { display: block; }
+.btn-leave-group:hover { color: var(--red); background: var(--bg-hover); }
+.blocked-peer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9em;
+}
+.blocked-peer-item span { color: var(--text-secondary); }
+
 .online-dot {
   display: inline-block;
   width: 8px;
@@ -2238,6 +2289,13 @@ body {
   font-size: 12px;
 }
 .btn-danger:hover { opacity: 0.85; }
+
+.danger-zone {
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-top: 12px;
+}
 
 .browse-hubs-content { max-width: 550px; }
 

@@ -116,9 +116,20 @@ async function startApp() {
   if (fs.existsSync(deviceKeyFile)) {
     passphrase = fs.readFileSync(deviceKeyFile, 'utf8').trim();
   } else if (fs.existsSync(identityFile)) {
-    // Existing identity from before device-key — use legacy default for backward compat
-    passphrase = 'decentranet-desktop-passphrase';
-    console.warn('[Security] Using legacy passphrase. Will migrate on next identity regeneration.');
+    // Existing identity from before device-key — auto-migrate to random device key
+    const legacyPassphrase = 'decentranet-desktop-passphrase';
+    try {
+      const { loadIdentity: loadId, saveIdentity: saveId } = await import('./dist/crypto/identity.js');
+      const identity = loadId(identityFile, legacyPassphrase);
+      const newKey = crypto.randomBytes(32).toString('hex');
+      saveId(identity, identityFile, newKey);
+      fs.writeFileSync(deviceKeyFile, newKey);
+      passphrase = newKey;
+      console.log('[Security] Migrated legacy passphrase to device-specific key.');
+    } catch {
+      passphrase = legacyPassphrase;
+      console.warn('[Security] Legacy passphrase migration failed. Using legacy default.');
+    }
   } else {
     // Fresh install — generate random device-specific key
     passphrase = crypto.randomBytes(32).toString('hex');

@@ -146,10 +146,12 @@ export class APIServer {
     const ext = path.extname(filePath);
     const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
 
+    // Generate per-request nonce for auth token script
+    const nonce = crypto.randomBytes(16).toString('base64');
+
     const securityHeaders: Record<string, string> = {
-      // Note: 'unsafe-inline' required for script-src because the frontend uses inline onclick handlers.
-      // XSS is mitigated at the application layer via escapeAttr() and input sanitization (Phase A).
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* wss://localhost:*; img-src 'self' data: blob: https://*.klipy.com https://static.klipy.com; media-src 'self' blob: data:;",
+      // Nonce protects the auth token <script>; script-src-attr allows 75+ inline onclick handlers
+      'Content-Security-Policy': `default-src 'self'; script-src 'self' 'nonce-${nonce}'; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* wss://localhost:*; img-src 'self' data: blob: https://*.klipy.com https://static.klipy.com; media-src 'self' blob: data:;`,
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
     };
@@ -158,10 +160,10 @@ export class APIServer {
       if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
         let content: Buffer | string = fs.readFileSync(filePath);
 
-        // Inject auth token into the HTML page
+        // Inject auth token into the HTML page with nonce
         if (urlPath === '/index.html') {
           const html = content.toString('utf8');
-          const tokenScript = `<script>window.__DECENTRA_TOKEN='${this.authToken}';</script>`;
+          const tokenScript = `<script nonce="${nonce}">window.__DECENTRA_TOKEN='${this.authToken}';</script>`;
           content = Buffer.from(html.replace('</head>', `${tokenScript}\n</head>`));
         }
 
@@ -341,6 +343,12 @@ export class APIServer {
             memberCount: g.members.length,
             lastMessageAt: g.lastMessageAt,
           })));
+        }
+
+        case 'leave_group': {
+          if (!data.groupId) return this.err(id, 'Missing groupId');
+          await this.deps.groups.leaveGroup(data.groupId);
+          return this.ok(id, { left: true });
         }
 
         case 'share_file': {
@@ -1310,6 +1318,47 @@ export class APIServer {
           return this.ok(id, { maskedKey: masked });
         }
 
+        case 'remove_friend': {
+          if (!data.peerId) return this.err(id, 'Missing peerId');
+          await this.deps.store.removeFriend(data.peerId);
+          return this.ok(id, { removed: true });
+        }
+
+        case 'block_peer': {
+          if (!data.peerId) return this.err(id, 'Missing peerId');
+          await this.deps.store.blockPeer(data.peerId);
+          await this.deps.store.removeFriend(data.peerId);
+          return this.ok(id, { blocked: true });
+        }
+
+        case 'unblock_peer': {
+          if (!data.peerId) return this.err(id, 'Missing peerId');
+          await this.deps.store.unblockPeer(data.peerId);
+          return this.ok(id, { unblocked: true });
+        }
+
+        case 'get_blocked': {
+          const blocked = await this.deps.store.getBlockedPeers();
+          return this.ok(id, blocked);
+        }
+
+        case 'delete_account': {
+          if (!data || data.confirm !== 'DELETE') {
+            return this.err(id, 'Must confirm with { confirm: "DELETE" }');
+          }
+          try {
+            await this.deps.node.stop();
+          } catch {}
+          await this.deps.store.wipeAll();
+          // Close all WS clients after response sent
+          setTimeout(() => {
+            for (const client of this.clients) {
+              try { client.close(1000, 'Account deleted'); } catch {}
+            }
+          }, 500);
+          return this.ok(id, { deleted: true, message: 'Account deleted. Please restart the application.' });
+        }
+
         default:
           return this.err(id, `Unknown action: ${action}`);
       }
@@ -1548,9 +1597,15 @@ export class APIServer {
    * This lets the relay operator set KLIPY_API_KEY once, and all clients inherit it.
    */
   private async getGifApiKey(): Promise<string> {
-    // 1. Check local store (user-configured or previously fetched)
+    // 1. Check local store (user-configured or previously fetched) with 24h expiry
     const local = await this.deps.store.getMeta('gif_api_key');
-    if (local) return local;
+    if (local) {
+      const ts = await this.deps.store.getMeta('gif_api_key_ts');
+      if (!ts || Date.now() - parseInt(ts, 10) < 24 * 60 * 60 * 1000) {
+        return local;
+      }
+      // Expired — clear cached key and re-fetch below
+    }
 
     // 2. Check environment variable (set on relay server)
     if (APIServer.DEFAULT_GIF_API_KEY) {
@@ -1569,8 +1624,9 @@ export class APIServer {
           try {
             const parsed = JSON.parse(text);
             if (parsed.gifApiKey) {
-              // Cache locally so we don't keep asking
+              // Cache locally with timestamp
               await this.deps.store.setMeta('gif_api_key', parsed.gifApiKey);
+              await this.deps.store.setMeta('gif_api_key_ts', String(Date.now()));
               return parsed.gifApiKey;
             }
           } catch {}

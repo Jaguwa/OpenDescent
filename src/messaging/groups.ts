@@ -244,6 +244,33 @@ export class GroupManager {
     }
   }
 
+  /** Leave a group — notify members and remove locally */
+  async leaveGroup(groupId: string): Promise<void> {
+    const group = this.groups.get(groupId);
+    if (!group) throw new Error(`Unknown group: ${groupId}`);
+
+    const myId = this.node.getPeerId();
+
+    // Send leave control message to all members
+    const controlMsg: GroupControlMessage = {
+      type: 'group_leave',
+      groupId,
+      from: myId,
+      payload: null,
+      timestamp: Date.now(),
+    };
+    const data = new TextEncoder().encode(JSON.stringify(controlMsg));
+    for (const memberId of group.members) {
+      if (memberId === myId) continue;
+      try { await this.node.sendToPeer(memberId, PROTOCOLS.MESSAGE, data); } catch {}
+    }
+
+    // Remove locally
+    this.groups.delete(groupId);
+    await this.store.deleteGroup(groupId);
+    console.log(`[Groups] Left group "${group.name}" (${groupId})`);
+  }
+
   /** Get all groups we're in */
   getGroups(): StoredGroup[] {
     return Array.from(this.groups.values());

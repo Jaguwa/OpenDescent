@@ -244,6 +244,11 @@ export class MessagingService {
         return;
       }
 
+      // Silently drop messages from blocked peers (no error to sender — preserves privacy)
+      if (await this.store.isBlocked(envelope.from)) {
+        return;
+      }
+
       // Verify sender signature — reject messages from unknown or unverifiable senders
       const senderProfile = this.node.getKnownPeer(envelope.from);
       if (!senderProfile) {

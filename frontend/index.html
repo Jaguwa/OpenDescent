@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DecentraNet</title>
+  <meta name="description" content="DecentraNet — decentralized peer-to-peer social network">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta property="og:title" content="DecentraNet">
+  <meta property="og:description" content="Decentralized peer-to-peer social network. No servers. No surveillance.">
+  <meta property="og:type" content="website">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -452,6 +459,17 @@
             <input type="checkbox" id="setting-discoverable" checked>
             Allow others to find me via search
           </label>
+        </div>
+
+        <div class="settings-section">
+          <h4>Blocked Peers</h4>
+          <div id="blocked-peers-list"><p class="subtle">No blocked peers.</p></div>
+        </div>
+
+        <div class="settings-section danger-zone">
+          <h4 style="color:var(--red)">Danger Zone</h4>
+          <button class="btn-danger" onclick="deleteAccount()">Delete Account</button>
+          <p class="subtle" style="margin-top:4px">Permanently erases all data. Cannot be undone.</p>
         </div>
 
         <div class="modal-actions" style="margin-top:16px">

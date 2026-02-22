@@ -67,6 +67,7 @@ const NS = {
   HUB_LISTING: 'hublst:',
   HUB_STATS: 'hubstats:',
   SEALED: 'sealed:',
+  BLOCK: 'block:',
 } as const;
 
 export class LocalStore {
@@ -108,6 +109,19 @@ export class LocalStore {
 
   async close(): Promise<void> {
     await this.db.close();
+  }
+
+  /** Wipe all data: close DB, delete store dir, identity, device key, libp2p key */
+  async wipeAll(): Promise<void> {
+    await this.db.close();
+    const storeDir = path.join(this.dataDir, 'store');
+    if (fs.existsSync(storeDir)) fs.rmSync(storeDir, { recursive: true, force: true });
+    const identityFile = path.join(this.dataDir, 'identity.json');
+    if (fs.existsSync(identityFile)) fs.unlinkSync(identityFile);
+    const deviceKeyFile = path.join(this.dataDir, '.device-key');
+    if (fs.existsSync(deviceKeyFile)) fs.unlinkSync(deviceKeyFile);
+    const libp2pKeyFile = path.join(this.dataDir, 'libp2p-key');
+    if (fs.existsSync(libp2pKeyFile)) fs.unlinkSync(libp2pKeyFile);
   }
 
   // ─── Shard Storage ──────────────────────────────────────────────────────
@@ -408,6 +422,10 @@ export class LocalStore {
     }
   }
 
+  async deleteGroup(groupId: string): Promise<void> {
+    try { await this.db.del(NS.GROUP + groupId); } catch {}
+  }
+
   async getAllGroups(): Promise<any[]> {
     const groups: any[] = [];
     for await (const [, value] of this.db.iterator({ gte: NS.GROUP, lt: NS.GROUP + '\xFF' })) {
@@ -643,6 +661,29 @@ export class LocalStore {
       friends.push(data.peerId);
     }
     return friends;
+  }
+
+  // ─── Block List ────────────────────────────────────────────────────────
+
+  async blockPeer(peerId: PeerId): Promise<void> {
+    await this.db.put(NS.BLOCK + peerId, JSON.stringify({ peerId, blockedAt: Date.now() }));
+  }
+
+  async unblockPeer(peerId: PeerId): Promise<void> {
+    try { await this.db.del(NS.BLOCK + peerId); } catch {}
+  }
+
+  async isBlocked(peerId: PeerId): Promise<boolean> {
+    try { await this.db.get(NS.BLOCK + peerId); return true; } catch { return false; }
+  }
+
+  async getBlockedPeers(): Promise<PeerId[]> {
+    const blocked: PeerId[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.BLOCK, lt: NS.BLOCK + '\xFF' })) {
+      const data = JSON.parse(value);
+      blocked.push(data.peerId);
+    }
+    return blocked;
   }
 
   // ─── Posts, Reactions, Comments (Phase 4) ──────────────────────────────
