@@ -881,7 +881,7 @@ export class DecentraNode {
         return null;
       }
 
-      const stream = await this.node.dialProtocol(conn.remotePeer, protocol);
+      const stream = await this.node.dialProtocol(conn.remotePeer, protocol, { runOnLimitedConnection: true });
 
       // Write request
       await stream.sink((async function* () {
@@ -1011,6 +1011,9 @@ export class DecentraNode {
   private async registerProtocolHandlers(): Promise<void> {
     if (!this.node) return;
 
+    // All protocols must work over relay-routed (limited) connections
+    const limitedOk = { runOnLimitedConnection: true };
+
     // Peer exchange: receive their profile, send ours back
     await this.node.handle(PROTOCOLS.PEER_EXCHANGE, async ({ stream, connection }) => {
       const libp2pId = connection.remotePeer.toString();
@@ -1050,7 +1053,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Exchange] Error handling profile exchange:`, error);
       }
-    });
+    }, limitedOk);
 
     // Message delivery
     await this.node.handle(PROTOCOLS.MESSAGE, async ({ stream, connection }) => {
@@ -1064,7 +1067,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling message:`, error);
       }
-    });
+    }, limitedOk);
 
     // Shard storage
     await this.node.handle(PROTOCOLS.SHARD_STORE, async ({ stream, connection }) => {
@@ -1077,7 +1080,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error storing shard:`, error);
       }
-    });
+    }, limitedOk);
 
     // Shard retrieval — looks up shard via the registered handler
     await this.node.handle(PROTOCOLS.SHARD_RETRIEVE, async ({ stream, connection }) => {
@@ -1099,7 +1102,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error retrieving shard:`, error);
       }
-    });
+    }, limitedOk);
 
     // Call signaling
     await this.node.handle(PROTOCOLS.CALL_SIGNAL, async ({ stream, connection }) => {
@@ -1112,7 +1115,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling call signal:`, error);
       }
-    });
+    }, limitedOk);
 
     // Account bundle storage/retrieval
     await this.node.handle(PROTOCOLS.ACCOUNT_BUNDLE, async ({ stream, connection }) => {
@@ -1137,7 +1140,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling account bundle:`, error);
       }
-    });
+    }, limitedOk);
 
     // History sync — respond to recovery requests from contacts
     await this.node.handle(PROTOCOLS.HISTORY_SYNC, async ({ stream, connection }) => {
@@ -1167,7 +1170,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling history sync:`, error);
       }
-    });
+    }, limitedOk);
 
     // Profile update (Phase 2)
     await this.node.handle(PROTOCOLS.PROFILE_UPDATE, async ({ stream, connection }) => {
@@ -1184,7 +1187,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling profile update:`, error);
       }
-    });
+    }, limitedOk);
 
     // Peer search (Phase 3)
     await this.node.handle(PROTOCOLS.PEER_SEARCH, async ({ stream, connection }) => {
@@ -1202,7 +1205,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling peer search:`, error);
       }
-    });
+    }, limitedOk);
 
     // Friend request (Phase 3)
     await this.node.handle(PROTOCOLS.FRIEND_REQUEST, async ({ stream, connection }) => {
@@ -1219,7 +1222,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling friend request:`, error);
       }
-    });
+    }, limitedOk);
 
     // Post broadcast (Phase 4)
     await this.node.handle(PROTOCOLS.POST_BROADCAST, async ({ stream, connection }) => {
@@ -1234,7 +1237,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling post broadcast:`, error);
       }
-    });
+    }, limitedOk);
 
     // Post interaction (Phase 4)
     await this.node.handle(PROTOCOLS.POST_INTERACTION, async ({ stream, connection }) => {
@@ -1251,7 +1254,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling post interaction:`, error);
       }
-    });
+    }, limitedOk);
 
     // Vouch broadcast (Trust Web)
     await this.node.handle(PROTOCOLS.VOUCH_BROADCAST, async ({ stream, connection }) => {
@@ -1266,7 +1269,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling vouch broadcast:`, error);
       }
-    });
+    }, limitedOk);
 
     // Dead drop broadcast
     await this.node.handle(PROTOCOLS.DEAD_DROP_BROADCAST, async ({ stream, connection }) => {
@@ -1281,7 +1284,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling dead drop broadcast:`, error);
       }
-    });
+    }, limitedOk);
 
     // Dead drop relay (onion routing)
     await this.node.handle(PROTOCOLS.DEAD_DROP_RELAY, async ({ stream, connection }) => {
@@ -1296,7 +1299,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling dead drop relay:`, error);
       }
-    });
+    }, limitedOk);
 
     // Poll broadcast (polls + results, differentiated by type field)
     await this.node.handle(PROTOCOLS.POLL_BROADCAST, async ({ stream, connection }) => {
@@ -1311,7 +1314,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling poll broadcast:`, error);
       }
-    });
+    }, limitedOk);
 
     // Poll vote (direct peer-to-peer: voter -> creator)
     await this.node.handle(PROTOCOLS.POLL_VOTE, async ({ stream, connection }) => {
@@ -1326,7 +1329,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling poll vote:`, error);
       }
-    });
+    }, limitedOk);
 
     // Hub sync (invites, messages, state sync, updates)
     await this.node.handle(PROTOCOLS.HUB_SYNC, async ({ stream, connection }) => {
@@ -1343,7 +1346,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling hub sync:`, error);
       }
-    });
+    }, limitedOk);
 
     // Hub discovery (public hub listings, search)
     await this.node.handle(PROTOCOLS.HUB_DISCOVERY, async ({ stream, connection }) => {
@@ -1360,7 +1363,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling hub discovery:`, error);
       }
-    });
+    }, limitedOk);
 
     // Onion relay (general-purpose onion routing)
     await this.node.handle(PROTOCOLS.ONION_RELAY, async ({ stream, connection }) => {
@@ -1375,7 +1378,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling onion relay:`, error);
       }
-    });
+    }, limitedOk);
 
     // Delete notifications
     await this.node.handle(PROTOCOLS.DELETE_NOTIFY, async ({ stream, connection }) => {
@@ -1390,7 +1393,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling delete notification:`, error);
       }
-    });
+    }, limitedOk);
 
     console.log(`[Protocol] Registered handlers for: ${Object.values(PROTOCOLS).join(', ')}`);
   }
