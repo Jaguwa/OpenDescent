@@ -512,6 +512,29 @@ export interface DeadDrop {
   proofOfWork: string;     // hex SHA-256 hash with leading zero bits
   powNonce: number;        // nonce that produces the PoW hash
   votes: number;           // net score (up - down)
+  difficulty?: number;     // PoW difficulty (bits), default 18
+}
+
+/** Deletion notification — for DMs and posts */
+export interface DeleteNotification {
+  type: 'delete_message' | 'delete_post';
+  targetId: string;        // message ID or post ID
+  from: string;            // peer who requested deletion
+  timestamp: number;
+  scope: 'self' | 'everyone';  // self = local only, everyone = notify peers
+  conversationId?: string; // for message deletion
+  msgTimestamp?: number;    // original message timestamp for store key lookup
+}
+
+/** Content report — local trust signal */
+export interface ContentReport {
+  id: string;
+  contentType: 'post' | 'deaddrop' | 'message';
+  contentId: string;
+  reporterId: string;
+  reason: 'spam' | 'harassment' | 'illegal' | 'other';
+  detail?: string;
+  timestamp: number;
 }
 
 /** A vote on a dead drop — anonymous, gossiped */

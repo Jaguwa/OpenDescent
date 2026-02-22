@@ -68,6 +68,8 @@ const NS = {
   HUB_STATS: 'hubstats:',
   SEALED: 'sealed:',
   BLOCK: 'block:',
+  HUB_STATS_SNAP: 'hubsnap:',
+  REPORT: 'report:',
 } as const;
 
 export class LocalStore {
@@ -1276,6 +1278,114 @@ export class LocalStore {
       }
     }
     return buckets;
+  }
+
+  // ─── Hub Stats Snapshots ────────────────────────────────────────────────
+
+  async storeHubStatsSnapshot(hubId: string, stats: HubStats): Promise<void> {
+    const tsKey = stats.computedAt.toString().padStart(15, '0');
+    await this.db.put(NS.HUB_STATS_SNAP + hubId + ':' + tsKey, JSON.stringify(stats));
+  }
+
+  async getHubStatsHistory(hubId: string, since?: number): Promise<HubStats[]> {
+    const prefix = NS.HUB_STATS_SNAP + hubId + ':';
+    const gte = since
+      ? prefix + since.toString().padStart(15, '0')
+      : prefix;
+    const snapshots: HubStats[] = [];
+    for await (const [, value] of this.db.iterator({ gte, lt: prefix + '\xFF' })) {
+      snapshots.push(JSON.parse(value));
+    }
+    return snapshots;
+  }
+
+  // ─── Content Reports ──────────────────────────────────────────────────
+
+  async storeReport(report: { id: string; contentType: string; contentId: string; reporterId: string; reason: string; detail?: string; timestamp: number }): Promise<void> {
+    await this.db.put(NS.REPORT + report.contentId + ':' + report.reporterId, JSON.stringify(report));
+  }
+
+  async getReportsForContent(contentId: string): Promise<any[]> {
+    const prefix = NS.REPORT + contentId + ':';
+    const reports: any[] = [];
+    for await (const [, value] of this.db.iterator({ gte: prefix, lt: prefix + '\xFF' })) {
+      reports.push(JSON.parse(value));
+    }
+    return reports;
+  }
+
+  async getReportCount(contentId: string): Promise<number> {
+    let count = 0;
+    const prefix = NS.REPORT + contentId + ':';
+    for await (const _ of this.db.keys({ gte: prefix, lt: prefix + '\xFF' })) {
+      count++;
+    }
+    return count;
+  }
+
+  async isContentHidden(contentId: string): Promise<boolean> {
+    return (await this.getReportCount(contentId)) >= 3;
+  }
+
+  // ─── Data Export ──────────────────────────────────────────────────────
+
+  async exportAllData(peerId: string): Promise<object> {
+    const conversations: any[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.HISTORY, lt: NS.HISTORY + '\xFF' })) {
+      conversations.push(JSON.parse(value));
+    }
+
+    const messages: any[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.MESSAGE, lt: NS.MESSAGE + '\xFF' })) {
+      messages.push(JSON.parse(value));
+    }
+
+    const posts: any[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.POST, lt: NS.POST + '\xFF' })) {
+      posts.push(JSON.parse(value));
+    }
+
+    const contacts: any[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.PEER, lt: NS.PEER + '\xFF' })) {
+      const parsed = JSON.parse(value);
+      contacts.push({ peerId: parsed.peerId, displayName: parsed.displayName, lastSeen: parsed.lastSeen });
+    }
+
+    const groups: any[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.GROUP, lt: NS.GROUP + '\xFF' })) {
+      const g = JSON.parse(value);
+      groups.push({ groupId: g.groupId, name: g.name, members: g.members, createdAt: g.createdAt });
+    }
+
+    const hubs: any[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.HUB, lt: NS.HUB + '\xFF' })) {
+      const h = JSON.parse(value);
+      hubs.push({ hubId: h.hubId, name: h.name, description: h.description, createdAt: h.createdAt });
+    }
+
+    const pinnedKeys: any[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.TOFU, lt: NS.TOFU + '\xFF' })) {
+      pinnedKeys.push(JSON.parse(value));
+    }
+
+    let displayName: string | undefined;
+    try { displayName = (await this.db.get(NS.META + 'displayName')) || undefined; } catch {}
+
+    let themePrefs: any;
+    try { const tp = await this.db.get(NS.META + 'themePrefs'); if (tp) themePrefs = JSON.parse(tp); } catch {}
+
+    return {
+      exportDate: new Date().toISOString(),
+      peerId,
+      settings: { displayName, themePrefs },
+      conversations,
+      messages,
+      posts,
+      contacts,
+      groups,
+      hubs,
+      pinnedKeys,
+    };
   }
 
   // ─── Stats ─────────────────────────────────────────────────────────────

@@ -98,6 +98,7 @@ export const PROTOCOLS = {
   POLL_VOTE: `${PROTOCOL_PREFIX}/poll-vote/1.0.0`,
   HUB_SYNC: `${PROTOCOL_PREFIX}/hub-sync/1.0.0`,
   HUB_DISCOVERY: `${PROTOCOL_PREFIX}/hub-discovery/1.0.0`,
+  DELETE_NOTIFY: `${PROTOCOL_PREFIX}/delete-notify/1.0.0`,
   ONION_RELAY: `${PROTOCOL_PREFIX}/onion-relay/1.0.0`,
 } as const;
 
@@ -132,6 +133,7 @@ export class DecentraNode {
   private hubSyncHandler?: (data: string) => Promise<string | void>;
   private hubDiscoveryHandler?: (data: string) => Promise<string | void>;
   private onionRelayHandler?: (data: string) => Promise<void>;
+  private deleteNotifyHandler?: (data: string) => Promise<void>;
   private passphrase: string;
 
   // Rate limiting: 100 messages per 60-second window per peer
@@ -246,8 +248,18 @@ export class DecentraNode {
     }
 
     // Public nodes always run the relay server; private nodes only if configured
+    // Defaults are way too restrictive (15 reservations, 128KB data, 2min duration)
+    // — bump to production-grade limits for a messaging network
     if (isPublic || this.config.enableRelay) {
-      libp2pConfig.services.relay = circuitRelayServer();
+      libp2pConfig.services.relay = circuitRelayServer({
+        reservations: {
+          maxReservations: 256,
+          reservationTtl: 2 * 60 * 60 * 1000,       // 2 hours
+          applyDefaultLimit: true,
+          defaultDurationLimit: 10 * 60 * 1000,      // 10 min per relayed connection
+          defaultDataLimit: BigInt(10 * 1024 * 1024), // 10 MB per direction
+        },
+      });
     }
 
     this.node = await createLibp2p(libp2pConfig);
@@ -491,6 +503,11 @@ export class DecentraNode {
   /** Register handler for onion relay cells */
   setOnionRelayHandler(handler: (data: string) => Promise<void>): void {
     this.onionRelayHandler = handler;
+  }
+
+  /** Register handler for delete notifications */
+  setDeleteNotifyHandler(handler: (data: string) => Promise<void>): void {
+    this.deleteNotifyHandler = handler;
   }
 
   /** Broadcast data to all connected peers on a given protocol */
@@ -1357,6 +1374,21 @@ export class DecentraNode {
         await writeToSink(stream, new TextEncoder().encode('OK'));
       } catch (error) {
         console.error(`[Protocol] Error handling onion relay:`, error);
+      }
+    });
+
+    // Delete notifications
+    await this.node.handle(PROTOCOLS.DELETE_NOTIFY, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.deleteNotifyHandler) {
+          await this.deleteNotifyHandler(text);
+        }
+        await writeToSink(stream, new TextEncoder().encode('OK'));
+      } catch (error) {
+        console.error(`[Protocol] Error handling delete notification:`, error);
       }
     });
 

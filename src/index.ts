@@ -842,6 +842,25 @@ Options:
   const hubStats = new HubStatsService(store, hubs);
   hubStats.start();
 
+  // Wire delete notification handler (re-registered after apiServer init to broadcast UI events)
+  let deleteNotifyBroadcast: ((event: string, data: Record<string, unknown>) => void) | null = null;
+  node.setDeleteNotifyHandler(async (data) => {
+    try {
+      const notification = JSON.parse(data);
+      if (notification.type === 'delete_message' && notification.conversationId && notification.msgTimestamp && notification.targetId) {
+        await store.deleteHistoryMessage(notification.conversationId, notification.msgTimestamp, notification.targetId);
+        console.log(`[Delete] Remote deletion: message ${notification.targetId} from ${notification.from}`);
+        deleteNotifyBroadcast?.('message_deleted', {
+          conversationId: notification.conversationId,
+          messageId: notification.targetId,
+          from: notification.from,
+        });
+      }
+    } catch (e) {
+      console.warn(`[Delete] Failed to process notification:`, e);
+    }
+  });
+
   // Wire group message handler into the messaging layer
   messaging.setGroupMessageHandler(groups.handleGroupControlMessage.bind(groups));
   await groups.loadGroups();
@@ -1060,6 +1079,9 @@ Options:
     hubs,
     hubStats,
   });
+
+  // Connect delete-notification handler to the UI broadcast
+  deleteNotifyBroadcast = (event, data) => apiServer.broadcastEvent(event, data);
 
   // Periodic cleanup of expired dead drops (every 30 minutes)
   const dropCleanupTimer = setInterval(async () => {

@@ -457,6 +457,8 @@ export class HubManager {
     const hub = this.hubs.get(hubId);
     if (!hub) throw new Error(`Unknown hub: ${hubId}`);
 
+    await this.requirePermission(hubId, 'sendMessages');
+
     const hubKey = new Uint8Array(Buffer.from(hub.hubKey, 'base64'));
     const myId = this.node.getPeerId();
     const messageId = crypto.randomUUID();

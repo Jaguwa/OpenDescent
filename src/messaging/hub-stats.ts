@@ -10,6 +10,7 @@ export class HubStatsService {
   private store: LocalStore;
   private hubs: HubManager;
   private interval: ReturnType<typeof setInterval> | null = null;
+  private lastSnapshotTime: Map<string, number> = new Map();
 
   constructor(store: LocalStore, hubs: HubManager) {
     this.store = store;
@@ -126,7 +127,19 @@ export class HubStatsService {
     };
 
     await this.store.storeHubStats(stats);
+
+    // Hourly snapshot for historical tracking
+    const lastSnap = this.lastSnapshotTime.get(hubId) || 0;
+    if (now - lastSnap > 3600000) {
+      await this.store.storeHubStatsSnapshot(hubId, stats);
+      this.lastSnapshotTime.set(hubId, now);
+    }
+
     return stats;
+  }
+
+  async getStatsHistory(hubId: string, since?: number): Promise<HubStats[]> {
+    return this.store.getHubStatsHistory(hubId, since);
   }
 
   async getStats(hubId: string): Promise<HubStats | null> {

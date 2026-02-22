@@ -818,12 +818,17 @@ export class APIServer {
         case 'get_timeline': {
           const limit = data?.limit || 50;
           const before = data?.before;
-          const posts = await this.deps.store.getTimeline(limit, before);
-          // Enrich with like status
+          const allPosts = await this.deps.store.getTimeline(limit + 20, before);
+          // Enrich with like status and filter reported content
           const myId2 = this.deps.node.getPeerId();
-          for (const post of posts) {
+          const posts = [];
+          for (const post of allPosts) {
+            const hidden = await this.deps.store.isContentHidden(post.postId);
             const reaction = await this.deps.store.getReaction(post.postId, myId2);
             post.liked = !!reaction;
+            (post as any).hidden = hidden;
+            posts.push(post);
+            if (posts.length >= limit) break;
           }
           return this.ok(id, posts);
         }
@@ -852,20 +857,44 @@ export class APIServer {
         case 'delete_post': {
           if (!this.deps.posts) return this.err(id, 'Posts not available');
           if (!data.postId) return this.err(id, 'Missing postId');
-          await this.deps.posts.deletePost(data.postId);
+          const scope = data.scope || 'everyone';
+          if (scope === 'self') {
+            // Local-only deletion
+            await this.deps.store.deletePost(data.postId);
+          } else {
+            // Delete for everyone — broadcasts to peers
+            await this.deps.posts.deletePost(data.postId);
+          }
           return this.ok(id, { deleted: true });
         }
 
         case 'delete_message': {
           if (!data.conversationId && !data.peerId) return this.err(id, 'Missing conversationId or peerId');
           if (!data.timestamp || !data.messageId) return this.err(id, 'Missing timestamp or messageId');
+          const delScope = data.scope || 'self';
           let convoId = data.conversationId;
+          const myDelId = this.deps.node.getPeerId();
           if (!convoId && data.peerId) {
-            // Build DM conversation ID (sorted peer IDs)
-            const myId = this.deps.node.getPeerId();
-            convoId = [myId, data.peerId].sort().join(':');
+            convoId = [myDelId, data.peerId].sort().join(':');
           }
           await this.deps.store.deleteHistoryMessage(convoId, data.timestamp, data.messageId);
+
+          if (delScope === 'everyone' && data.peerId) {
+            // Send delete notification to the peer
+            const { PROTOCOLS: DP } = await import('../network/node.js');
+            const notification = JSON.stringify({
+              type: 'delete_message',
+              targetId: data.messageId,
+              from: myDelId,
+              timestamp: Date.now(),
+              scope: 'everyone',
+              conversationId: convoId,
+              msgTimestamp: data.timestamp,
+            });
+            const notifyData = new TextEncoder().encode(notification);
+            // DM: send to the other peer
+            await this.deps.node.sendToPeer(data.peerId, DP.DELETE_NOTIFY, notifyData);
+          }
           return this.ok(id, { deleted: true });
         }
 
@@ -1228,6 +1257,13 @@ export class APIServer {
           return this.ok(id, hubStatsResult);
         }
 
+        case 'hub_stats_history': {
+          if (!this.deps.hubStats) return this.err(id, 'Hub stats not available');
+          if (!data?.hubId) return this.err(id, 'hubId required');
+          const snapshots = await this.deps.hubStats.getStatsHistory(data.hubId, data.since);
+          return this.ok(id, snapshots);
+        }
+
         case 'get_hub_leaderboard': {
           const allStats = await this.deps.store.getAllHubStats();
           const allListings = await this.deps.store.getPublicHubListings();
@@ -1339,6 +1375,29 @@ export class APIServer {
           if (!key) return this.ok(id, { maskedKey: null });
           const masked = key.length > 8 ? key.slice(0, 4) + '...' + key.slice(-4) : '****';
           return this.ok(id, { maskedKey: masked });
+        }
+
+        case 'export_data': {
+          const exportPeerId = this.deps.node.getPeerId();
+          const exportResult = await this.deps.store.exportAllData(exportPeerId);
+          return this.ok(id, exportResult);
+        }
+
+        case 'report_content': {
+          if (!data.contentId || !data.reason) return this.err(id, 'Missing contentId or reason');
+          const validReasons = ['spam', 'harassment', 'illegal', 'other'];
+          if (!validReasons.includes(data.reason)) return this.err(id, 'Invalid reason');
+          const report = {
+            id: crypto.randomUUID(),
+            contentType: data.contentType || 'post',
+            contentId: data.contentId,
+            reporterId: this.deps.node.getPeerId(),
+            reason: data.reason,
+            detail: data.detail || undefined,
+            timestamp: Date.now(),
+          };
+          await this.deps.store.storeReport(report);
+          return this.ok(id, { reported: true, hidden: await this.deps.store.isContentHidden(data.contentId) });
         }
 
         case 'remove_friend': {
@@ -1613,6 +1672,11 @@ export class APIServer {
         client.send(json);
       }
     }
+  }
+
+  /** Broadcast an event to all authenticated WS clients (for use outside the class) */
+  broadcastEvent(event: string, data: Record<string, unknown>): void {
+    this.broadcast({ type: 'event', event, data } as WSEvent);
   }
 
   /**

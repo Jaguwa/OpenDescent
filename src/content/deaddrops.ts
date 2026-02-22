@@ -17,7 +17,7 @@ import type { DeadDrop, DeadDropVote, OnionLayer } from '../types/index.js';
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const DROP_EXPIRY_MS = 24 * 60 * 60 * 1000;   // 24 hours
-const POW_DIFFICULTY = 18;                      // 18 leading zero bits (~262K hashes avg)
+const POW_DIFFICULTY_BASE = 18;                 // baseline: 18 leading zero bits (~262K hashes avg)
 const RELAY_HOP_COUNT = 3;                      // 3-hop onion circuit
 const RELAY_MIN_DELAY_MS = 2000;                // 2-15 second random delay per relay
 const RELAY_MAX_DELAY_MS = 15000;
@@ -59,6 +59,31 @@ export class DeadDropService {
     }, SEEN_PRUNE_INTERVAL);
   }
 
+  // ─── Adaptive Difficulty ─────────────────────────────────────────────────
+
+  private async getDropCountLastHour(): Promise<number> {
+    const cutoff = Date.now() - 3600000;
+    let count = 0;
+    for await (const [key] of this.store['db'].iterator({ gte: 'ddropidx:', lt: 'ddropidx:\xFF', reverse: true })) {
+      // Key format: ddropidx:{paddedTimestamp}:{dropId}
+      const parts = key.split(':');
+      if (parts.length >= 2) {
+        const ts = parseInt(parts[1], 10);
+        if (ts < cutoff) break;
+        count++;
+      }
+    }
+    return count;
+  }
+
+  async getAdaptiveDifficulty(): Promise<number> {
+    const count = await this.getDropCountLastHour();
+    if (count > 500) return 24;  // ~12s
+    if (count > 200) return 22;  // ~3s
+    if (count > 50) return 20;   // ~800ms
+    return POW_DIFFICULTY_BASE;   // ~200ms
+  }
+
   // ─── Create & Submit ────────────────────────────────────────────────────
 
   async createDeadDrop(content: string): Promise<{ drop: DeadDrop; warning?: string }> {
@@ -76,9 +101,10 @@ export class DeadDropService {
     const nonce = Buffer.from(encrypted.nonce).toString('base64');
     const authTag = Buffer.from(encrypted.authTag).toString('base64');
 
-    // Compute proof of work
+    // Compute proof of work with adaptive difficulty
+    const difficulty = await this.getAdaptiveDifficulty();
     const challenge = dropId + ciphertext;
-    const pow = computePoW(challenge);
+    const pow = computePoW(challenge, difficulty);
 
     const drop: DeadDrop = {
       dropId,
@@ -90,6 +116,7 @@ export class DeadDropService {
       proofOfWork: pow.hash,
       powNonce: pow.nonce,
       votes: 0,
+      difficulty,
     };
 
     // Pick relay peers for onion routing
@@ -225,7 +252,7 @@ export class DeadDropService {
         drop.expiresAt = drop.timestamp + DROP_EXPIRY_MS;
 
         // Verify PoW
-        if (!verifyPoW(drop.dropId + drop.ciphertext, drop.proofOfWork, drop.powNonce)) {
+        if (!verifyPoW(drop.dropId + drop.ciphertext, drop.proofOfWork, drop.powNonce, drop.difficulty)) {
           console.warn(`[DeadDrop] Exit relay: invalid PoW for drop ${drop.dropId}`);
           return;
         }
@@ -280,7 +307,7 @@ export class DeadDropService {
       if (drop.expiresAt < Date.now()) return;
 
       // Verify PoW
-      if (!verifyPoW(drop.dropId + drop.ciphertext, drop.proofOfWork, drop.powNonce)) {
+      if (!verifyPoW(drop.dropId + drop.ciphertext, drop.proofOfWork, drop.powNonce, drop.difficulty)) {
         console.warn(`[DeadDrop] Invalid PoW for drop ${drop.dropId}`);
         return;
       }
@@ -391,24 +418,26 @@ function getDateString(offsetDays: number): string {
 
 // ─── Proof of Work ────────────────────────────────────────────────────────────
 
-function computePoW(challenge: string): { hash: string; nonce: number } {
+function computePoW(challenge: string, difficulty: number = POW_DIFFICULTY_BASE): { hash: string; nonce: number } {
   let nonce = 0;
   while (true) {
     const hash = crypto.createHash('sha256')
       .update(challenge + nonce.toString())
       .digest('hex');
-    if (hasLeadingZeroBits(hash, POW_DIFFICULTY)) {
+    if (hasLeadingZeroBits(hash, difficulty)) {
       return { hash, nonce };
     }
     nonce++;
   }
 }
 
-function verifyPoW(challenge: string, hash: string, nonce: number): boolean {
+function verifyPoW(challenge: string, hash: string, nonce: number, claimedDifficulty?: number): boolean {
+  // Accept any difficulty >= baseline (can't reject higher PoW)
+  const diff = Math.max(claimedDifficulty || POW_DIFFICULTY_BASE, POW_DIFFICULTY_BASE);
   const computed = crypto.createHash('sha256')
     .update(challenge + nonce.toString())
     .digest('hex');
-  return computed === hash && hasLeadingZeroBits(computed, POW_DIFFICULTY);
+  return computed === hash && hasLeadingZeroBits(computed, diff);
 }
 
 function hasLeadingZeroBits(hexHash: string, bits: number): boolean {

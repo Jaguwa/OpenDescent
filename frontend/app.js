@@ -649,6 +649,14 @@ function handleEvent(event, data) {
       showToast(`Invited to hub "${data.hubName}"`, `by ${data.fromName}`);
       refreshHubs();
       break;
+    case 'message_deleted': {
+      // Real-time deletion from remote peer
+      const bubble = document.querySelector(`.message[data-msg-id="${data.messageId}"]`);
+      if (bubble) {
+        bubble.innerHTML = '<div class="msg-body" style="opacity:0.5;font-style:italic">Message deleted</div>';
+      }
+      break;
+    }
   }
 }
 
@@ -794,9 +802,9 @@ function renderMessages(messages) {
       el.innerHTML += renderVoicenoteMessageHTML(isMine, vnMsg, time, senderHTML);
       continue;
     }
-    const msgDeleteBtn = isMine ? `<button class="msg-delete-btn" onclick="deleteMessage('${escapeAttr(m.messageId)}', ${m.timestamp})" title="Delete">&#128465;</button>` : '';
+    const msgDeleteBtn = `<button class="msg-delete-btn" onclick="deleteMessage('${escapeAttr(m.messageId)}', ${m.timestamp}, ${isMine})" title="Delete">&#128465;</button>`;
     el.innerHTML += `
-        <div class="message ${isMine ? 'sent' : 'received'}">
+        <div class="message ${isMine ? 'sent' : 'received'}" data-msg-id="${escapeAttr(m.messageId)}">
           ${senderHTML}
           <div class="msg-body">${renderContentWithGifs(m.body)}</div>
           <div class="msg-time">${time} ${isMine ? `<span class="msg-status">${m.status || ''}</span>` : ''}${msgDeleteBtn}</div>
@@ -1312,6 +1320,32 @@ async function saveSettings() {
   document.getElementById('settings-modal').classList.add('hidden');
 }
 
+// ─── Data Export ─────────────────────────────────────────────────────────────
+
+async function exportMyData() {
+  const btn = document.getElementById('btn-export-data');
+  if (btn) { btn.disabled = true; btn.textContent = 'Exporting...'; }
+  try {
+    const data = await send('export_data', {});
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().split('T')[0];
+    a.href = url;
+    a.download = `decentranet-export-${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export Complete', 'Your data has been downloaded', 'success');
+  } catch (e) {
+    showToast('Export Failed', e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Download My Data'; }
+  }
+}
+
 // ─── Profile View (Phase 2) ─────────────────────────────────────────────────
 
 async function openProfile(peerId) {
@@ -1808,6 +1842,14 @@ function renderPostCard(post) {
   const safeAuthorId = escapeAttr(post.authorId);
   const safePostId = escapeAttr(post.postId);
 
+  if (post.hidden) {
+    return `<div class="post-card post-hidden" data-postid="${safePostId}">
+      <div class="post-content subtle" style="text-align:center;padding:16px">
+        [Content hidden due to reports] <a href="#" onclick="event.preventDefault();this.closest('.post-card').classList.remove('post-hidden');this.closest('.post-card').outerHTML=renderPostCard(Object.assign(${JSON.stringify({...post, hidden: false})}))" style="color:var(--accent)">Show anyway</a>
+      </div>
+    </div>`;
+  }
+
   return `<div class="post-card" data-postid="${safePostId}">
     <div class="post-card-header">
       <canvas class="post-avatar" width="40" height="40" data-peerid="${safeAuthorId}" onclick="openPeerProfile('${safeAuthorId}')"></canvas>
@@ -1825,7 +1867,8 @@ function renderPostCard(post) {
       <button class="post-action-btn" onclick="openComments('${safePostId}')">
         &#128172; ${post.commentCount || 0}
       </button>
-      ${isMe ? `<button class="post-action-btn post-delete-btn" onclick="deletePost('${safePostId}')" title="Delete post">&#128465;</button>` : ''}
+      <button class="post-action-btn post-delete-btn" onclick="deletePost('${safePostId}', ${isMe})" title="${isMe ? 'Delete post' : 'Hide from feed'}">&#128465;</button>
+      ${!isMe ? `<button class="post-action-btn" onclick="showReportModal('${safePostId}','post')" title="Report">&#9873;</button>` : ''}
     </div>
   </div>`;
 }
@@ -1842,6 +1885,61 @@ function togglePostVisibility() {
     postVisibility = 'public';
     btn.innerHTML = '&#127758; Public';
     btn.title = 'Visible to everyone';
+  }
+}
+
+// ─── Content Reporting ───────────────────────────────────────────────────────
+
+let reportTarget = { contentId: '', contentType: '' };
+
+function showReportModal(contentId, contentType) {
+  reportTarget = { contentId, contentType };
+  const modal = document.getElementById('report-modal');
+  if (!modal) {
+    // Create modal dynamically
+    const div = document.createElement('div');
+    div.id = 'report-modal';
+    div.className = 'modal';
+    div.innerHTML = `<div class="modal-content" style="max-width:400px">
+      <h3>Report Content</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
+        <label><input type="radio" name="report-reason" value="spam" checked> Spam</label>
+        <label><input type="radio" name="report-reason" value="harassment"> Harassment</label>
+        <label><input type="radio" name="report-reason" value="illegal"> Illegal content</label>
+        <label><input type="radio" name="report-reason" value="other"> Other</label>
+      </div>
+      <textarea id="report-detail" placeholder="Additional details (optional)" rows="2" style="width:100%;resize:vertical;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius);padding:8px"></textarea>
+      <div class="modal-actions" style="margin-top:12px">
+        <button class="btn-secondary" onclick="document.getElementById('report-modal').classList.add('hidden')">Cancel</button>
+        <button class="btn-primary" onclick="submitReport()">Report</button>
+      </div>
+    </div>`;
+    document.body.appendChild(div);
+  } else {
+    modal.classList.remove('hidden');
+  }
+  document.getElementById('report-modal').classList.remove('hidden');
+}
+
+async function submitReport() {
+  const reason = document.querySelector('input[name="report-reason"]:checked')?.value || 'other';
+  const detail = document.getElementById('report-detail')?.value || '';
+  try {
+    const result = await send('report_content', {
+      contentId: reportTarget.contentId,
+      contentType: reportTarget.contentType,
+      reason,
+      detail,
+    });
+    document.getElementById('report-modal').classList.add('hidden');
+    showToast('Reported', result.hidden ? 'Content will be hidden from feeds' : 'Thank you for your report', 'success');
+    if (result.hidden) {
+      // Hide the post card in the DOM
+      const card = document.querySelector(`[data-postid="${reportTarget.contentId}"]`);
+      if (card) card.innerHTML = '<div class="post-content subtle" style="text-align:center;padding:16px">[Content hidden due to reports]</div>';
+    }
+  } catch (e) {
+    showToast('Report Failed', e.message, 'error');
   }
 }
 
@@ -1866,30 +1964,52 @@ async function createPost() {
   finally { if (btn) { btn.disabled = false; btn.textContent = 'Post'; } }
 }
 
-async function deletePost(postId) {
-  if (!confirm('Delete this post?')) return;
+async function deletePost(postId, isAuthor) {
+  let scope = 'self';
+  if (isAuthor) {
+    const choice = confirm('Delete for everyone?\n\nOK = Delete for everyone\nCancel = Delete for me only');
+    scope = choice ? 'everyone' : 'self';
+  } else {
+    if (!confirm('Delete this post from your feed?')) return;
+  }
   try {
-    await send('delete_post', { postId });
+    await send('delete_post', { postId, scope });
     showToast('Post deleted');
     loadFeed();
   } catch (e) { showToast('Failed to delete', e.message); }
 }
 
-async function deleteMessage(messageId, timestamp) {
+async function deleteMessage(messageId, timestamp, isMine) {
+  // Determine scope: own messages get a choice, received messages are always "Delete for me"
+  let scope = 'self';
+  let peerId = null;
+  if (isMine && state.activeChat && state.activeChat.type !== 'group' && !state.activeChannel) {
+    const choice = confirm('Delete for everyone?\n\nOK = Delete for everyone\nCancel = Delete for me only');
+    scope = choice ? 'everyone' : 'self';
+  }
   try {
     let conversationId;
     if (state.activeChannel) {
       conversationId = `hub:${state.activeChannel.hubId}:${state.activeChannel.channelId}`;
     } else if (state.activeChat) {
       conversationId = state.activeChat.id;
+      // Extract the other peer's ID for DM deletion notifications
+      if (scope === 'everyone' && state.activeChat.type !== 'group') {
+        const parts = state.activeChat.id.split(':');
+        peerId = parts.find(p => p !== state.myPeerId);
+      }
     }
     if (!conversationId) return;
-    await send('delete_message', { conversationId, messageId, timestamp });
-    // Remove from DOM
-    const msgEl = document.querySelector(`.msg-delete-btn[onclick*="${messageId}"]`);
-    if (msgEl) {
-      const bubble = msgEl.closest('.message');
-      if (bubble) { bubble.style.transition = 'opacity 0.2s'; bubble.style.opacity = '0'; setTimeout(() => bubble.remove(), 200); }
+    await send('delete_message', { conversationId, messageId, timestamp, scope, peerId });
+    // Remove from DOM or show placeholder
+    const bubble = document.querySelector(`.message[data-msg-id="${messageId}"]`);
+    if (bubble) {
+      if (scope === 'everyone') {
+        bubble.innerHTML = '<div class="msg-body" style="opacity:0.5;font-style:italic">Message deleted</div>';
+      } else {
+        bubble.style.transition = 'opacity 0.2s'; bubble.style.opacity = '0';
+        setTimeout(() => bubble.remove(), 200);
+      }
     }
   } catch (e) { showToast('Failed to delete', e.message); }
 }
@@ -4290,6 +4410,29 @@ function renderHubOverviewStats(stats) {
     drawHubSparkline(document.getElementById('hub-sparkline-canvas'), stats.dailyMessageCounts);
     document.getElementById('hub-overview-activity').classList.remove('hidden');
   }
+
+  // Growth indicators from historical snapshots
+  loadHubGrowthIndicators(stats);
+}
+
+async function loadHubGrowthIndicators(currentStats) {
+  try {
+    const weekAgo = Date.now() - 7 * 86400000;
+    const history = await send('hub_stats_history', { hubId: currentStats.hubId, since: weekAgo });
+    if (!history || history.length === 0) return;
+    const oldest = history[0];
+    const memberDiff = (currentStats.totalMembers || 0) - (oldest.totalMembers || 0);
+    const msgToday = currentStats.messagesToday || 0;
+    const growthEl = document.getElementById('stat-members');
+    if (growthEl && memberDiff !== 0) {
+      const sign = memberDiff > 0 ? '+' : '';
+      growthEl.innerHTML = `${currentStats.totalMembers} <small style="color:var(--green);font-size:0.7em">${sign}${memberDiff} this week</small>`;
+    }
+    const msgEl = document.getElementById('stat-mpd');
+    if (msgEl && msgToday > 0) {
+      msgEl.innerHTML = `${currentStats.messagesPerDay} <small style="color:var(--text-muted);font-size:0.7em">${msgToday} today</small>`;
+    }
+  } catch {}
 }
 
 function drawHubSparkline(canvas, data) {
