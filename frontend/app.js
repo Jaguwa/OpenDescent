@@ -781,7 +781,18 @@ function renderConversations() {
   el.innerHTML = state.conversations.map((c) => {
     const isActive = state.activeChat && state.activeChat.id === c.conversationId;
     const time = formatTime(c.lastMessage.timestamp);
-    const preview = c.lastMessage.body.slice(0, 40);
+    let preview = c.lastMessage.body || '';
+    if (preview.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(preview);
+        if (parsed.type === 'voicenote') preview = '🎤 Voice note';
+        else if (parsed.type === 'file' || parsed.contentId) preview = '📎 File';
+        else if (parsed.type === 'image') preview = '🖼 Image';
+        else if (parsed.type === 'video') preview = '🎬 Video';
+        else preview = `[${parsed.type || 'attachment'}]`;
+      } catch { /* not JSON, use as-is */ }
+    }
+    preview = preview.slice(0, 40);
     const icon = c.isGroup ? '&#128101; ' : '';
     return `
       <div class="list-item ${isActive ? 'active' : ''}"
