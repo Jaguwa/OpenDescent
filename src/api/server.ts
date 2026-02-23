@@ -1777,7 +1777,7 @@ export class APIServer {
   private fetchExternal(url: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Request timeout')), 10000);
-      https.get(url, { headers: { 'User-Agent': 'DecentraNet/1.0' } }, (res) => {
+      https.get(url, { headers: { 'User-Agent': 'OpenDescent/1.0' } }, (res) => {
         if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
           clearTimeout(timeout);
           reject(new Error(`HTTP ${res.statusCode}`));

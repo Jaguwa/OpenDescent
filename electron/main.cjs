@@ -1,5 +1,5 @@
 /**
- * DecentraNet — Electron Main Process
+ * OpenDescent — Electron Main Process
  *
  * Starts the same backend services as src/index.ts, then opens a
  * BrowserWindow pointed at the local API server. CommonJS (.cjs)
@@ -15,7 +15,7 @@ const net = require('net');
 
 // ─── Log to file ─────────────────────────────────────────────────────────────
 
-const logPath = path.join(app.getPath('userData'), 'decentranet.log');
+const logPath = path.join(app.getPath('userData'), 'opendescent.log');
 const logStream = fs.createWriteStream(logPath, { flags: 'w' });
 const origLog = console.log;
 const origErr = console.error;
@@ -60,9 +60,18 @@ async function startApp() {
   const wsPort = await findFreePort(tcpPort + 1);
   const apiPort = await findFreePort(3100);
 
-  // 2. Data directory — AppData/Roaming/DecentraNet (Windows convention)
+  // 2. Data directory — AppData/Roaming/OpenDescent (Windows convention)
+  //    Migrate from old DecentraNet location if it exists
   const dataDir = path.join(app.getPath('userData'), 'node-data');
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(dataDir)) {
+    const oldDir = path.join(path.dirname(app.getPath('userData')), 'decentra-net', 'node-data');
+    if (fs.existsSync(oldDir)) {
+      console.log(`[Electron] Migrating data from ${oldDir} to ${dataDir}`);
+      fs.cpSync(oldDir, dataDir, { recursive: true });
+    } else {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+  }
 
   // 3. Paths for the API server
   //    In dev:  <project>/frontend
@@ -150,7 +159,7 @@ async function startApp() {
     messageRetentionSeconds: 7 * 24 * 60 * 60,
   };
 
-  console.log(`[Electron] Starting DecentraNet node on TCP ${tcpPort}, WS ${wsPort}, API ${apiPort}`);
+  console.log(`[Electron] Starting OpenDescent node on TCP ${tcpPort}, WS ${wsPort}, API ${apiPort}`);
   console.log(`[Electron] Data dir: ${dataDir}`);
   console.log(`[Electron] Frontend: ${frontendDir}`);
 
@@ -369,7 +378,7 @@ async function startApp() {
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 750,
-    title: 'DecentraNet',
+    title: 'OpenDescent',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

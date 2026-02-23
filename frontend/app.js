@@ -1,5 +1,5 @@
 /**
- * DecentraNet Browser Frontend
+ * OpenDescent Browser Frontend
  *
  * - WebSocket client connecting to local Node.js backend
  * - Chat UI (DMs, groups, file sharing)
@@ -11,7 +11,7 @@
  * - Global timeline with posts, likes, comments
  */
 
-console.log('[DecentraNet] app.js loaded');
+console.log('[OpenDescent] app.js loaded');
 
 // ─── Debounce Utility ────────────────────────────────────────────────────────
 
@@ -21,6 +21,52 @@ function debounce(fn, ms) {
     clearTimeout(timer);
     timer = setTimeout(() => fn.apply(this, args), ms);
   };
+}
+
+// ─── Custom Confirm / Prompt Dialogs ─────────────────────────────────────────
+
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirm-modal');
+    document.getElementById('confirm-message').textContent = message;
+    modal.classList.remove('hidden');
+    const ok = document.getElementById('confirm-ok');
+    const cancel = document.getElementById('confirm-cancel');
+    function cleanup(result) {
+      modal.classList.add('hidden');
+      ok.removeEventListener('click', onOk);
+      cancel.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    ok.addEventListener('click', onOk);
+    cancel.addEventListener('click', onCancel);
+    ok.focus();
+  });
+}
+
+function showPrompt(message, defaultValue) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('prompt-modal');
+    document.getElementById('prompt-message').textContent = message;
+    const input = document.getElementById('prompt-input');
+    input.value = defaultValue || '';
+    modal.classList.remove('hidden');
+    const ok = document.getElementById('prompt-ok');
+    const cancel = document.getElementById('prompt-cancel');
+    function cleanup(result) {
+      modal.classList.add('hidden');
+      ok.removeEventListener('click', onOk);
+      cancel.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk() { cleanup(input.value); }
+    function onCancel() { cleanup(null); }
+    ok.addEventListener('click', onOk);
+    cancel.addEventListener('click', onCancel);
+    input.focus();
+  });
 }
 
 // ─── Sound Effects (Web Audio API) ──────────────────────────────────────────
@@ -479,12 +525,12 @@ function getAvatarDataURL(peerId, size) {
 
 function connectWS() {
   const wsUrl = `ws://${window.location.host}`;
-  console.log('[DecentraNet] Connecting to', wsUrl);
+  console.log('[OpenDescent] Connecting to', wsUrl);
   state.ws = new WebSocket(wsUrl);
 
   state.ws.onopen = () => {
     const token = window.__DECENTRA_TOKEN || '';
-    console.log('[DecentraNet] WS open, sending auth token:', token ? `${token.slice(0, 8)}...` : '(empty)');
+    console.log('[OpenDescent] WS open, sending auth token:', token ? `${token.slice(0, 8)}...` : '(empty)');
     state.ws.send(JSON.stringify({ type: 'auth', token }));
   };
 
@@ -492,14 +538,14 @@ function connectWS() {
   const origOnMessage = (event) => {
     if (!authDone) {
       const msg = JSON.parse(event.data);
-      console.log('[DecentraNet] WS pre-auth message:', msg);
+      console.log('[OpenDescent] WS pre-auth message:', msg);
       if (msg.type === 'auth') {
         if (msg.ok) {
           authDone = true;
           state.ws.onmessage = handleWSMessage;
           onAuthenticated();
         } else {
-          console.error('[DecentraNet] WebSocket auth failed');
+          console.error('[OpenDescent] WebSocket auth failed');
           setConnectionStatus('offline');
         }
         return;
@@ -509,7 +555,7 @@ function connectWS() {
   state.ws.onmessage = origOnMessage;
 
   function onAuthenticated() {
-    console.log('[DecentraNet] Authenticated! Loading data...');
+    console.log('[OpenDescent] Authenticated! Loading data...');
     setConnectionStatus('online');
     send('get_identity').then((data) => {
       state.myPeerId = data.peerId;
@@ -555,7 +601,7 @@ function connectWS() {
   }
 
   state.ws.onclose = (ev) => {
-    console.warn('[DecentraNet] WS closed:', ev.code, ev.reason);
+    console.warn('[OpenDescent] WS closed:', ev.code, ev.reason);
     setConnectionStatus('offline');
     state.connected = false;
     if (state.refreshTimer) { clearInterval(state.refreshTimer); state.refreshTimer = null; }
@@ -567,7 +613,7 @@ function connectWS() {
   };
 
   state.ws.onerror = (ev) => {
-    console.error('[DecentraNet] WS error:', ev);
+    console.error('[OpenDescent] WS error:', ev);
     showToast('Connection Error', 'Lost connection to backend', 'error');
   };
 }
@@ -762,8 +808,8 @@ function renderContacts() {
         <div class="item-preview">${c.peerId.slice(0, 20)}...</div>
       </div>
       <div class="contact-actions">
-        <button class="btn-icon btn-remove" onclick="event.stopPropagation(); removeFriend('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')" title="Remove">&#10005;</button>
-        <button class="btn-icon btn-block" onclick="event.stopPropagation(); blockPeer('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')" title="Block">&#128683;</button>
+        <button class="btn-icon btn-remove" onclick="event.stopPropagation(); removeFriend('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')" title="Remove"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg></button>
+        <button class="btn-icon btn-block" onclick="event.stopPropagation(); blockPeer('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')" title="Block"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><line x1="3.1" y1="3.1" x2="10.9" y2="10.9"/></svg></button>
       </div>
     </div>`
   ).join('');
@@ -779,7 +825,7 @@ function renderGroups() {
     <div class="list-item" onclick="openGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')">
       <div class="item-name">&#128101; ${escapeHtml(g.name)}</div>
       <div class="item-preview">${g.memberCount} members</div>
-      <button class="btn-icon btn-leave-group" onclick="event.stopPropagation(); leaveGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')" title="Leave group">&#10005;</button>
+      <button class="btn-icon btn-leave-group" onclick="event.stopPropagation(); leaveGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')" title="Leave group"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg></button>
     </div>`
   ).join('');
 }
@@ -939,7 +985,7 @@ function startDM(peerId, displayName) {
 }
 
 async function removeFriend(peerId, name) {
-  if (!confirm(`Remove ${name} from contacts?`)) return;
+  if (!await showConfirm(`Remove ${name} from contacts?`)) return;
   try {
     await send('remove_friend', { peerId });
     showToast('Removed', `${name} removed from contacts`, 'info');
@@ -950,7 +996,7 @@ async function removeFriend(peerId, name) {
 }
 
 async function blockPeer(peerId, name) {
-  if (!confirm(`Block ${name}? They will be removed from your contacts and their messages will be silently dropped.`)) return;
+  if (!await showConfirm(`Block ${name}? They will be removed from your contacts and their messages will be silently dropped.`)) return;
   try {
     await send('block_peer', { peerId });
     showToast('Blocked', `${name} has been blocked`, 'info');
@@ -989,8 +1035,8 @@ async function loadBlockedPeers() {
 }
 
 async function deleteAccount() {
-  if (!confirm('Delete your account? This will permanently erase all data including your identity, messages, and contacts. This cannot be undone.')) return;
-  const typed = prompt('Type DELETE to confirm:');
+  if (!await showConfirm('Delete your account? This will permanently erase all data including your identity, messages, and contacts. This cannot be undone.')) return;
+  const typed = await showPrompt('Type DELETE to confirm:');
   if (typed !== 'DELETE') {
     showToast('Cancelled', 'Account deletion cancelled', 'info');
     return;
@@ -1011,7 +1057,7 @@ function openGroup(groupId, name) {
 }
 
 async function leaveGroup(groupId, name) {
-  if (!confirm(`Leave group "${name}"?`)) return;
+  if (!await showConfirm(`Leave group "${name}"?`)) return;
   try {
     await send('leave_group', { groupId });
     showToast('Left Group', `You left "${name}"`, 'info');
@@ -1204,7 +1250,7 @@ function showSettingsModal() {
   loadBlockedPeers();
 
   // Version
-  document.getElementById('settings-version').textContent = 'DecentraNet v0.5.3';
+  document.getElementById('settings-version').textContent = 'OpenDescent v0.5.3';
 
   modal.classList.remove('hidden');
 }
@@ -1352,7 +1398,7 @@ async function exportMyData() {
     const a = document.createElement('a');
     const date = new Date().toISOString().split('T')[0];
     a.href = url;
-    a.download = `decentranet-export-${date}.json`;
+    a.download = `opendescent-export-${date}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1986,10 +2032,10 @@ async function createPost() {
 async function deletePost(postId, isAuthor) {
   let scope = 'self';
   if (isAuthor) {
-    const choice = confirm('Delete for everyone?\n\nOK = Delete for everyone\nCancel = Delete for me only');
+    const choice = await showConfirm('Delete for everyone? OK = Delete for everyone, Cancel = Delete for me only');
     scope = choice ? 'everyone' : 'self';
   } else {
-    if (!confirm('Delete this post from your feed?')) return;
+    if (!await showConfirm('Delete this post from your feed?')) return;
   }
   try {
     await send('delete_post', { postId, scope });
@@ -2003,7 +2049,7 @@ async function deleteMessage(messageId, timestamp, isMine) {
   let scope = 'self';
   let peerId = null;
   if (isMine && state.activeChat && state.activeChat.type !== 'group' && !state.activeChannel) {
-    const choice = confirm('Delete for everyone?\n\nOK = Delete for everyone\nCancel = Delete for me only');
+    const choice = await showConfirm('Delete for everyone? OK = Delete for everyone, Cancel = Delete for me only');
     scope = choice ? 'everyone' : 'self';
   }
   try {
@@ -4071,7 +4117,7 @@ async function saveHubSettings() {
 
 async function deleteCurrentHub() {
   if (!state.activeHub) return;
-  if (!confirm(`Delete hub "${state.activeHub.name}"? This cannot be undone.`)) return;
+  if (!await showConfirm(`Delete hub "${state.activeHub.name}"? This cannot be undone.`)) return;
   try {
     await send('delete_hub', { hubId: state.activeHub.hubId });
     closeHubSettingsModal();
@@ -4083,7 +4129,7 @@ async function deleteCurrentHub() {
 
 async function leaveCurrentHub() {
   if (!state.activeHub) return;
-  if (!confirm(`Leave hub "${state.activeHub.name}"?`)) return;
+  if (!await showConfirm(`Leave hub "${state.activeHub.name}"?`)) return;
   try {
     await send('leave_hub', { hubId: state.activeHub.hubId });
     closeHubSettingsModal();
@@ -4149,7 +4195,7 @@ async function createHubChannel(categoryId, btn) {
 }
 
 async function deleteHubCategory(categoryId) {
-  if (!state.activeHub || !confirm('Delete this category and all its channels?')) return;
+  if (!state.activeHub || !await showConfirm('Delete this category and all its channels?')) return;
   try {
     await send('delete_category', { hubId: state.activeHub.hubId, categoryId });
     await selectHub(state.activeHub.hubId);
@@ -4158,7 +4204,7 @@ async function deleteHubCategory(categoryId) {
 }
 
 async function deleteHubChannel(channelId) {
-  if (!state.activeHub || !confirm('Delete this channel?')) return;
+  if (!state.activeHub || !await showConfirm('Delete this channel?')) return;
   try {
     await send('delete_channel', { hubId: state.activeHub.hubId, channelId });
     await selectHub(state.activeHub.hubId);
@@ -4215,7 +4261,7 @@ async function inviteHubMember() {
 }
 
 async function kickHubMember(peerId) {
-  if (!state.activeHub || !confirm('Kick this member?')) return;
+  if (!state.activeHub || !await showConfirm('Kick this member?')) return;
   try {
     await send('kick_hub_member', { hubId: state.activeHub.hubId, peerId });
     showToast('Member kicked');

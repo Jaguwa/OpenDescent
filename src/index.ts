@@ -1,5 +1,5 @@
 /**
- * DecentraNet — Main Entry Point
+ * OpenDescent — Main Entry Point
  *
  * Top-level orchestrator that wires together all layers:
  * Network -> Crypto -> Storage -> Messaging -> Media
@@ -100,7 +100,7 @@ function parseArgs(): ParsedArgs {
 
 // ─── Interactive CLI ─────────────────────────────────────────────────────────
 
-class DecentraNetCLI {
+class OpenDescentCLI {
   private node: DecentraNode;
   private store: LocalStore;
   private messaging: MessagingService;
@@ -222,7 +222,7 @@ class DecentraNetCLI {
       case 'id':
       case 'whoami': {
         const identity = this.node.getIdentity();
-        console.log(`  DecentraNet ID:  ${this.node.getPeerId()}`);
+        console.log(`  OpenDescent ID:  ${this.node.getPeerId()}`);
         console.log(`  libp2p ID:       ${this.node.getLibp2pPeerId()}`);
         console.log(`  Name:            ${identity.displayName || '(none)'}`);
         const addrs = this.node.getAddresses();
@@ -609,10 +609,10 @@ class DecentraNetCLI {
   }
 
   /**
-   * Resolve a user input (name or peer ID) to a DecentraNet PeerId.
+   * Resolve a user input (name or peer ID) to an OpenDescent PeerId.
    */
   private resolveRecipient(input: string): string | null {
-    // Try exact DecentraNet PeerId match
+    // Try exact OpenDescent PeerId match
     if (this.node.getKnownPeer(input)) return input;
 
     // Try name match
@@ -696,7 +696,7 @@ async function main(): Promise<void> {
 
   if (args.help) {
     console.log(`
-Usage: decentra-net [options]
+Usage: opendescent [options]
 
 Options:
   --port, -p <number>      TCP port to listen on (default: 6001)
@@ -767,7 +767,7 @@ Options:
     disableMdns: args.disableMdns || false,
   };
 
-  console.log('Starting DecentraNet node...\n');
+  console.log('Starting OpenDescent node...\n');
 
   const node = new DecentraNode(config, passphrase);
   const store = new LocalStore(config.dataDir, config.maxStorageBytes);
@@ -1192,7 +1192,7 @@ Options:
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-  const cli = new DecentraNetCLI(node, store, messaging, calls, groups, content);
+  const cli = new OpenDescentCLI(node, store, messaging, calls, groups, content);
   cli.setWebPort(webPort);
   await cli.start();
 }

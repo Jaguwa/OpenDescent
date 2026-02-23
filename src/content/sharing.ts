@@ -21,6 +21,7 @@ import type { PeerId, ContentManifest, Shard, ContentType } from '../types/index
 import { shardContent, reassembleContent, DEFAULT_SHARD_CONFIG } from '../storage/shard.js';
 import { DecentraNode, PROTOCOLS } from '../network/node.js';
 import { LocalStore } from '../storage/store.js';
+import { sign, verify, publicKeyToPeerId } from '../crypto/identity.js';
 
 /** Info about a shared file, sent as a message body */
 export interface SharedFileInfo {
@@ -37,6 +38,14 @@ export interface SharedFileInfo {
   shardCount: number;
   requiredShards: number;
   originalSize: number;
+  /** Author's OpenDescent PeerId */
+  author?: string;
+  /** Timestamp of manifest creation */
+  createdAt?: number;
+  /** Ed25519 signature over manifest fields (base64) */
+  signature?: string;
+  /** Author's Ed25519 public key for verification (base64) */
+  authorPublicKey?: string;
 }
 
 export class ContentManager {
@@ -110,17 +119,39 @@ export class ContentManager {
       }
     }
 
+    const createdAt = Date.now();
+    const identity = this.node.getIdentity();
+    const nonceB64 = Buffer.from(nonce).toString('base64');
+
+    // Build canonical signable data (all manifest fields except signature)
+    const signableData = new TextEncoder().encode(JSON.stringify({
+      contentId,
+      author: myId,
+      type: 'file',
+      totalSize: fileSize,
+      shardCount: shards.length,
+      requiredShards: shards[0].requiredShards,
+      shardLocations,
+      encryptionNonce: nonceB64,
+      createdAt,
+    }));
+    const sig = sign(signableData, identity.privateKey);
+
     const fileInfo: SharedFileInfo = {
       contentId,
       fileName,
       fileSize,
       mimeType,
       encryptionKey: Buffer.from(encryptionKey).toString('base64'),
-      encryptionNonce: Buffer.from(nonce).toString('base64'),
+      encryptionNonce: nonceB64,
       shardLocations,
       shardCount: shards.length,
       requiredShards: shards[0].requiredShards,
       originalSize: encryptedData.length,
+      author: myId,
+      createdAt,
+      signature: Buffer.from(sig).toString('base64'),
+      authorPublicKey: Buffer.from(identity.publicKey).toString('base64'),
     };
 
     // Store manifest locally
@@ -136,8 +167,8 @@ export class ContentManager {
       )),
       encryptionNonce: nonce,
       recipients: [],
-      createdAt: Date.now(),
-      signature: new Uint8Array(0), // TODO: sign manifest
+      createdAt,
+      signature: sig,
     };
     await this.store.storeManifest(manifest);
 
@@ -150,6 +181,32 @@ export class ContentManager {
    */
   async downloadFile(fileInfo: SharedFileInfo, outputDir: string): Promise<string> {
     console.log(`[Content] Downloading "${fileInfo.fileName}" (${formatBytes(fileInfo.fileSize)})`);
+
+    // Verify manifest signature if present (backward compat: skip for legacy unsigned shares)
+    if (fileInfo.signature && fileInfo.authorPublicKey) {
+      const authorId = fileInfo.author || publicKeyToPeerId(
+        new Uint8Array(Buffer.from(fileInfo.authorPublicKey, 'base64'))
+      );
+      const signableData = new TextEncoder().encode(JSON.stringify({
+        contentId: fileInfo.contentId,
+        author: authorId,
+        type: 'file',
+        totalSize: fileInfo.fileSize,
+        shardCount: fileInfo.shardCount,
+        requiredShards: fileInfo.requiredShards,
+        shardLocations: fileInfo.shardLocations,
+        encryptionNonce: fileInfo.encryptionNonce,
+        createdAt: fileInfo.createdAt,
+      }));
+      const pubKey = new Uint8Array(Buffer.from(fileInfo.authorPublicKey, 'base64'));
+      const sig = new Uint8Array(Buffer.from(fileInfo.signature, 'base64'));
+      if (!verify(signableData, sig, pubKey)) {
+        throw new Error('Manifest signature verification failed — file may have been tampered with');
+      }
+      console.log(`[Content] Manifest signature verified ✓`);
+    } else {
+      console.warn('[Content] Unsigned manifest — skipping verification (legacy share)');
+    }
 
     const shards: Shard[] = [];
     const neededShards = fileInfo.requiredShards;

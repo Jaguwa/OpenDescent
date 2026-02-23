@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>DecentraNet</title>
-  <meta name="description" content="DecentraNet — decentralized peer-to-peer social network">
+  <title>OpenDescent</title>
+  <meta name="description" content="OpenDescent — decentralized peer-to-peer social network">
   <meta name="theme-color" content="#1a1a2e">
-  <meta property="og:title" content="DecentraNet">
+  <meta property="og:title" content="OpenDescent">
   <meta property="og:description" content="Decentralized peer-to-peer social network. No servers. No surveillance.">
   <meta property="og:type" content="website">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -49,7 +49,7 @@
         <button class="tab" data-tab="contacts">Contacts</button>
         <button class="tab" data-tab="groups">Groups</button>
         <button class="tab" data-tab="discover">Discover</button>
-        <button class="tab" data-tab="deaddrops">Dead Drops</button>
+        <button class="tab" data-tab="deaddrops">Drops</button>
         <button id="btn-connect-peer" class="tab connect-tab" title="Connect Peer">+</button>
       </div>
 
@@ -122,7 +122,7 @@
       <!-- Empty state -->
       <div id="empty-state" class="hidden">
         <div class="empty-icon">&#9672;</div>
-        <h2>DecentraNet</h2>
+        <h2>OpenDescent</h2>
         <p>Select a conversation or contact to start chatting.</p>
         <p class="subtle">Peer-to-peer. End-to-end encrypted. No servers.</p>
       </div>
@@ -672,7 +672,7 @@
     <!-- ─── Mnemonic Setup Modal ──────────────────────────────── -->
     <div id="mnemonic-modal" class="modal hidden">
       <div class="modal-content mnemonic-modal-content">
-        <h3 id="mnemonic-title">Welcome to DecentraNet</h3>
+        <h3 id="mnemonic-title">Welcome to OpenDescent</h3>
 
         <!-- Step 1: Choose Create or Recover -->
         <div id="mnemonic-step-choose">
@@ -725,7 +725,7 @@
     <!-- ─── Onboarding Splash Modal ──────────────────────────── -->
     <div id="onboarding-splash" class="modal hidden">
       <div class="modal-content onboarding-splash-content">
-        <h2>DecentraNet</h2>
+        <h2>OpenDescent</h2>
         <p class="onboarding-tagline">Decentralized. Encrypted. Yours.</p>
         <div class="onboarding-features">
           <div class="onboarding-feature-card">
@@ -974,6 +974,29 @@
 
         <div class="modal-actions" style="margin-top:16px">
           <button class="btn-secondary" onclick="closeDMSModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Confirm Dialog ─────────────────────────────────── -->
+    <div id="confirm-modal" class="modal hidden">
+      <div class="modal-content confirm-modal-content">
+        <p id="confirm-message"></p>
+        <div class="modal-actions">
+          <button id="confirm-ok" class="btn-primary">OK</button>
+          <button id="confirm-cancel" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Prompt Dialog ──────────────────────────────────── -->
+    <div id="prompt-modal" class="modal hidden">
+      <div class="modal-content confirm-modal-content">
+        <p id="prompt-message"></p>
+        <input type="text" id="prompt-input" class="input-field" style="margin:12px 0">
+        <div class="modal-actions">
+          <button id="prompt-ok" class="btn-primary">OK</button>
+          <button id="prompt-cancel" class="btn-secondary">Cancel</button>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-/* ─── DecentraNet Frontend ─────────────────────────────────────────────── */
+/* ─── OpenDescent Frontend ─────────────────────────────────────────────── */
 
 :root {
   --bg-primary: #0d1117;
@@ -139,25 +139,20 @@ body {
 #sidebar-tabs {
   display: flex;
   border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
-#sidebar-tabs::-webkit-scrollbar { display: none; }
-
 .tab {
-  flex: 0 0 auto;
-  padding: 10px 12px;
+  flex: 1 1 0;
+  padding: 10px 4px;
   background: none;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.85em;
+  font-size: 0.78em;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .tab:hover { color: var(--text-primary); }
@@ -1241,6 +1236,15 @@ body {
   justify-content: flex-end;
   gap: 8px;
 }
+.confirm-modal-content {
+  min-width: 300px;
+  max-width: 420px;
+}
+.confirm-modal-content p {
+  margin-bottom: 16px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
 
 .btn-primary {
   padding: 8px 20px;
@@ -1419,7 +1423,7 @@ body {
 
 .connect-tab {
   flex: 0 0 auto !important;
-  padding: 10px 14px !important;
+  padding: 10px 8px !important;
   font-size: 1.2em;
   font-weight: 700;
   color: var(--accent) !important;

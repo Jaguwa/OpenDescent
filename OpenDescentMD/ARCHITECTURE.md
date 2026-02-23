@@ -1,4 +1,4 @@
-# DecentraNet — Security Model & Next Steps
+# OpenDescent — Security Model & Next Steps
 
 ## Security Model
 

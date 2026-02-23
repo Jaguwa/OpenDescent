@@ -1,4 +1,4 @@
-# DecentraNet — Decentralized P2P Social Network
+# OpenDescent — Decentralized P2P Social Network
 
 A fully decentralized peer-to-peer social network with encrypted messaging,
 voice/video notes, and real-time calls. No central servers. Data is sharded,
