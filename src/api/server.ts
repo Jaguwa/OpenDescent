@@ -27,6 +27,7 @@ import type { DeadDropService } from '../content/deaddrops.js';
 import type { PollService } from '../content/polls.js';
 import type { HubManager } from '../messaging/hubs.js';
 import type { HubStatsService } from '../messaging/hub-stats.js';
+import type { DeadManSwitchService } from '../deadswitch/deadswitch.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ export interface APIServerDeps {
   polls?: PollService;
   hubs?: HubManager;
   hubStats?: HubStatsService;
+  dms?: DeadManSwitchService;
   /** Override frontend static files directory (default: <cwd>/frontend) */
   frontendDir?: string;
   /** Override temp directory for file shares/downloads (default: cwd) */
@@ -1439,6 +1441,44 @@ export class APIServer {
             }
           }, 500);
           return this.ok(id, { deleted: true, message: 'Account deleted. Please restart the application.' });
+        }
+
+        // ─── Dead Man's Switch ──────────────────────────────
+
+        case 'dms_create': {
+          if (!this.deps.dms) return this.err(id, 'Dead Man\'s Switch not available');
+          if (!data.recipientIds || !Array.isArray(data.recipientIds) || data.recipientIds.length === 0) {
+            return this.err(id, 'At least one recipient required');
+          }
+          if (!data.message || typeof data.message !== 'string') return this.err(id, 'Message required');
+          const switchId = await this.deps.dms.createSwitch(data.recipientIds, data.message, data.windowMs);
+          return this.ok(id, { switchId });
+        }
+
+        case 'dms_list': {
+          if (!this.deps.dms) return this.err(id, 'Dead Man\'s Switch not available');
+          const switches = await this.deps.dms.listSwitches();
+          return this.ok(id, switches);
+        }
+
+        case 'dms_check_in': {
+          if (!this.deps.dms) return this.ok(id, { ok: true });
+          await this.deps.dms.checkIn();
+          return this.ok(id, { ok: true });
+        }
+
+        case 'dms_disarm': {
+          if (!this.deps.dms) return this.err(id, 'Dead Man\'s Switch not available');
+          if (!data.switchId) return this.err(id, 'Missing switchId');
+          await this.deps.dms.disarm(data.switchId);
+          return this.ok(id, { ok: true });
+        }
+
+        case 'dms_delete': {
+          if (!this.deps.dms) return this.err(id, 'Dead Man\'s Switch not available');
+          if (!data.switchId) return this.err(id, 'Missing switchId');
+          await this.deps.dms.deleteSwitch(data.switchId);
+          return this.ok(id, { ok: true });
         }
 
         default:

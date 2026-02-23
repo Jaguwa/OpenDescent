@@ -532,10 +532,26 @@ function connectWS() {
     refreshAll();
     loadFeed();
 
+    // DMS auto check-in
+    send('dms_check_in').catch(() => {});
+
     // Show theme spin wheel button after a short delay
     setTimeout(() => {
       document.getElementById('theme-wheel-btn').classList.remove('hidden');
     }, 1500);
+
+    // Onboarding: show splash on first launch (after auth settles)
+    setTimeout(() => {
+      if (!localStorage.getItem('decentra_onboarded')) {
+        // If mnemonic modal is showing (legacy user), defer until mnemonic completes
+        const mnemonicModal = document.getElementById('mnemonic-modal');
+        if (mnemonicModal && !mnemonicModal.classList.contains('hidden')) {
+          onboardingPendingAfterMnemonic = true;
+        } else {
+          launchOnboarding();
+        }
+      }
+    }, 500);
   }
 
   state.ws.onclose = (ev) => {
@@ -1186,6 +1202,9 @@ function showSettingsModal() {
 
   // Blocked peers
   loadBlockedPeers();
+
+  // Version
+  document.getElementById('settings-version').textContent = 'DecentraNet v0.5.3';
 
   modal.classList.remove('hidden');
 }
@@ -4611,6 +4630,11 @@ async function mnemonicVerify() {
     document.getElementById('mnemonic-modal').classList.add('hidden');
     showToast('Identity created!', 'Your seed phrase is your backup key.');
     mnemonicWords = null;
+    // Trigger deferred onboarding splash
+    if (onboardingPendingAfterMnemonic) {
+      onboardingPendingAfterMnemonic = false;
+      setTimeout(() => launchOnboarding(), 300);
+    }
   } catch (e) { showToast('Failed to confirm', e.message); }
 }
 
@@ -4633,6 +4657,11 @@ async function mnemonicRecover() {
     document.getElementById('mnemonic-modal').classList.add('hidden');
     showToast('Identity recovered!', `Peer ID: ${result.peerId.slice(0, 16)}...`);
     if (result.bundleFound) showToast('Account bundle found!', 'Contacts and groups restored.');
+    // Trigger deferred onboarding splash
+    if (onboardingPendingAfterMnemonic) {
+      onboardingPendingAfterMnemonic = false;
+      setTimeout(() => launchOnboarding(), 300);
+    }
   } catch (e) { const errEl = document.getElementById('recover-error'); errEl.textContent = e.message; errEl.classList.remove('hidden'); }
 }
 
@@ -5276,5 +5305,355 @@ function handleVoiceSignal(data) {
 
   } else if (signal.type === 'voice_leave') {
     removeVoicePeer(fromId);
+  }
+}
+
+// ─── Onboarding Walkthrough ──────────────────────────────────────────────────
+
+const ONBOARDING_STEPS = [
+  { target: '#identity-bar', tab: null, title: 'Your Identity', desc: 'This is you. Your identity is a cryptographic keypair \u2014 no email, no password, no server. Back it up with your 12-word mnemonic phrase.' },
+  { target: '.tab[data-tab="feed"]', tab: 'feed', title: 'Feed', desc: 'Share posts, photos, videos, polls, and voice notes with your network. Toggle between public and friends-only.' },
+  { target: '.tab[data-tab="chats"]', tab: 'chats', title: 'Chats', desc: 'End-to-end encrypted direct messages with forward secrecy. Even if a key is compromised, past messages stay safe.' },
+  { target: '.tab[data-tab="contacts"]', tab: 'contacts', title: 'Contacts', desc: 'Your trusted peers. Add contacts via friend requests or invite codes. Keys are pinned on first contact (TOFU).' },
+  { target: '.tab[data-tab="groups"]', tab: 'groups', title: 'Groups', desc: 'Private group chats with automatic key rotation. When someone leaves, the encryption key changes.' },
+  { target: '.tab[data-tab="discover"]', tab: 'discover', title: 'Discover', desc: 'Find peers on the network, send friend requests, and browse who is online.' },
+  { target: '.tab[data-tab="deaddrops"]', tab: 'deaddrops', title: 'Dead Drops', desc: 'Post anonymously via 3-hop onion routing. No identity attached \u2014 not even a timestamp from your device.' },
+  { target: '#hub-strip', tab: null, title: 'Hubs', desc: 'Community spaces with text channels and voice chat. Create your own or browse existing ones.' },
+  { target: '#btn-connect-peer', tab: null, title: 'Connect Peer', desc: 'Share an invite code to connect with peers across networks. Copy your code or paste a friend\u2019s.' },
+  { target: '#btn-settings', tab: null, title: 'Settings', desc: 'Customize themes, privacy, data, and configure a Dead Man\'s Switch. You can replay this tour anytime from here.' },
+];
+
+let onboardingStep = 0;
+let onboardingActive = false;
+let onboardingPendingAfterMnemonic = false;
+
+function launchOnboarding() {
+  // Close settings modal if open
+  const settingsModal = document.getElementById('settings-modal');
+  if (settingsModal && !settingsModal.classList.contains('hidden')) {
+    settingsModal.classList.add('hidden');
+  }
+  // Show splash
+  document.getElementById('onboarding-splash').classList.remove('hidden');
+}
+
+function startOnboardingTour() {
+  document.getElementById('onboarding-splash').classList.add('hidden');
+  onboardingStep = 0;
+  onboardingActive = true;
+  const overlay = document.getElementById('onboarding-overlay');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('active');
+  showOnboardingStep();
+}
+
+function finishOnboarding() {
+  onboardingActive = false;
+  const overlay = document.getElementById('onboarding-overlay');
+  overlay.classList.add('hidden');
+  overlay.classList.remove('active');
+  cleanupSpotlightTarget();
+  localStorage.setItem('decentra_onboarded', '1');
+}
+
+function showOnboardingStep() {
+  const step = ONBOARDING_STEPS[onboardingStep];
+  if (!step) { finishOnboarding(); return; }
+
+  // Switch tab if needed
+  if (step.tab) {
+    const tabBtn = document.querySelector(`.tab[data-tab="${step.tab}"]`);
+    if (tabBtn) tabBtn.click();
+  }
+
+  const target = document.querySelector(step.target);
+  if (!target || target.offsetParent === null) {
+    // Target not visible — skip this step
+    if (onboardingStep < ONBOARDING_STEPS.length - 1) {
+      onboardingStep++;
+      showOnboardingStep();
+    } else {
+      finishOnboarding();
+    }
+    return;
+  }
+
+  // Position spotlight
+  const rect = target.getBoundingClientRect();
+  const pad = 6;
+  const spotlight = document.getElementById('onboarding-spotlight');
+  spotlight.style.top = (rect.top - pad) + 'px';
+  spotlight.style.left = (rect.left - pad) + 'px';
+  spotlight.style.width = (rect.width + pad * 2) + 'px';
+  spotlight.style.height = (rect.height + pad * 2) + 'px';
+
+  // Elevate target
+  cleanupSpotlightTarget();
+  target.classList.add('onboarding-spotlight-target');
+
+  // Fill tooltip
+  document.getElementById('onboarding-tooltip-title').textContent = step.title;
+  document.getElementById('onboarding-tooltip-desc').textContent = step.desc;
+  document.getElementById('onboarding-step-indicator').textContent = `${onboardingStep + 1} / ${ONBOARDING_STEPS.length}`;
+
+  const btnBack = document.getElementById('onboarding-btn-back');
+  const btnNext = document.getElementById('onboarding-btn-next');
+  btnBack.style.display = onboardingStep === 0 ? 'none' : '';
+  btnNext.textContent = onboardingStep === ONBOARDING_STEPS.length - 1 ? 'Done' : 'Next';
+
+  positionTooltip(rect);
+}
+
+function positionTooltip(targetRect) {
+  const tooltip = document.getElementById('onboarding-tooltip');
+  const pad = 12;
+  const tooltipW = 300;
+  let top, left;
+
+  // If target is near the left edge, position tooltip to the right of it
+  if (targetRect.left < 80) {
+    top = targetRect.top + (targetRect.height / 2) - 60;
+    left = targetRect.right + pad;
+    // Clamp vertical
+    if (top < 8) top = 8;
+    if (top + 160 > window.innerHeight - 8) top = window.innerHeight - 168;
+  // If target is near the right edge, position tooltip to the left of it
+  } else if (targetRect.right > window.innerWidth - 80) {
+    top = targetRect.top + (targetRect.height / 2) - 60;
+    left = targetRect.left - tooltipW - pad;
+    if (top < 8) top = 8;
+    if (left < 8) left = 8;
+  } else {
+    // Default: below the target, centered
+    top = targetRect.bottom + pad;
+    left = targetRect.left + (targetRect.width / 2) - (tooltipW / 2);
+  }
+
+  // Clamp horizontal
+  if (left < 8) left = 8;
+  if (left + tooltipW > window.innerWidth - 8) left = window.innerWidth - tooltipW - 8;
+
+  tooltip.style.top = top + 'px';
+  tooltip.style.left = left + 'px';
+  tooltip.style.bottom = '';
+
+  // Check if it overflows bottom (only for below-target placement)
+  requestAnimationFrame(() => {
+    const tooltipRect = tooltip.getBoundingClientRect();
+    if (tooltipRect.bottom > window.innerHeight - 8) {
+      tooltip.style.top = (targetRect.top - tooltipRect.height - pad) + 'px';
+      if (parseFloat(tooltip.style.top) < 8) {
+        tooltip.style.top = '8px';
+      }
+    }
+  });
+}
+
+function cleanupSpotlightTarget() {
+  const prev = document.querySelector('.onboarding-spotlight-target');
+  if (prev) prev.classList.remove('onboarding-spotlight-target');
+}
+
+function onboardingNext() {
+  if (onboardingStep >= ONBOARDING_STEPS.length - 1) {
+    finishOnboarding();
+  } else {
+    onboardingStep++;
+    showOnboardingStep();
+  }
+}
+
+function onboardingBack() {
+  if (onboardingStep > 0) {
+    onboardingStep--;
+    showOnboardingStep();
+  }
+}
+
+// Wire up onboarding buttons
+document.getElementById('onboarding-btn-tour').addEventListener('click', startOnboardingTour);
+document.getElementById('onboarding-btn-skip-splash').addEventListener('click', () => {
+  document.getElementById('onboarding-splash').classList.add('hidden');
+  localStorage.setItem('decentra_onboarded', '1');
+});
+document.getElementById('onboarding-btn-next').addEventListener('click', onboardingNext);
+document.getElementById('onboarding-btn-back').addEventListener('click', onboardingBack);
+document.getElementById('onboarding-btn-skip').addEventListener('click', finishOnboarding);
+
+// Reposition on resize
+window.addEventListener('resize', debounce(() => {
+  if (!onboardingActive) return;
+  showOnboardingStep();
+}, 150));
+
+// ─── Dead Man's Switch ──────────────────────────────────────────────────
+
+let dmsCountdownTimer = null;
+
+function showDMSModal() {
+  // Close settings modal
+  document.getElementById('settings-modal').classList.add('hidden');
+  const modal = document.getElementById('dms-modal');
+
+  // Populate contact picker
+  const picker = document.getElementById('dms-contact-picker');
+  const contacts = state.contacts || [];
+  picker.innerHTML = contacts.length === 0
+    ? '<p class="subtle">No contacts yet.</p>'
+    : contacts.map(c => `<label class="member-option"><input type="checkbox" value="${escapeHtml(c.peerId)}" class="dms-recipient-cb"> ${escapeHtml(c.displayName || c.peerId.slice(0, 12))}</label>`).join('');
+
+  // Wire char counter
+  const input = document.getElementById('dms-message-input');
+  const counter = document.getElementById('dms-char-counter');
+  input.value = '';
+  counter.textContent = '0/2000';
+  input.oninput = () => { counter.textContent = `${input.value.length}/2000`; };
+
+  // Load active switches
+  loadDMSSwitches();
+
+  modal.classList.remove('hidden');
+}
+
+function closeDMSModal() {
+  document.getElementById('dms-modal').classList.add('hidden');
+  if (dmsCountdownTimer) { clearInterval(dmsCountdownTimer); dmsCountdownTimer = null; }
+}
+
+async function loadDMSSwitches() {
+  try {
+    const switches = await send('dms_list');
+    renderDMSSwitches(switches || []);
+  } catch {
+    document.getElementById('dms-active-list').innerHTML = '<p class="subtle">Failed to load switches.</p>';
+  }
+}
+
+function renderDMSSwitches(switches) {
+  const container = document.getElementById('dms-active-list');
+  if (!switches || switches.length === 0) {
+    container.innerHTML = '<p class="subtle">No active switches.</p>';
+    if (dmsCountdownTimer) { clearInterval(dmsCountdownTimer); dmsCountdownTimer = null; }
+    return;
+  }
+
+  container.innerHTML = switches.map(s => {
+    const statusClass = 'dms-status-' + s.status;
+    const statusLabel = s.status.charAt(0).toUpperCase() + s.status.slice(1);
+    const msgPreview = (s.message || '').slice(0, 80) + (s.message.length > 80 ? '...' : '');
+    const recipientCount = s.recipientIds ? s.recipientIds.length : 0;
+    const windowLabel = formatDMSWindow(s.windowMs);
+    return `<div class="dms-switch-card" data-switch-id="${s.switchId}">
+      <div class="dms-card-header">
+        <span class="${statusClass}">${statusLabel}</span>
+        <span class="dms-countdown ${statusClass}" data-remaining="${s.timeRemaining || 0}">${s.status === 'armed' ? formatDMSCountdown(s.timeRemaining) : ''}</span>
+      </div>
+      <div class="dms-message-preview">${escapeHtml(msgPreview)}</div>
+      <div class="subtle" style="font-size:0.8em;margin-bottom:6px">${recipientCount} recipient${recipientCount !== 1 ? 's' : ''} &middot; ${windowLabel}</div>
+      <div class="dms-card-actions">
+        ${s.status === 'armed' ? `<button class="btn-secondary" onclick="disarmDMS('${s.switchId}')">Disarm</button>` : ''}
+        <button class="btn-secondary" onclick="deleteDMS('${s.switchId}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Start countdown update timer
+  if (dmsCountdownTimer) clearInterval(dmsCountdownTimer);
+  dmsCountdownTimer = setInterval(() => {
+    document.querySelectorAll('.dms-countdown[data-remaining]').forEach(el => {
+      let remaining = parseInt(el.dataset.remaining, 10);
+      if (remaining > 0) {
+        remaining -= 60000;
+        if (remaining < 0) remaining = 0;
+        el.dataset.remaining = remaining;
+        el.textContent = formatDMSCountdown(remaining);
+      }
+    });
+  }, 60000);
+}
+
+function formatDMSCountdown(ms) {
+  if (!ms || ms <= 0) return 'Expired';
+  const hours = Math.floor(ms / 3600000);
+  const mins = Math.floor((ms % 3600000) / 60000);
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remainHours = hours % 24;
+    return `${days}d ${remainHours}h`;
+  }
+  return `${hours}h ${mins}m`;
+}
+
+function formatDMSWindow(ms) {
+  if (ms >= 7 * 24 * 3600000) return '7 days';
+  if (ms >= 3 * 24 * 3600000) return '3 days';
+  if (ms >= 24 * 3600000) return '24 hours';
+  return '12 hours';
+}
+
+function onDMSWindowChange() {
+  const select = document.getElementById('dms-window-select');
+  const customDiv = document.getElementById('dms-custom-window');
+  if (select.value === 'custom') {
+    customDiv.classList.remove('hidden');
+    customDiv.style.display = 'flex';
+  } else {
+    customDiv.classList.add('hidden');
+  }
+}
+
+function getDMSWindowMs() {
+  const select = document.getElementById('dms-window-select');
+  if (select.value === 'custom') {
+    const val = parseInt(document.getElementById('dms-custom-value').value, 10);
+    const unit = parseInt(document.getElementById('dms-custom-unit').value, 10);
+    if (!val || val < 1) return 0;
+    return val * unit;
+  }
+  return parseInt(select.value, 10);
+}
+
+async function createDMS() {
+  const message = document.getElementById('dms-message-input').value.trim();
+  if (!message) { showToast('Error', 'Message is required', 'error'); return; }
+
+  const checkboxes = document.querySelectorAll('.dms-recipient-cb:checked');
+  const recipientIds = Array.from(checkboxes).map(cb => cb.value);
+  if (recipientIds.length === 0) { showToast('Error', 'Select at least one recipient', 'error'); return; }
+
+  const windowMs = getDMSWindowMs();
+  if (!windowMs || windowMs < 3600000 || windowMs > 30 * 86400000) {
+    showToast('Error', 'Window must be between 1 hour and 30 days', 'error');
+    return;
+  }
+
+  try {
+    await send('dms_create', { recipientIds, message, windowMs });
+    showToast('Switch Created', 'Dead Man\'s Switch is now armed', 'success');
+    document.getElementById('dms-message-input').value = '';
+    document.querySelectorAll('.dms-recipient-cb').forEach(cb => { cb.checked = false; });
+    loadDMSSwitches();
+  } catch (err) {
+    showToast('Error', err.message || 'Failed to create switch', 'error');
+  }
+}
+
+async function disarmDMS(switchId) {
+  try {
+    await send('dms_disarm', { switchId });
+    showToast('Disarmed', 'Switch has been disarmed', 'success');
+    loadDMSSwitches();
+  } catch (err) {
+    showToast('Error', err.message || 'Failed to disarm', 'error');
+  }
+}
+
+async function deleteDMS(switchId) {
+  try {
+    await send('dms_delete', { switchId });
+    showToast('Deleted', 'Switch removed', 'success');
+    loadDMSSwitches();
+  } catch (err) {
+    showToast('Error', err.message || 'Failed to delete', 'error');
   }
 }

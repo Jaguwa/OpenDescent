@@ -34,7 +34,7 @@
     "asar": false,
     "win": {
       "target": "nsis",
-      "icon": null
+      "icon": "Descentfinallogo.ico"
     },
     "nsis": {
       "oneClick": false,

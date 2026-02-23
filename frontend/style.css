@@ -140,16 +140,21 @@ body {
   display: flex;
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
+#sidebar-tabs::-webkit-scrollbar { display: none; }
+
 .tab {
-  flex: 1;
-  padding: 8px 4px;
+  flex: 0 0 auto;
+  padding: 10px 12px;
   background: none;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.8em;
+  font-size: 0.85em;
+  white-space: nowrap;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   white-space: nowrap;
@@ -1414,7 +1419,7 @@ body {
 
 .connect-tab {
   flex: 0 0 auto !important;
-  width: 36px;
+  padding: 10px 14px !important;
   font-size: 1.2em;
   font-weight: 700;
   color: var(--accent) !important;
@@ -3558,4 +3563,264 @@ body {
 
 @media (max-width: 768px) {
   input, textarea, select { font-size: 16px; }
+}
+
+/* ─── Onboarding Splash Modal ─────────────────────────────────────────── */
+
+.onboarding-splash-content {
+  max-width: 520px;
+  text-align: center;
+}
+
+.onboarding-splash-content h2 {
+  font-size: 1.6em;
+  margin-bottom: 4px;
+}
+
+.onboarding-tagline {
+  color: var(--accent);
+  font-size: 0.95em;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+.onboarding-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.onboarding-feature-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.onboarding-feature-icon {
+  font-size: 1.6em;
+  margin-bottom: 6px;
+}
+
+.onboarding-feature-card h4 {
+  font-size: 0.9em;
+  margin-bottom: 4px;
+}
+
+.onboarding-feature-card p {
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.onboarding-splash-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+@media (max-width: 500px) {
+  .onboarding-features {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Onboarding Spotlight Overlay ────────────────────────────────────── */
+
+#onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+#onboarding-overlay.active {
+  pointer-events: auto;
+}
+
+#onboarding-spotlight {
+  position: absolute;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65);
+  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  pointer-events: none;
+  z-index: 10001;
+}
+
+#onboarding-tooltip {
+  position: absolute;
+  z-index: 10002;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  width: 300px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+#onboarding-tooltip h4 {
+  font-size: 1em;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+
+#onboarding-tooltip p {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.onboarding-tooltip-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.onboarding-step-indicator {
+  font-size: 0.75em;
+  color: var(--text-muted);
+}
+
+.onboarding-tooltip-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.onboarding-tooltip-btns button {
+  padding: 5px 14px;
+  font-size: 0.8em;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+#onboarding-btn-back {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+#onboarding-btn-back:hover {
+  background: var(--bg-hover);
+}
+
+#onboarding-btn-next {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+#onboarding-btn-next:hover {
+  background: var(--accent-hover);
+}
+
+#onboarding-btn-skip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+#onboarding-btn-skip:hover {
+  color: var(--text-primary);
+}
+
+.onboarding-spotlight-target {
+  position: relative;
+  z-index: 10001;
+}
+
+@media (max-width: 500px) {
+  #onboarding-tooltip {
+    width: 260px;
+  }
+}
+
+/* ─── Dead Man's Switch ──────────────────────────────────────────────── */
+
+.dms-modal-content {
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.dms-switch-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.dms-switch-card .dms-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.dms-countdown {
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.dms-status-armed {
+  color: var(--orange);
+}
+
+.dms-status-triggered {
+  color: var(--red);
+}
+
+.dms-status-disarmed {
+  color: var(--text-muted);
+}
+
+.dms-switch-card .dms-message-preview {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dms-switch-card .dms-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.dms-switch-card .dms-card-actions button {
+  font-size: 0.8em;
+  padding: 4px 10px;
+}
+
+#dms-contact-picker {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+
+#dms-contact-picker .member-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+#dms-contact-picker .member-option:hover {
+  background: var(--bg-hover);
+  border-radius: var(--radius);
 }

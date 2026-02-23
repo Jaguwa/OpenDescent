@@ -12,7 +12,7 @@ import { Level } from 'level';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote, Poll, EncryptedVote, PollResults, PollVoteReceipt, Hub, HubCategory, HubChannel, HubMember, HubInvite, HubListing, HubStats } from '../types/index.js';
+import type { Shard, MessageEnvelope, PeerProfile, ContentManifest, PeerId, AccountBundle, PinnedKey, ThemePreferences, UserProfile, FriendRequest, Post, PostReaction, PostComment, Vouch, VouchRevocation, DeadDrop, DeadDropVote, Poll, EncryptedVote, PollResults, PollVoteReceipt, Hub, HubCategory, HubChannel, HubMember, HubInvite, HubListing, HubStats, DeadManSwitch } from '../types/index.js';
 
 /** Decrypted message for conversation history */
 export interface StoredMessage {
@@ -70,6 +70,7 @@ const NS = {
   BLOCK: 'block:',
   HUB_STATS_SNAP: 'hubsnap:',
   REPORT: 'report:',
+  DMS: 'dms:',
 } as const;
 
 export class LocalStore {
@@ -1325,6 +1326,45 @@ export class LocalStore {
 
   async isContentHidden(contentId: string): Promise<boolean> {
     return (await this.getReportCount(contentId)) >= 3;
+  }
+
+  // ─── Dead Man's Switch ──────────────────────────────────────────────
+
+  async storeDMS(dms: DeadManSwitch): Promise<void> {
+    await this.db.put(NS.DMS + dms.switchId, JSON.stringify(dms));
+  }
+
+  async getDMS(switchId: string): Promise<DeadManSwitch | null> {
+    try {
+      return JSON.parse(await this.db.get(NS.DMS + switchId));
+    } catch {
+      return null;
+    }
+  }
+
+  async getAllArmedDMS(): Promise<DeadManSwitch[]> {
+    const switches: DeadManSwitch[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.DMS, lt: NS.DMS + '\xFF' })) {
+      const dms = JSON.parse(value) as DeadManSwitch;
+      if (dms.status === 'armed') switches.push(dms);
+    }
+    return switches;
+  }
+
+  async getAllDMS(): Promise<DeadManSwitch[]> {
+    const switches: DeadManSwitch[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.DMS, lt: NS.DMS + '\xFF' })) {
+      switches.push(JSON.parse(value));
+    }
+    return switches;
+  }
+
+  async updateDMS(dms: DeadManSwitch): Promise<void> {
+    await this.db.put(NS.DMS + dms.switchId, JSON.stringify(dms));
+  }
+
+  async deleteDMS(switchId: string): Promise<void> {
+    try { await this.db.del(NS.DMS + switchId); } catch {}
   }
 
   // ─── Data Export ──────────────────────────────────────────────────────

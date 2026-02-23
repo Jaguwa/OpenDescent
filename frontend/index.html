@@ -473,11 +473,25 @@
           <p class="subtle" style="margin-top:4px">Export all conversations, posts, contacts, and settings as JSON.</p>
         </div>
 
+        <div class="settings-section">
+          <h4>Dead Man's Switch</h4>
+          <button id="btn-dms-settings" class="btn-secondary" onclick="showDMSModal()">Configure</button>
+          <p class="subtle" style="margin-top:4px">Auto-send a message if you don't check in.</p>
+        </div>
+
+        <div class="settings-section">
+          <h4>Tutorial</h4>
+          <button id="btn-show-tutorial" class="btn-secondary" onclick="launchOnboarding()">Show Tutorial</button>
+          <p class="subtle" style="margin-top:4px">Replay the welcome tour and feature walkthrough.</p>
+        </div>
+
         <div class="settings-section danger-zone">
           <h4 style="color:var(--red)">Danger Zone</h4>
           <button class="btn-danger" onclick="deleteAccount()">Delete Account</button>
           <p class="subtle" style="margin-top:4px">Permanently erases all data. Cannot be undone.</p>
         </div>
+
+        <p class="subtle" style="text-align:center;margin-top:12px" id="settings-version"></p>
 
         <div class="modal-actions" style="margin-top:16px">
           <button id="btn-cancel-settings" class="btn-secondary">Cancel</button>
@@ -708,6 +722,62 @@
       </div>
     </div>
 
+    <!-- ─── Onboarding Splash Modal ──────────────────────────── -->
+    <div id="onboarding-splash" class="modal hidden">
+      <div class="modal-content onboarding-splash-content">
+        <h2>DecentraNet</h2>
+        <p class="onboarding-tagline">Decentralized. Encrypted. Yours.</p>
+        <div class="onboarding-features">
+          <div class="onboarding-feature-card">
+            <div class="onboarding-feature-icon">&#128273;</div>
+            <h4>Your Keys, Your Identity</h4>
+            <p>A cryptographic keypair is your identity. No email, no password, no server.</p>
+          </div>
+          <div class="onboarding-feature-card">
+            <div class="onboarding-feature-icon">&#128274;</div>
+            <h4>End-to-End Encrypted</h4>
+            <p>Messages, calls, and files are encrypted so only you and the recipient can read them.</p>
+          </div>
+          <div class="onboarding-feature-card">
+            <div class="onboarding-feature-icon">&#127760;</div>
+            <h4>Peer-to-Peer Network</h4>
+            <p>Connect directly to other peers. No central server stores your data.</p>
+          </div>
+          <div class="onboarding-feature-card">
+            <div class="onboarding-feature-icon">&#128123;</div>
+            <h4>Anonymous Dead Drops</h4>
+            <p>Post anonymously via 3-hop onion routing. No identity attached.</p>
+          </div>
+          <div class="onboarding-feature-card">
+            <div class="onboarding-feature-icon">&#9200;</div>
+            <h4>Dead Man's Switch</h4>
+            <p>Pre-write a message that auto-sends to chosen contacts if you don't check in within your set window.</p>
+          </div>
+        </div>
+        <div class="onboarding-splash-actions">
+          <button id="onboarding-btn-tour" class="btn-primary">Take the Tour</button>
+          <button id="onboarding-btn-skip-splash" class="btn-secondary">Skip</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Onboarding Spotlight Overlay ──────────────────────── -->
+    <div id="onboarding-overlay" class="hidden">
+      <div id="onboarding-spotlight"></div>
+      <div id="onboarding-tooltip">
+        <button id="onboarding-btn-skip">&#10005;</button>
+        <h4 id="onboarding-tooltip-title"></h4>
+        <p id="onboarding-tooltip-desc"></p>
+        <div class="onboarding-tooltip-footer">
+          <span id="onboarding-step-indicator" class="onboarding-step-indicator"></span>
+          <div class="onboarding-tooltip-btns">
+            <button id="onboarding-btn-back">Back</button>
+            <button id="onboarding-btn-next">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ─── TOFU Key Change Warning Banner ──────────────────── -->
     <div id="tofu-banner" class="tofu-banner hidden">
       <div class="tofu-banner-content">
@@ -862,6 +932,48 @@
         <div id="hub-leaderboard" class="hidden"></div>
         <div class="modal-actions" style="margin-top:16px">
           <button class="btn-secondary" onclick="closeBrowseHubsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Dead Man's Switch Modal ────────────────────────── -->
+    <div id="dms-modal" class="modal hidden">
+      <div class="modal-content dms-modal-content">
+        <h3>Dead Man's Switch</h3>
+        <p class="subtle" style="margin-bottom:12px">Pre-write a message that auto-sends to chosen contacts if you don't open the app within your set window.</p>
+
+        <div id="dms-active-list"></div>
+
+        <div class="settings-section" style="margin-top:16px">
+          <h4>New Switch</h4>
+          <label>Message</label>
+          <textarea id="dms-message-input" placeholder="Message to send if you don't check in..." rows="3" maxlength="2000"></textarea>
+          <span id="dms-char-counter" class="subtle" style="display:block;text-align:right;margin-top:2px">0/2000</span>
+
+          <label style="margin-top:8px">Recipients</label>
+          <div id="dms-contact-picker"></div>
+
+          <label style="margin-top:8px">Timer Window</label>
+          <select id="dms-window-select" onchange="onDMSWindowChange()">
+            <option value="43200000">12 hours</option>
+            <option value="86400000" selected>24 hours</option>
+            <option value="259200000">3 days</option>
+            <option value="604800000">7 days</option>
+            <option value="custom">Custom...</option>
+          </select>
+          <div id="dms-custom-window" class="hidden" style="margin-top:6px;display:flex;gap:6px;align-items:center">
+            <input type="number" id="dms-custom-value" min="1" max="720" value="48" style="width:80px">
+            <select id="dms-custom-unit">
+              <option value="3600000">hours</option>
+              <option value="86400000">days</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" style="margin-top:12px;width:100%" onclick="createDMS()">Create Switch</button>
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn-secondary" onclick="closeDMSModal()">Close</button>
         </div>
       </div>
     </div>

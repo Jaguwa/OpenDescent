@@ -789,6 +789,18 @@ export interface OnionRelayCell {
   innerPayload: string;
 }
 
+// ─── Dead Man's Switch ──────────────────────────────────────────────────
+
+export interface DeadManSwitch {
+  switchId: string;
+  recipientIds: PeerId[];
+  message: string;
+  windowMs: number;
+  createdAt: number;
+  lastCheckIn: number;
+  status: 'armed' | 'triggered' | 'disarmed';
+}
+
 // ─── Account Recovery ────────────────────────────────────────────────────────
 
 /** Account bundle distributed to network peers for recovery */

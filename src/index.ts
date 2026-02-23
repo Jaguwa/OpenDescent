@@ -25,6 +25,7 @@ import { DeadDropService } from './content/deaddrops.js';
 import { PollService } from './content/polls.js';
 import { HubManager } from './messaging/hubs.js';
 import { HubStatsService } from './messaging/hub-stats.js';
+import { DeadManSwitchService } from './deadswitch/deadswitch.js';
 import { APIServer } from './api/server.js';
 import { OnionTransport } from './network/onion-transport.js';
 import type { NodeConfig, Message, PeerProfile, ContentType } from './types/index.js';
@@ -801,6 +802,8 @@ Options:
   const polls = new PollService(node, store);
   const hubs = new HubManager(node, store);
 
+  const dmsService = new DeadManSwitchService(store, messaging);
+
   // Start onion transport if enabled
   let onionTransport: OnionTransport | null = null;
   if (args.onionRouting) {
@@ -1078,10 +1081,22 @@ Options:
     polls,
     hubs,
     hubStats,
+    dms: dmsService,
   });
 
   // Connect delete-notification handler to the UI broadcast
   deleteNotifyBroadcast = (event, data) => apiServer.broadcastEvent(event, data);
+
+  // Dead Man's Switch: auto check-in on startup + 1-minute trigger check
+  dmsService.checkIn().catch(() => {});
+  const dmsTimer = setInterval(async () => {
+    try {
+      const triggered = await dmsService.checkAndTrigger();
+      if (triggered.length > 0) {
+        console.log(`[DMS] Triggered ${triggered.length} switches: ${triggered.join(', ')}`);
+      }
+    } catch {}
+  }, 60 * 1000);
 
   // Periodic cleanup of expired dead drops (every 30 minutes)
   const dropCleanupTimer = setInterval(async () => {
@@ -1160,6 +1175,7 @@ Options:
       clearInterval(pollCleanupTimer);
       clearInterval(messageCleanupTimer);
       clearInterval(bundleDistTimer);
+      clearInterval(dmsTimer);
       posts.stop();
       polls.stop();
       trustWeb.stop();
