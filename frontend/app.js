@@ -5035,6 +5035,31 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-share-file').addEventListener('click', triggerFileShare);
   document.getElementById('file-input').addEventListener('change', handleFileSelected);
 
+  // Drag-and-drop file sharing on chat area
+  const chatArea = document.getElementById('chat-area');
+  chatArea.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; chatArea.classList.add('drag-over'); });
+  chatArea.addEventListener('dragleave', (e) => { if (!chatArea.contains(e.relatedTarget)) chatArea.classList.remove('drag-over'); });
+  chatArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    chatArea.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file || !state.activeChat || state.activeChat.type !== 'dm') {
+      if (!state.activeChat || state.activeChat.type !== 'dm') showToast('File sharing', 'Open a DM to share files');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = btoa(new Uint8Array(reader.result).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+      try {
+        showToast('Sharing file...', file.name);
+        await send('share_file', { recipientId: state.activeChat.peerId, fileName: file.name, fileData: base64 });
+        showToast('File shared!', file.name);
+        refreshConversations();
+      } catch (err) { showToast('Failed to share file', err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
   // Post media inputs
   document.getElementById('post-image-input').addEventListener('change', (e) => handlePostMedia(e, 'image'));
   document.getElementById('post-video-input').addEventListener('change', (e) => handlePostMedia(e, 'video'));

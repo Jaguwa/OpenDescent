@@ -439,7 +439,10 @@ export class APIServer {
           }));
 
           const { PROTOCOLS } = await import('../network/node.js');
-          await this.deps.node.sendToPeer(recipientId, PROTOCOLS.CALL_SIGNAL, signalData);
+          const response = await this.deps.node.sendToPeer(recipientId, PROTOCOLS.CALL_SIGNAL, signalData);
+          if (!response) {
+            return this.err(id, 'Peer not reachable — call signal could not be delivered');
+          }
           return this.ok(id, { sent: true });
         }
 
@@ -737,8 +740,8 @@ export class APIServer {
           // Send to target peer
           const { PROTOCOLS: FP } = await import('../network/node.js');
           const frData = new TextEncoder().encode(JSON.stringify(friendReq));
-          await this.deps.node.sendToPeer(frPeerId, FP.FRIEND_REQUEST, frData);
-          return this.ok(id, { requestId: friendReq.requestId });
+          const frResponse = await this.deps.node.sendToPeer(frPeerId, FP.FRIEND_REQUEST, frData);
+          return this.ok(id, { requestId: friendReq.requestId, delivered: !!frResponse });
         }
 
         case 'get_friend_requests': {
@@ -762,8 +765,8 @@ export class APIServer {
             requestId: rId,
             accepted: rAccept,
           }));
-          await this.deps.node.sendToPeer(req.from, RP.FRIEND_REQUEST, responseData);
-          return this.ok(id, { accepted: rAccept });
+          const rpResponse = await this.deps.node.sendToPeer(req.from, RP.FRIEND_REQUEST, responseData);
+          return this.ok(id, { accepted: rAccept, delivered: !!rpResponse });
         }
 
         case 'get_friends': {

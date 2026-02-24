@@ -140,6 +140,13 @@ export class DecentraNode {
   private rateLimiter: Map<string, { count: number; windowStart: number }> = new Map();
   private rateLimitCleanupTimer?: ReturnType<typeof setInterval>;
 
+  // Peer reconnection state
+  private peerLastLibp2pId: Map<string, string> = new Map();  // decentraId -> last known libp2pId
+  private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
+  private reconnectAttempts: Map<string, number> = new Map();
+  private static MAX_RECONNECT_ATTEMPTS = 3;
+  private static RECONNECT_DELAYS = [3000, 10000, 30000];
+
   // DHT directory publishing
   private directoryPublishTimer?: ReturnType<typeof setInterval>;
   private directoryPublishing = false;
@@ -289,6 +296,12 @@ export class DecentraNode {
       clearInterval(this.rateLimitCleanupTimer);
       this.rateLimitCleanupTimer = undefined;
     }
+    // Cancel all pending reconnection timers
+    for (const [decentraId, timer] of this.reconnectTimers) {
+      clearTimeout(timer);
+    }
+    this.reconnectTimers.clear();
+    this.reconnectAttempts.clear();
     if (this.node) {
       console.log(`[Node] Shutting down...`);
       await this.node.stop();
@@ -411,6 +424,113 @@ export class DecentraNode {
         this.rateLimiter.delete(peerId);
       }
     }
+  }
+
+  // ─── Peer Reconnection ──────────────────────────────────────────────────
+
+  /** Check if we have an active libp2p connection to a peer */
+  private hasActiveConnection(libp2pId: string): boolean {
+    if (!this.node) return false;
+    return this.node.getConnections().some(c => c.remotePeer.toString() === libp2pId);
+  }
+
+  /** Find the last-known libp2p PeerId for a decentra peer */
+  private findLibp2pIdForPeer(decentraId: string): string | undefined {
+    // Check current mapping first
+    const current = this.decentraToLibp2p.get(decentraId);
+    if (current) return current;
+    // Fall back to last-known mapping
+    return this.peerLastLibp2pId.get(decentraId);
+  }
+
+  /** Schedule reconnection to a known peer with exponential backoff */
+  private scheduleReconnect(decentraId: string): void {
+    // Don't schedule if already pending
+    if (this.reconnectTimers.has(decentraId)) return;
+
+    const attempt = this.reconnectAttempts.get(decentraId) || 0;
+    if (attempt >= DecentraNode.MAX_RECONNECT_ATTEMPTS) {
+      console.log(`[Reconnect] Giving up on ${decentraId.slice(0, 12)} after ${attempt} attempts`);
+      this.reconnectAttempts.delete(decentraId);
+      return;
+    }
+
+    const delay = DecentraNode.RECONNECT_DELAYS[attempt] || 30000;
+    console.log(`[Reconnect] Scheduling attempt ${attempt + 1}/${DecentraNode.MAX_RECONNECT_ATTEMPTS} for ${decentraId.slice(0, 12)} in ${delay / 1000}s`);
+
+    const timer = setTimeout(async () => {
+      this.reconnectTimers.delete(decentraId);
+      this.reconnectAttempts.set(decentraId, attempt + 1);
+
+      // Check if already reconnected (e.g. peer dialed us)
+      const currentLibp2pId = this.decentraToLibp2p.get(decentraId);
+      if (currentLibp2pId && this.hasActiveConnection(currentLibp2pId)) {
+        console.log(`[Reconnect] ${decentraId.slice(0, 12)} already reconnected`);
+        this.reconnectAttempts.delete(decentraId);
+        return;
+      }
+
+      const success = await this.reconnectPeer(decentraId);
+      if (success) {
+        console.log(`[Reconnect] Successfully reconnected to ${decentraId.slice(0, 12)}`);
+        this.reconnectAttempts.delete(decentraId);
+      } else {
+        // Schedule next attempt
+        this.scheduleReconnect(decentraId);
+      }
+    }, delay);
+
+    this.reconnectTimers.set(decentraId, timer);
+  }
+
+  /** Cancel pending reconnection for a peer */
+  private cancelReconnect(decentraId: string): void {
+    const timer = this.reconnectTimers.get(decentraId);
+    if (timer) {
+      clearTimeout(timer);
+      this.reconnectTimers.delete(decentraId);
+      this.reconnectAttempts.delete(decentraId);
+      console.log(`[Reconnect] Cancelled reconnection for ${decentraId.slice(0, 12)} (peer reconnected)`);
+    }
+  }
+
+  /** Attempt to reconnect to a known peer via profile addresses or relay fallback */
+  private async reconnectPeer(decentraId: string): Promise<boolean> {
+    const profile = this.knownPeers.get(decentraId);
+    if (!profile || !this.node) return false;
+
+    console.log(`[Reconnect] Attempting reconnect to ${profile.displayName || decentraId.slice(0, 12)}...`);
+
+    // Try profile addresses first (relay addresses sorted first — most likely to work across NAT)
+    if (profile.addresses && profile.addresses.length > 0) {
+      const addrs = [...profile.addresses].sort((a, b) => {
+        const aRelay = a.includes('/p2p-circuit/') ? 0 : 1;
+        const bRelay = b.includes('/p2p-circuit/') ? 0 : 1;
+        return aRelay - bRelay;
+      });
+
+      for (const addr of addrs) {
+        try {
+          await this.node.dial(multiaddr(addr), { signal: AbortSignal.timeout(8000) });
+          return true;
+        } catch {}
+      }
+    }
+
+    // Relay fallback: construct circuit address through bootstrap peers
+    const libp2pId = this.findLibp2pIdForPeer(decentraId);
+    if (libp2pId) {
+      for (const relayAddr of DEFAULT_BOOTSTRAP_PEERS) {
+        if (relayAddr.includes('/ws/')) continue; // skip WS duplicates
+        const circuitAddr = `${relayAddr}/p2p-circuit/p2p/${libp2pId}`;
+        try {
+          await this.node.dial(multiaddr(circuitAddr), { signal: AbortSignal.timeout(10000) });
+          return true;
+        } catch {}
+      }
+    }
+
+    return false;
   }
 
   /** Register a handler to serve shard retrieve requests */
@@ -668,13 +788,12 @@ export class DecentraNode {
     }
 
     // Immediately register the ID mapping so sendToPeer() works right away
+    // Always update — a reconnection may have a new libp2p PeerId
     const libp2pId = connectedLibp2pId || payload.l;
     if (libp2pId && payload.d) {
-      if (!this.decentraToLibp2p.has(payload.d)) {
-        this.libp2pToDecentra.set(libp2pId, payload.d);
-        this.decentraToLibp2p.set(payload.d, libp2pId);
-        console.log(`[Invite] Registered ID mapping: ${payload.d.slice(0, 12)} ↔ ${libp2pId.slice(0, 12)}`);
-      }
+      this.libp2pToDecentra.set(libp2pId, payload.d);
+      this.decentraToLibp2p.set(payload.d, libp2pId);
+      console.log(`[Invite] Registered ID mapping: ${payload.d.slice(0, 12)} ↔ ${libp2pId.slice(0, 12)}`);
 
       // Wait for profile exchange to complete — this populates the real crypto keys
       // needed for encryption. Without this, messaging/invites fail with DECODE_ERROR.
@@ -858,9 +977,21 @@ export class DecentraNode {
    * Resolves the DecentraNet ID to a libp2p connection and sends.
    */
   async sendToPeer(decentraId: string, protocol: string, data: Uint8Array): Promise<Uint8Array | null> {
-    const libp2pId = this.decentraToLibp2p.get(decentraId);
+    let libp2pId = this.decentraToLibp2p.get(decentraId);
+
+    // If no mapping or no active connection, try to reconnect
+    if (!libp2pId || !this.hasActiveConnection(libp2pId)) {
+      if (this.knownPeers.has(decentraId)) {
+        console.log(`[Node] No active connection to ${decentraId.slice(0, 12)} — attempting reconnect...`);
+        const reconnected = await this.reconnectPeer(decentraId);
+        if (reconnected) {
+          libp2pId = this.decentraToLibp2p.get(decentraId);
+        }
+      }
+    }
+
     if (!libp2pId) {
-      console.log(`[Node] Unknown DecentraNet peer ${decentraId} — no libp2p mapping`);
+      console.log(`[Node] Unknown peer ${decentraId} — no libp2p mapping`);
       return null;
     }
     return this.sendToLibp2pPeer(libp2pId, protocol, data);
@@ -964,6 +1095,13 @@ export class DecentraNode {
     this.node.addEventListener('peer:connect', (event) => {
       const libp2pId = event.detail.toString();
       console.log(`[Node] Peer connected: ${libp2pId}`);
+
+      // Cancel any pending reconnection for this peer
+      const decentraId = this.libp2pToDecentra.get(libp2pId);
+      if (decentraId) {
+        this.cancelReconnect(decentraId);
+      }
+
       // Auto-exchange profiles after a short delay (let the connection stabilize)
       setTimeout(() => this.initiateProfileExchange(libp2pId), 500);
     });
@@ -972,6 +1110,19 @@ export class DecentraNode {
       const libp2pId = event.detail.toString();
       const decentraId = this.libp2pToDecentra.get(libp2pId);
       console.log(`[Node] Peer disconnected: ${libp2pId}${decentraId ? ` (${decentraId})` : ''}`);
+
+      // Clean up stale ID mapping so reconnection can register a fresh one
+      if (decentraId) {
+        this.peerLastLibp2pId.set(decentraId, libp2pId);
+        this.libp2pToDecentra.delete(libp2pId);
+        this.decentraToLibp2p.delete(decentraId);
+
+        // Schedule reconnection for known peers (contacts we've exchanged profiles with)
+        if (this.knownPeers.has(decentraId)) {
+          this.scheduleReconnect(decentraId);
+        }
+      }
+
       this.emit('peer:disconnected', undefined, decentraId || libp2pId);
     });
 
