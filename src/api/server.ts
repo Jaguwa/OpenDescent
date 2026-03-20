@@ -28,6 +28,7 @@ import type { PollService } from '../content/polls.js';
 import type { HubManager } from '../messaging/hubs.js';
 import type { HubStatsService } from '../messaging/hub-stats.js';
 import type { DeadManSwitchService } from '../deadswitch/deadswitch.js';
+import { verifyLicense, checkLimit, setLicensePublicKey, TIER_LIMITS, type LicenseStatus } from '../licensing/license.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,7 @@ export class APIServer {
   private tempDir: string;
   private callSignals: Map<string, (signal: any) => void> = new Map();
   private wsRateLimiter: Map<WebSocket, { count: number; windowStart: number }> = new Map();
+  private licenseStatus: LicenseStatus = { tier: 'free', valid: false };
   private static readonly DEFAULT_GIF_API_KEY = process.env.KLIPY_API_KEY || '';
 
   constructor(port: number, deps: APIServerDeps) {
@@ -120,6 +122,9 @@ export class APIServer {
 
     // Wire up events from the backend
     this.wireBackendEvents();
+
+    // Load license key from storage on startup
+    this.loadLicense();
 
     this.httpServer.listen(port, '127.0.0.1', () => {
       console.log(`[API] Frontend: http://localhost:${port}`);
@@ -338,6 +343,10 @@ export class APIServer {
 
         case 'create_group': {
           const { name, members } = data;
+          const maxMembers = this.getTierLimit('maxGroupMembers');
+          if (members.length > maxMembers) {
+            return this.err(id, `Group too large (max ${maxMembers} members on free tier — upgrade to Pro for unlimited)`);
+          }
           const memberIds: string[] = [];
           for (const m of members) {
             const resolved = this.resolveRecipient(m);
@@ -381,9 +390,13 @@ export class APIServer {
           const recipientId = this.resolveRecipient(to);
           if (!recipientId) return this.err(id, `Unknown recipient: ${to}`);
 
-          // Size limit: 50MB decoded (base64 is ~33% overhead)
-          if (!fileData || typeof fileData !== 'string' || fileData.length > 70_000_000) {
-            return this.err(id, 'File too large (max 50MB)');
+          // Size limit based on tier
+          const maxFileMB = this.getTierLimit('maxFileSizeMB');
+          const maxFileBytes = maxFileMB * 1024 * 1024;
+          const maxBase64 = Math.ceil(maxFileBytes * 1.37); // base64 overhead
+          if (!fileData || typeof fileData !== 'string' || fileData.length > maxBase64) {
+            const tierName = this.licenseStatus.valid ? this.licenseStatus.tier : 'free';
+            return this.err(id, `File too large (max ${maxFileMB}MB on ${tierName} tier)`);
           }
 
           // Sanitize filename to prevent path traversal
@@ -912,9 +925,12 @@ export class APIServer {
           // For large files (>500KB): write to temp, shard via ContentManager
           if (!this.deps.content) return this.err(id, 'Content manager not available');
           const { base64Data, fileName, mimeType } = data;
-          // Size limit: 50MB decoded
-          if (!base64Data || typeof base64Data !== 'string' || base64Data.length > 70_000_000) {
-            return this.err(id, 'File too large (max 50MB)');
+          // Size limit based on tier
+          const mediaMaxMB = this.getTierLimit('maxFileSizeMB');
+          const mediaMaxBase64 = Math.ceil(mediaMaxMB * 1024 * 1024 * 1.37);
+          if (!base64Data || typeof base64Data !== 'string' || base64Data.length > mediaMaxBase64) {
+            const mediaTier = this.licenseStatus.valid ? this.licenseStatus.tier : 'free';
+            return this.err(id, `File too large (max ${mediaMaxMB}MB on ${mediaTier} tier)`);
           }
           const safeMediaName = path.basename(String(fileName || 'upload'));
           if (!safeMediaName || safeMediaName === '.' || safeMediaName === '..') return this.err(id, 'Invalid file name');
@@ -1081,6 +1097,16 @@ export class APIServer {
           if (!this.deps.hubs) return this.err(id, 'Hubs not available');
           if (!data.name || typeof data.name !== 'string' || data.name.length > 100) {
             return this.err(id, 'Hub name too long (max 100 chars)');
+          }
+          // Check hub creation limit
+          const maxHubs = this.getTierLimit('maxHubsCreated');
+          if (maxHubs !== Infinity) {
+            const existingHubs = this.deps.hubs.getHubs();
+            const myId = this.deps.node.getPeerId();
+            const ownedHubs = existingHubs.filter(h => h.ownerId === myId).length;
+            if (ownedHubs >= maxHubs) {
+              return this.err(id, `Hub limit reached (max ${maxHubs} on free tier — upgrade to Pro for unlimited)`);
+            }
           }
           const hubId = await this.deps.hubs.createHub(
             data.name, data.description || '', !!data.isPublic, data.tags || [], data.icon,
@@ -1450,6 +1476,18 @@ export class APIServer {
 
         case 'dms_create': {
           if (!this.deps.dms) return this.err(id, 'Dead Man\'s Switch not available');
+          // Check DMS limit
+          const maxDMS = this.getTierLimit('maxDeadManSwitches');
+          if (maxDMS === 0) {
+            return this.err(id, 'Dead Man\'s Switch is a Pro feature — upgrade to unlock');
+          }
+          if (maxDMS !== Infinity) {
+            const existing = await this.deps.dms.listSwitches();
+            const active = existing.filter(s => s.status === 'armed').length;
+            if (active >= maxDMS) {
+              return this.err(id, `DMS limit reached (max ${maxDMS} — upgrade to Pro for unlimited)`);
+            }
+          }
           if (!data.recipientIds || !Array.isArray(data.recipientIds) || data.recipientIds.length === 0) {
             return this.err(id, 'At least one recipient required');
           }
@@ -1482,6 +1520,49 @@ export class APIServer {
           if (!data.switchId) return this.err(id, 'Missing switchId');
           await this.deps.dms.deleteSwitch(data.switchId);
           return this.ok(id, { ok: true });
+        }
+
+        // ─── Licensing ──────────────────────────────────────────
+
+        case 'get_license_status': {
+          return this.ok(id, {
+            tier: this.licenseStatus.valid ? this.licenseStatus.tier : 'free',
+            valid: this.licenseStatus.valid,
+            expiresAt: this.licenseStatus.expiresAt,
+            error: this.licenseStatus.error,
+            limits: TIER_LIMITS[this.licenseStatus.valid ? this.licenseStatus.tier : 'free'],
+          });
+        }
+
+        case 'activate_license': {
+          if (!data.licenseKey || typeof data.licenseKey !== 'string') {
+            return this.err(id, 'Missing license key');
+          }
+          const peerId = this.deps.node.getPeerId();
+          const status = verifyLicense(data.licenseKey.trim(), peerId);
+          if (!status.valid) {
+            return this.err(id, status.error || 'Invalid license key');
+          }
+          // Store the valid license key
+          await this.deps.store.setMeta('license_key', data.licenseKey.trim());
+          this.licenseStatus = status;
+          console.log(`[License] Pro license activated (expires ${new Date(status.expiresAt!).toLocaleDateString()})`);
+          return this.ok(id, {
+            tier: status.tier,
+            valid: true,
+            expiresAt: status.expiresAt,
+            limits: TIER_LIMITS[status.tier],
+          });
+        }
+
+        case 'get_checkout_url': {
+          const checkoutPeerId = this.deps.node.getPeerId();
+          // Return the URL the browser should open to start checkout
+          const licenseServerUrl = data.licenseServer || 'http://188.166.151.203:9000';
+          return this.ok(id, {
+            url: `${licenseServerUrl}/checkout`,
+            peerId: checkoutPeerId,
+          });
         }
 
         default:
@@ -1765,6 +1846,27 @@ export class APIServer {
     }
 
     return '';
+  }
+
+  /** Load and verify stored license key */
+  private async loadLicense(): Promise<void> {
+    try {
+      const key = await this.deps.store.getMeta('license_key');
+      if (key) {
+        const peerId = this.deps.node.getPeerId();
+        this.licenseStatus = verifyLicense(key, peerId);
+        if (this.licenseStatus.valid) {
+          console.log(`[License] Pro license active (expires ${new Date(this.licenseStatus.expiresAt!).toLocaleDateString()})`);
+        } else {
+          console.log(`[License] Stored license invalid: ${this.licenseStatus.error}`);
+        }
+      }
+    } catch {}
+  }
+
+  /** Get current tier limits */
+  private getTierLimit(limit: keyof typeof TIER_LIMITS.free): number {
+    return checkLimit(this.licenseStatus, limit);
   }
 
   private resolveRecipient(input: string): string | null {
