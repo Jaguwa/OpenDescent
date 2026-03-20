@@ -1129,6 +1129,9 @@ async function uploadFileChunked(file, purpose, recipientId) {
   });
   const uploadId = init.uploadId;
 
+  // Show persistent progress bar
+  showUploadProgress(file.name, 0);
+
   // Send chunks
   for (let i = 0; i < totalChunks; i++) {
     const start = i * CHUNK_SIZE;
@@ -1138,13 +1141,36 @@ async function uploadFileChunked(file, purpose, recipientId) {
 
     await send('upload_chunk', { uploadId, chunkIndex: i, chunkData });
 
-    // Update progress toast
     const pct = Math.round(((i + 1) / totalChunks) * 100);
-    showToast('Uploading...', `${file.name} — ${pct}%`);
+    showUploadProgress(file.name, pct);
   }
 
+  // Show processing state while backend encrypts + shards
+  showUploadProgress(file.name + ' — processing...', 100);
+
   // Finish
-  return await send('upload_finish', { uploadId });
+  const result = await send('upload_finish', { uploadId });
+  hideUploadProgress();
+  return result;
+}
+
+function showUploadProgress(fileName, pct) {
+  let bar = document.getElementById('upload-progress-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'upload-progress-bar';
+    bar.innerHTML = `<div class="upload-progress-inner"><span class="upload-progress-name"></span><div class="upload-progress-track"><div class="upload-progress-fill"></div></div><span class="upload-progress-pct"></span></div>`;
+    document.body.appendChild(bar);
+  }
+  bar.querySelector('.upload-progress-name').textContent = fileName;
+  bar.querySelector('.upload-progress-pct').textContent = pct + '%';
+  bar.querySelector('.upload-progress-fill').style.width = pct + '%';
+  bar.classList.remove('hidden');
+}
+
+function hideUploadProgress() {
+  const bar = document.getElementById('upload-progress-bar');
+  if (bar) bar.classList.add('hidden');
 }
 
 function triggerFileShare() {

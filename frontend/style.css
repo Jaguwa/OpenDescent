@@ -2381,6 +2381,54 @@ body {
   opacity: 0.9;
 }
 
+/* ─── Upload Progress Bar ─────────────────────────────────────────────── */
+
+#upload-progress-bar {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  min-width: 280px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+#upload-progress-bar.hidden { display: none; }
+.upload-progress-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.upload-progress-name {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upload-progress-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #58a6ff, #7ee787);
+  border-radius: 3px;
+  transition: width 0.15s ease;
+}
+.upload-progress-pct {
+  font-size: 0.8rem;
+  color: var(--accent);
+  min-width: 32px;
+  text-align: right;
+}
+
 .browse-hubs-content { max-width: 550px; }
 
 /* ─── Animated Backgrounds ──────────────────────────────────────────────── */
