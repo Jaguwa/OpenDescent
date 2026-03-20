@@ -445,6 +445,29 @@
           </div>
         </div>
 
+        <div class="settings-section" id="license-section">
+          <h4>OpenDescent Pro</h4>
+          <div id="license-status-display">
+            <div id="license-free-banner" class="license-banner license-free">
+              <div class="license-tier-badge">FREE</div>
+              <div class="license-limits">35MB files · 10 member groups · 2 hubs</div>
+              <button class="btn-upgrade" onclick="upgradeToPro()">Upgrade to Pro — $5/mo</button>
+              <p class="subtle" style="margin-top:6px">500MB files · Unlimited groups & hubs · Dead Man's Switch</p>
+            </div>
+            <div id="license-pro-banner" class="license-banner license-pro hidden">
+              <div class="license-tier-badge pro">PRO</div>
+              <div class="license-expires">Active until <span id="license-expiry-date"></span></div>
+              <div class="license-limits">500MB files · Unlimited groups & hubs · Dead Man's Switch</div>
+            </div>
+          </div>
+          <div style="margin-top:8px">
+            <div class="settings-row">
+              <label style="flex:1">License Key: <input type="text" id="setting-license-key" placeholder="Paste your license key..." style="margin-bottom:0"></label>
+              <button class="btn-primary" onclick="activateLicense()" style="margin-left:4px">Activate</button>
+            </div>
+          </div>
+        </div>
+
         <div class="settings-section">
           <h4>GIF Library</h4>
           <div class="settings-row">

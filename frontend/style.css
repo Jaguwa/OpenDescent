@@ -2324,6 +2324,63 @@ body {
   margin-top: 12px;
 }
 
+/* ─── License / Pro Tier ──────────────────────────────────────────────── */
+
+.license-banner {
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+}
+.license-banner.license-free {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+}
+.license-banner.license-pro {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 1px solid #58a6ff44;
+}
+.license-tier-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.license-tier-badge.pro {
+  background: linear-gradient(135deg, #58a6ff, #7ee787);
+  color: #0d1117;
+}
+.license-limits {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 4px 0;
+}
+.license-expires {
+  font-size: 0.85rem;
+  color: #7ee787;
+  margin: 4px 0;
+}
+.btn-upgrade {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #58a6ff, #7ee787);
+  color: #0d1117;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-upgrade:hover {
+  opacity: 0.9;
+}
+
 .browse-hubs-content { max-width: 550px; }
 
 /* ─── Animated Backgrounds ──────────────────────────────────────────────── */

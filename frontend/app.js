@@ -1254,6 +1254,9 @@ function showSettingsModal() {
   // Advanced colors — populate all 16 color pickers
   populateColorEditor(vars);
 
+  // License status
+  loadLicenseStatus();
+
   // GIF API key
   loadGifApiKey();
 
@@ -3292,6 +3295,64 @@ function renderHubIcon(icon, fallbackName, cssClass) {
 }
 
 // GIF API key management
+// ─── License / Pro Tier ──────────────────────────────────────────────────
+
+async function loadLicenseStatus() {
+  try {
+    const data = await send('get_license_status');
+    state.licenseStatus = data;
+    updateLicenseUI(data);
+  } catch {}
+}
+
+function updateLicenseUI(data) {
+  const freeBanner = document.getElementById('license-free-banner');
+  const proBanner = document.getElementById('license-pro-banner');
+  if (!freeBanner || !proBanner) return;
+
+  if (data && data.valid && data.tier === 'pro') {
+    freeBanner.classList.add('hidden');
+    proBanner.classList.remove('hidden');
+    const expiryEl = document.getElementById('license-expiry-date');
+    if (expiryEl && data.expiresAt) {
+      expiryEl.textContent = new Date(data.expiresAt).toLocaleDateString();
+    }
+  } else {
+    freeBanner.classList.remove('hidden');
+    proBanner.classList.add('hidden');
+  }
+}
+
+async function activateLicense() {
+  const input = document.getElementById('setting-license-key');
+  if (!input) return;
+  const key = input.value.trim();
+  if (!key) { showToast('License', 'Please paste your license key', 'error'); return; }
+  try {
+    const data = await send('activate_license', { licenseKey: key });
+    state.licenseStatus = data;
+    updateLicenseUI(data);
+    input.value = '';
+    showToast('Pro Activated!', 'Welcome to OpenDescent Pro', 'success');
+  } catch (e) {
+    showToast('Activation Failed', e.message, 'error');
+  }
+}
+
+async function upgradeToPro() {
+  try {
+    const data = await send('get_checkout_url');
+    if (!data || !data.checkoutUrl) {
+      showToast('Error', 'Could not start checkout', 'error');
+      return;
+    }
+    window.open(data.checkoutUrl, '_blank');
+    showToast('Checkout opened', 'Complete payment in the new tab, then paste your license key here', 'success');
+  } catch (e) {
+    showToast('Checkout Error', e.message, 'error');
+  }
+}
+
 async function saveGifApiKey() {
   const keyInput = document.getElementById('setting-gif-api-key');
   if (!keyInput) return;

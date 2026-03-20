@@ -19,6 +19,7 @@
  */
 
 import * as http from 'http';
+import * as https from 'https';
 import * as crypto from 'crypto';
 import { createLicense, generateLicenseKeypair } from './license.js';
 
@@ -63,8 +64,7 @@ async function stripeRequest(
       },
     };
 
-    const { request } = require('https') as typeof import('https');
-    const req = request(options, (res) => {
+    const req = https.request(options, (res) => {
       const chunks: Buffer[] = [];
       res.on('data', (chunk: Buffer) => chunks.push(chunk));
       res.on('end', () => {

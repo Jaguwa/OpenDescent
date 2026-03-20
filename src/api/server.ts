@@ -1557,12 +1557,16 @@ export class APIServer {
 
         case 'get_checkout_url': {
           const checkoutPeerId = this.deps.node.getPeerId();
-          // Return the URL the browser should open to start checkout
-          const licenseServerUrl = data.licenseServer || 'http://188.166.151.203:9000';
-          return this.ok(id, {
-            url: `${licenseServerUrl}/checkout`,
-            peerId: checkoutPeerId,
-          });
+          const licenseServerUrl = (data && data.licenseServer) || 'http://188.166.151.203:9000';
+          try {
+            const checkoutResult = await this.postJSON(`${licenseServerUrl}/checkout`, { peerId: checkoutPeerId });
+            if (checkoutResult.url) {
+              return this.ok(id, { checkoutUrl: checkoutResult.url });
+            }
+            return this.err(id, checkoutResult.error || 'Could not create checkout session');
+          } catch (e: any) {
+            return this.err(id, 'License server unreachable: ' + e.message);
+          }
         }
 
         default:
@@ -1867,6 +1871,38 @@ export class APIServer {
   /** Get current tier limits */
   private getTierLimit(limit: keyof typeof TIER_LIMITS.free): number {
     return checkLimit(this.licenseStatus, limit);
+  }
+
+  /** POST JSON to an external HTTP endpoint (used for license server) */
+  private postJSON(url: string, body: Record<string, unknown>): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Request timeout')), 10000);
+      const parsed = new URL(url);
+      const payload = JSON.stringify(body);
+      const options: http.RequestOptions = {
+        hostname: parsed.hostname,
+        port: parsed.port || 80,
+        path: parsed.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+      };
+      const req = http.request(options, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          clearTimeout(timeout);
+          try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
+          catch { reject(new Error('Invalid response from license server')); }
+        });
+        res.on('error', (e) => { clearTimeout(timeout); reject(e); });
+      });
+      req.on('error', (e) => { clearTimeout(timeout); reject(e); });
+      req.write(payload);
+      req.end();
+    });
   }
 
   private resolveRecipient(input: string): string | null {
