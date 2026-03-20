@@ -1572,7 +1572,7 @@ function deserializeProfile(raw: any): PeerProfile {
 
 // ─── Stream Helpers (libp2p async iterable API) ──────────────────────────────
 
-const MAX_STREAM_BYTES = 10 * 1024 * 1024; // 10MB — reject streams larger than this
+const MAX_STREAM_BYTES = 200 * 1024 * 1024; // 200MB — supports Pro tier shards (500MB file / 4 shards + encoding overhead)
 
 async function readFromSource(source: AsyncIterable<any>): Promise<Uint8Array> {
   const chunks: Uint8Array[] = [];

@@ -101,6 +101,7 @@ export class APIServer {
   private callSignals: Map<string, (signal: any) => void> = new Map();
   private wsRateLimiter: Map<WebSocket, { count: number; windowStart: number }> = new Map();
   private licenseStatus: LicenseStatus = { tier: 'free', valid: false };
+  private activeUploads: Map<string, { filePath: string; fileName: string; mimeType: string; totalChunks: number; receivedChunks: number; purpose: string; recipientId?: string }> = new Map();
   private static readonly DEFAULT_GIF_API_KEY = process.env.KLIPY_API_KEY || '';
 
   constructor(port: number, deps: APIServerDeps) {
@@ -1520,6 +1521,82 @@ export class APIServer {
           if (!data.switchId) return this.err(id, 'Missing switchId');
           await this.deps.dms.deleteSwitch(data.switchId);
           return this.ok(id, { ok: true });
+        }
+
+        // ─── Chunked File Upload ────────────────────────────────
+
+        case 'upload_init': {
+          const { fileName, totalSize, totalChunks, mimeType, purpose, recipientId } = data;
+          if (!fileName || !totalSize || !totalChunks) return this.err(id, 'Missing upload parameters');
+
+          // Check file size against tier limit
+          const uploadMaxMB = this.getTierLimit('maxFileSizeMB');
+          const uploadMaxBytes = uploadMaxMB * 1024 * 1024;
+          if (totalSize > uploadMaxBytes) {
+            const tierName = this.licenseStatus.valid ? this.licenseStatus.tier : 'free';
+            return this.err(id, `File too large (${Math.round(totalSize / 1024 / 1024)}MB — max ${uploadMaxMB}MB on ${tierName} tier)`);
+          }
+
+          const uploadId = crypto.randomUUID();
+          const safeName = path.basename(String(fileName || 'upload'));
+          const tmpDir = path.join(this.tempDir, '.tmp-uploads');
+          if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+          const filePath = path.join(tmpDir, `${uploadId}_${safeName}`);
+
+          this.activeUploads.set(uploadId, {
+            filePath, fileName: safeName, mimeType: mimeType || 'application/octet-stream',
+            totalChunks, receivedChunks: 0, purpose: purpose || 'media', recipientId,
+          });
+
+          return this.ok(id, { uploadId, ready: true });
+        }
+
+        case 'upload_chunk': {
+          const { uploadId, chunkIndex, chunkData } = data;
+          const upload = this.activeUploads.get(uploadId);
+          if (!upload) return this.err(id, 'Unknown upload ID');
+
+          try {
+            const buf = Buffer.from(chunkData, 'base64');
+            fs.appendFileSync(upload.filePath, buf);
+            upload.receivedChunks++;
+            return this.ok(id, { received: upload.receivedChunks, total: upload.totalChunks });
+          } catch (e: any) {
+            return this.err(id, 'Failed to write chunk: ' + e.message);
+          }
+        }
+
+        case 'upload_finish': {
+          const { uploadId } = data;
+          const upload = this.activeUploads.get(uploadId);
+          if (!upload) return this.err(id, 'Unknown upload ID');
+          this.activeUploads.delete(uploadId);
+
+          if (upload.receivedChunks < upload.totalChunks) {
+            try { fs.unlinkSync(upload.filePath); } catch {}
+            return this.err(id, `Incomplete upload: ${upload.receivedChunks}/${upload.totalChunks} chunks`);
+          }
+
+          try {
+            if (upload.purpose === 'share' && upload.recipientId) {
+              // File share to a DM recipient
+              const fileInfo = await this.deps.content.shareFile(upload.filePath);
+              await this.deps.messaging.sendMediaMessage(
+                upload.recipientId, 'file' as ContentType,
+                fileInfo.contentId, JSON.stringify(fileInfo),
+              );
+              try { fs.unlinkSync(upload.filePath); } catch {}
+              return this.ok(id, { contentId: fileInfo.contentId, fileName: fileInfo.fileName });
+            } else {
+              // Media upload for posts
+              const fileInfo = await this.deps.content.shareFile(upload.filePath);
+              try { fs.unlinkSync(upload.filePath); } catch {}
+              return this.ok(id, { contentId: fileInfo.contentId, fileInfo });
+            }
+          } catch (e: any) {
+            try { fs.unlinkSync(upload.filePath); } catch {}
+            return this.err(id, e.message);
+          }
         }
 
         // ─── Licensing ──────────────────────────────────────────

@@ -1110,6 +1110,43 @@ async function sendMessage() {
 
 // ─── File Sharing ───────────────────────────────────────────────────────────
 
+// ─── Chunked File Upload ──────────────────────────────────────────────────
+
+const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
+
+async function uploadFileChunked(file, purpose, recipientId) {
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  const arrayBuffer = await file.arrayBuffer();
+
+  // Init
+  const init = await send('upload_init', {
+    fileName: file.name,
+    totalSize: file.size,
+    totalChunks,
+    mimeType: file.type,
+    purpose,
+    recipientId,
+  });
+  const uploadId = init.uploadId;
+
+  // Send chunks
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = new Uint8Array(arrayBuffer.slice(start, end));
+    const chunkData = btoa(chunk.reduce((data, byte) => data + String.fromCharCode(byte), ''));
+
+    await send('upload_chunk', { uploadId, chunkIndex: i, chunkData });
+
+    // Update progress toast
+    const pct = Math.round(((i + 1) / totalChunks) * 100);
+    showToast('Uploading...', `${file.name} — ${pct}%`);
+  }
+
+  // Finish
+  return await send('upload_finish', { uploadId });
+}
+
 function triggerFileShare() {
   if (!state.activeChat || state.activeChat.type !== 'dm') return;
   document.getElementById('file-input').click();
@@ -1118,17 +1155,12 @@ function triggerFileShare() {
 async function handleFileSelected(event) {
   const file = event.target.files[0];
   if (!file || !state.activeChat) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const base64 = btoa(new Uint8Array(reader.result).reduce((data, byte) => data + String.fromCharCode(byte), ''));
-    try {
-      showToast('Sharing file...', file.name);
-      await send('share_file', { recipientId: state.activeChat.peerId, fileName: file.name, fileData: base64 });
-      showToast('File shared!', file.name);
-      refreshConversations();
-    } catch (e) { showToast('Failed to share file', e.message); }
-  };
-  reader.readAsArrayBuffer(file);
+  try {
+    showToast('Sharing file...', file.name);
+    await uploadFileChunked(file, 'share', state.activeChat.peerId);
+    showToast('File shared!', file.name);
+    refreshConversations();
+  } catch (e) { showToast('Failed to share file', e.message); }
   event.target.value = '';
 }
 
@@ -2169,14 +2201,10 @@ async function handlePostMedia(event, type) {
       });
       renderAttachments();
     } else {
-      // Large file — upload through shard system
-      showToast('Uploading...', `Sharding ${file.name}`);
+      // Large file — chunked upload through shard system
+      showToast('Uploading...', `${file.name}`);
       try {
-        const result = await send('upload_media', {
-          base64Data: dataUrl,
-          fileName: file.name,
-          mimeType: file.type,
-        });
+        const result = await uploadFileChunked(file, 'media');
         state.postAttachments.push({
           type,
           contentId: result.contentId,
@@ -5108,17 +5136,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!state.activeChat || state.activeChat.type !== 'dm') showToast('File sharing', 'Open a DM to share files');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = btoa(new Uint8Array(reader.result).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+    (async () => {
       try {
         showToast('Sharing file...', file.name);
-        await send('share_file', { recipientId: state.activeChat.peerId, fileName: file.name, fileData: base64 });
+        await uploadFileChunked(file, 'share', state.activeChat.peerId);
         showToast('File shared!', file.name);
         refreshConversations();
       } catch (err) { showToast('Failed to share file', err.message); }
-    };
-    reader.readAsArrayBuffer(file);
+    })();
   });
 
   // Post media inputs
@@ -5455,7 +5480,7 @@ function handleVoiceSignal(data) {
 
 const ONBOARDING_STEPS = [
   { target: '#identity-bar', tab: null, title: 'Your Identity', desc: 'This is you. Your identity is a cryptographic keypair \u2014 no email, no password, no server. Back it up with your 12-word mnemonic phrase.' },
-  { target: '.tab[data-tab="feed"]', tab: 'feed', title: 'Feed', desc: 'Share posts, photos, videos, polls, and voice notes with your network. Toggle between public and friends-only.' },
+  { target: '.tab[data-tab="feed"]', tab: 'feed', title: 'Broadcast', desc: 'Share posts, photos, videos, polls, and voice notes with your network. Toggle between public and friends-only.' },
   { target: '.tab[data-tab="chats"]', tab: 'chats', title: 'Chats', desc: 'End-to-end encrypted direct messages with forward secrecy. Even if a key is compromised, past messages stay safe.' },
   { target: '.tab[data-tab="contacts"]', tab: 'contacts', title: 'Contacts', desc: 'Your trusted peers. Add contacts via friend requests or invite codes. Keys are pinned on first contact (TOFU).' },
   { target: '.tab[data-tab="groups"]', tab: 'groups', title: 'Groups', desc: 'Private group chats with automatic key rotation. When someone leaves, the encryption key changes.' },
