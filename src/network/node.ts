@@ -263,8 +263,8 @@ export class DecentraNode {
           maxReservations: 256,
           reservationTtl: 2 * 60 * 60 * 1000,       // 2 hours
           applyDefaultLimit: true,
-          defaultDurationLimit: 10 * 60 * 1000,      // 10 min per relayed connection
-          defaultDataLimit: BigInt(10 * 1024 * 1024), // 10 MB per direction
+          defaultDurationLimit: 2 * 60 * 60 * 1000,   // 2 hours per relayed connection
+          defaultDataLimit: BigInt(100 * 1024 * 1024), // 100 MB per direction
         },
       });
     }

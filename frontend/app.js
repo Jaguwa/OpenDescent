@@ -754,7 +754,12 @@ function handleEvent(event, data) {
 function onIncomingMessage(data) {
   const convoId = [state.myPeerId, data.from].sort().join(':');
   if (state.activeChat && state.activeChat.id === convoId) {
-    appendMessage({ from: data.from, body: data.body, timestamp: data.timestamp, status: 'delivered' });
+    // Show incoming bar briefly before the message appears
+    showIncomingBar();
+    setTimeout(() => {
+      hideIncomingBar();
+      appendMessage({ from: data.from, body: data.body, timestamp: data.timestamp, status: 'delivered' });
+    }, 800);
   }
   sfx.play('msgReceive');
   showToast(`${data.fromName}: ${data.body.slice(0, 50)}`);
@@ -940,18 +945,28 @@ function appendMessage(msg) {
     appendVoicenoteMessage(msg, true);
     return;
   }
+  const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
   el.innerHTML += `
-      <div class="message ${isMine ? 'sent' : 'received'} message-new">
+      <div class="message ${isMine ? 'sent' : 'received'} message-new" id="${msgId}">
         ${senderHTML}
-        <div class="msg-body">${renderContentWithGifs(msg.body)}</div>
-        <div class="msg-time">${time}</div>
+        <div class="msg-body">${escapeHtml(msg.body)}</div>
+        <div class="msg-time">${time}
+          <span class="msg-crypto-status crypto-encrypting"><span class="status-dot-sm"></span>${isMine ? 'ENCRYPTING' : 'DECRYPTING'}</span>
+        </div>
       </div>`;
-  // Remove animation class after it plays
-  requestAnimationFrame(() => {
-    const last = el.lastElementChild;
-    if (last) setTimeout(() => last.classList.remove('message-new'), 250);
-  });
   scrollToBottom();
+
+  // Trigger encryption visualization
+  requestAnimationFrame(() => {
+    const msgEl = document.getElementById(msgId);
+    if (!msgEl) return;
+    setTimeout(() => msgEl.classList.remove('message-new'), 250);
+    if (isMine) {
+      animateSendEncrypt(msgEl, msg.body);
+    } else {
+      animateReceiveDecrypt(msgEl, msg.body);
+    }
+  });
 }
 
 function renderFileMessageHTML(isMine, senderName, fileInfo, time) {
@@ -1135,6 +1150,530 @@ async function sendMessage() {
     sfx.play('msgSend');
     refreshConversations();
   } catch (e) { showToast('Failed to send message', e.message); }
+}
+
+// ─── Encryption Visualization Engine ─────────────────────────────────────────
+
+const HEX_CHARS = '0123456789abcdef';
+const ROUTE_NODES = ['EU-W7', 'REL-1', 'NAC-4', 'MX-2', 'AS-E2'];
+
+function randomHexChar() {
+  return HEX_CHARS[Math.floor(Math.random() * HEX_CHARS.length)];
+}
+
+function randomCipherChar() {
+  // Mix of hex and separator characters for realistic ciphertext look
+  const r = Math.random();
+  if (r < 0.7) return randomHexChar();
+  if (r < 0.85) return ':';
+  return ' ';
+}
+
+// Generate a fake but realistic SHA-256 fingerprint
+function generateFingerprint(text) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+  }
+  const abs = Math.abs(hash);
+  let fp = '';
+  for (let i = 0; i < 16; i++) {
+    fp += HEX_CHARS[(abs * (i + 7) * 31) % 16];
+    if (i % 4 === 3 && i < 15) fp += ':';
+  }
+  return fp;
+}
+
+// Subtle sound effects
+const cryptoSfx = {
+  _ctx: null,
+  _getCtx() {
+    if (!this._ctx) this._ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return this._ctx;
+  },
+  tick() {
+    try {
+      const ctx = this._getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 800 + Math.random() * 400;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.02, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.05);
+    } catch {}
+  },
+  lock() {
+    try {
+      const ctx = this._getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(900, ctx.currentTime + 0.08);
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    } catch {}
+  },
+  hop() {
+    try {
+      const ctx = this._getCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 1200 + Math.random() * 200;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.015, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.08);
+    } catch {}
+  },
+};
+
+function scrambleText(text, fraction) {
+  return text.split('').map((ch, i) => {
+    if (ch === ' ') return ' ';
+    const prob = (fraction * fraction); // quadratic acceleration
+    return Math.random() < prob ? randomCipherChar() : ch;
+  }).join('');
+}
+
+function resolveText(original, scrambled, fraction) {
+  return original.split('').map((ch, i) => {
+    if (ch === ' ') return ' ';
+    const prob = (fraction * fraction);
+    return Math.random() < prob ? ch : scrambled[i] || randomCipherChar();
+  }).join('');
+}
+
+// Generate fully scrambled version of text
+function fullScramble(text) {
+  return text.split('').map(ch => ch === ' ' ? ' ' : randomCipherChar()).join('');
+}
+
+// Create cipher machine HTML — full security pipeline
+function createCipherMachineHTML(mode) {
+  return `<div class="cipher-machine">
+    <div class="cipher-pipeline">
+      <div class="pipeline-step" data-step="keyex">
+        <span class="pipeline-icon">&#9656;</span>
+        <span class="pipeline-label">X25519 KEY</span>
+        <span class="pipeline-status">WAITING</span>
+      </div>
+      <div class="pipeline-step" data-step="cipher">
+        <span class="pipeline-icon"><span class="cipher-lock"></span></span>
+        <span class="pipeline-label">AES-256-GCM</span>
+        <span class="pipeline-status">WAITING</span>
+      </div>
+      <div class="pipeline-step" data-step="sign">
+        <span class="pipeline-icon">&#9998;</span>
+        <span class="pipeline-label">Ed25519 ${mode === 'encrypt' ? 'SIGN' : 'VERIFY'}</span>
+        <span class="pipeline-status">WAITING</span>
+      </div>
+    </div>
+    <div class="cipher-tape-row">
+      <div class="cipher-tape cipher-tape-in"></div>
+      <span class="cipher-arrow">&#9654;</span>
+      <div class="cipher-tape cipher-tape-out"></div>
+    </div>
+  </div>`;
+}
+
+// Create route strip HTML
+function createRouteStripHTML() {
+  // Use real peer names if available, fall back to generated node IDs
+  const peerNodes = [];
+  const connected = (state.contacts || []).filter(c => c.online).slice(0, 3);
+  peerNodes.push(ROUTE_NODES[0]); // origin
+  if (connected.length > 0) {
+    peerNodes.push('REL-1');
+    connected.forEach(c => peerNodes.push((c.displayName || c.peerId.slice(0, 6)).toUpperCase().slice(0, 6)));
+  } else {
+    peerNodes.push(...ROUTE_NODES.slice(1));
+  }
+
+  const nodes = peerNodes.map((n, i) =>
+    `<span class="route-node" data-idx="${i}">${n}</span>`
+  ).join('<span class="route-dash">—</span>');
+  return `<div class="route-strip">
+    <div class="route-strip-inner">
+      <span class="route-label">ROUTE</span>${nodes}
+    </div>
+  </div>`;
+}
+
+// Activate a pipeline step with status
+async function activateStep(msgEl, stepName, status, active) {
+  const step = msgEl.querySelector(`.pipeline-step[data-step="${stepName}"]`);
+  if (!step) return;
+  const statusEl = step.querySelector('.pipeline-status');
+  if (statusEl) statusEl.textContent = status;
+  if (active) {
+    step.classList.add('active');
+  } else {
+    step.classList.remove('active');
+    step.classList.add('done');
+  }
+}
+
+// Run the send encryption animation on a message element
+async function animateSendEncrypt(msgEl, plaintext) {
+  const bodyEl = msgEl.querySelector('.msg-body');
+  const statusEl = msgEl.querySelector('.msg-crypto-status');
+  if (!bodyEl) return;
+
+  const fp = generateFingerprint(plaintext);
+
+  // Insert cipher machine + route strip
+  const machineHTML = createCipherMachineHTML('encrypt');
+  const routeHTML = createRouteStripHTML();
+  bodyEl.insertAdjacentHTML('beforebegin', machineHTML + routeHTML);
+
+  const machine = msgEl.querySelector('.cipher-machine');
+  const routeStrip = msgEl.querySelector('.route-strip');
+  const tapeIn = msgEl.querySelector('.cipher-tape-in');
+  const tapeOut = msgEl.querySelector('.cipher-tape-out');
+  const arrows = msgEl.querySelectorAll('.cipher-arrow');
+
+  // Show machine
+  await new Promise(r => setTimeout(r, 50));
+  machine.classList.add('active');
+  scrollToBottom();
+
+  // Step 1: Key Exchange
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>KEY EXCHANGE'; statusEl.className = 'msg-crypto-status crypto-encrypting'; }
+  await activateStep(msgEl, 'keyex', 'AGREEING', true);
+  await new Promise(r => setTimeout(r, 400));
+  cryptoSfx.lock();
+  await activateStep(msgEl, 'keyex', 'AGREED ✓', false);
+  await new Promise(r => setTimeout(r, 150));
+
+  // Step 2: Encrypt
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>ENCRYPTING'; }
+  await activateStep(msgEl, 'cipher', 'PROCESSING', true);
+  arrows.forEach(a => a.classList.add('lit'));
+
+  const steps = Math.min(Math.ceil(plaintext.length / 2), 25);
+  const interval = Math.max(30, Math.min(45, 1000 / steps));
+
+  for (let i = 0; i <= steps; i++) {
+    const frac = i / steps;
+    const processedLen = Math.floor(frac * plaintext.length);
+    tapeIn.textContent = plaintext.slice(Math.max(0, processedLen - 18), processedLen);
+    const scrambled = scrambleText(plaintext, frac);
+    // Output tape shows hex-style ciphertext
+    let hexOut = '';
+    for (let j = 0; j < Math.min(processedLen, 18); j++) hexOut += randomHexChar();
+    tapeOut.textContent = hexOut;
+    bodyEl.textContent = scrambled;
+    if (i % 3 === 0) cryptoSfx.tick();
+    await new Promise(r => setTimeout(r, interval));
+  }
+
+  const fullCipher = fullScramble(plaintext);
+  bodyEl.textContent = fullCipher;
+  cryptoSfx.lock();
+  await activateStep(msgEl, 'cipher', 'DONE ✓', false);
+
+  // Lock pulse on message border
+  msgEl.classList.add('crypto-locked');
+  await new Promise(r => setTimeout(r, 200));
+
+  // Step 3: Sign
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>SIGNING'; }
+  await activateStep(msgEl, 'sign', 'SIGNING', true);
+  await new Promise(r => setTimeout(r, 350));
+  cryptoSfx.lock();
+  await activateStep(msgEl, 'sign', 'SIGNED ✓', false);
+  await new Promise(r => setTimeout(r, 200));
+
+  // Fade out machine
+  machine.classList.remove('active');
+  await new Promise(r => setTimeout(r, 300));
+
+  // Step 4: Route
+  routeStrip.classList.add('active');
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>ROUTING'; statusEl.className = 'msg-crypto-status crypto-routing'; }
+
+  const nodes = routeStrip.querySelectorAll('.route-node');
+  const dashes = routeStrip.querySelectorAll('.route-dash');
+  for (let i = 0; i < nodes.length; i++) {
+    nodes[i].classList.add('lit');
+    if (dashes[i]) dashes[i].classList.add('lit');
+    cryptoSfx.hop();
+    await new Promise(r => setTimeout(r, 160));
+  }
+
+  await new Promise(r => setTimeout(r, 250));
+  routeStrip.classList.remove('active');
+
+  // Step 5: Final resolve — crystallization
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>DELIVERED'; statusEl.className = 'msg-crypto-status crypto-delivered'; }
+  msgEl.classList.remove('crypto-locked');
+
+  const resolveSteps = 9;
+  let currentText = fullCipher;
+  for (let i = 1; i <= resolveSteps; i++) {
+    const frac = i / resolveSteps;
+    currentText = resolveText(plaintext, currentText, frac);
+    bodyEl.textContent = currentText;
+    await new Promise(r => setTimeout(r, 40));
+  }
+
+  bodyEl.innerHTML = renderContentWithGifs(plaintext);
+
+  // Show fingerprint badge
+  const fpBadge = document.createElement('div');
+  fpBadge.className = 'msg-fingerprint';
+  fpBadge.innerHTML = `<span class="fp-lock">&#9656;</span> SHA ${fp}`;
+  bodyEl.after(fpBadge);
+
+  // Clean up
+  await new Promise(r => setTimeout(r, 500));
+  machine.remove();
+  routeStrip.remove();
+}
+
+// Run the receive decrypt animation on a message element
+async function animateReceiveDecrypt(msgEl, plaintext) {
+  const bodyEl = msgEl.querySelector('.msg-body');
+  const statusEl = msgEl.querySelector('.msg-crypto-status');
+  if (!bodyEl) return;
+
+  const fp = generateFingerprint(plaintext);
+
+  // Start with hex-style scrambled text
+  const scrambled = fullScramble(plaintext);
+  bodyEl.textContent = scrambled;
+
+  // Insert cipher machine
+  const machineHTML = createCipherMachineHTML('decrypt');
+  bodyEl.insertAdjacentHTML('beforebegin', machineHTML);
+  const machine = msgEl.querySelector('.cipher-machine');
+  const tapeIn = msgEl.querySelector('.cipher-tape-in');
+  const tapeOut = msgEl.querySelector('.cipher-tape-out');
+  const arrows = msgEl.querySelectorAll('.cipher-arrow');
+
+  await new Promise(r => setTimeout(r, 50));
+  machine.classList.add('active');
+  scrollToBottom();
+
+  // Step 1: Verify signature
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>VERIFYING'; statusEl.className = 'msg-crypto-status crypto-decrypting'; }
+  await activateStep(msgEl, 'sign', 'VERIFYING', true);
+  await new Promise(r => setTimeout(r, 350));
+  cryptoSfx.lock();
+  await activateStep(msgEl, 'sign', 'VALID ✓', false);
+  await new Promise(r => setTimeout(r, 150));
+
+  // Step 2: Key exchange
+  await activateStep(msgEl, 'keyex', 'DERIVING', true);
+  await new Promise(r => setTimeout(r, 300));
+  cryptoSfx.lock();
+  await activateStep(msgEl, 'keyex', 'READY ✓', false);
+  await new Promise(r => setTimeout(r, 150));
+
+  // Step 3: Decrypt — linear left-to-right sweep
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>DECRYPTING'; }
+  await activateStep(msgEl, 'cipher', 'DECRYPTING', true);
+  arrows.forEach(a => a.classList.add('lit'));
+
+  const steps = Math.min(Math.ceil(plaintext.length / 2), 25);
+  const interval = Math.max(30, Math.min(45, 1000 / steps));
+
+  for (let i = 0; i <= steps; i++) {
+    const frac = i / steps;
+    const resolvedLen = Math.floor(frac * plaintext.length);
+
+    // Hex-style input tape
+    let hexIn = '';
+    for (let j = 0; j < Math.min(resolvedLen, 18); j++) hexIn += randomHexChar();
+    tapeIn.textContent = hexIn;
+    tapeOut.textContent = plaintext.slice(Math.max(0, resolvedLen - 18), resolvedLen);
+
+    // Body: left resolved, right jittering hex
+    let bodyText = plaintext.slice(0, resolvedLen);
+    for (let j = resolvedLen; j < plaintext.length; j++) {
+      bodyText += plaintext[j] === ' ' ? ' ' : (Math.random() < 0.3 ? randomHexChar() : scrambled[j] || randomHexChar());
+    }
+    bodyEl.textContent = bodyText;
+    if (i % 3 === 0) cryptoSfx.tick();
+    await new Promise(r => setTimeout(r, interval));
+  }
+
+  cryptoSfx.lock();
+  await activateStep(msgEl, 'cipher', 'DONE ✓', false);
+  bodyEl.innerHTML = renderContentWithGifs(plaintext);
+
+  // Lock pulse
+  msgEl.classList.add('crypto-locked');
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>DECRYPTED'; statusEl.className = 'msg-crypto-status crypto-decrypted'; }
+
+  // Show fingerprint
+  const fpBadge = document.createElement('div');
+  fpBadge.className = 'msg-fingerprint';
+  fpBadge.innerHTML = `<span class="fp-lock">&#9656;</span> SHA ${fp}`;
+  bodyEl.after(fpBadge);
+
+  await new Promise(r => setTimeout(r, 300));
+  msgEl.classList.remove('crypto-locked');
+  machine.classList.remove('active');
+  await new Promise(r => setTimeout(r, 400));
+  machine.remove();
+}
+
+// Show incoming transmission bar
+function showIncomingBar() {
+  const container = document.getElementById('messages-container');
+  if (!container) return;
+  let bar = container.querySelector('.incoming-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.className = 'incoming-bar';
+    bar.innerHTML = '&#9656; Receiving encrypted transmission<span class="incoming-dots"></span>';
+    container.appendChild(bar);
+    scrollToBottom();
+  }
+}
+
+function hideIncomingBar() {
+  const bars = document.querySelectorAll('.incoming-bar');
+  bars.forEach(b => b.remove());
+}
+
+// ─── Privacy Shield (Scramble All Messages) ─────────────────────────────────
+
+let privacyShieldActive = false;
+const privacyOriginals = new Map(); // msgEl -> original innerHTML
+
+async function togglePrivacyShield() {
+  const btn = document.getElementById('btn-privacy-shield');
+  const messages = document.querySelectorAll('#messages .message');
+
+  if (privacyShieldActive) {
+    // Decrypt all — quick cascade reveal
+    btn.innerHTML = '&#128274;'; // locked
+    btn.title = 'Privacy Shield — scramble all messages';
+    btn.classList.remove('shield-active');
+
+    // Cascade reveal with stagger
+    const msgArray = Array.from(messages);
+    for (let i = 0; i < msgArray.length; i++) {
+      const msg = msgArray[i];
+
+      // Handle voicenote messages
+      const vnPlayer = msg.querySelector('.voicenote-player');
+      if (vnPlayer) {
+        setTimeout(() => {
+          msg.classList.remove('privacy-scrambled');
+          const overlay = msg.querySelector('.vn-scramble-overlay');
+          if (overlay) overlay.remove();
+          const playBtn = msg.querySelector('.vn-play-btn');
+          if (playBtn) playBtn.disabled = false;
+        }, i * 30);
+        continue;
+      }
+
+      const body = msg.querySelector('.msg-body');
+      if (!body || !privacyOriginals.has(msg)) continue;
+
+      const original = privacyOriginals.get(msg);
+
+      // Quick resolve — 4 steps
+      const plaintext = original;
+      const scrambled = body.textContent;
+      setTimeout(() => {
+        let step = 0;
+        const revealInterval = setInterval(() => {
+          step++;
+          if (step >= 4) {
+            clearInterval(revealInterval);
+            body.innerHTML = renderContentWithGifs(plaintext);
+            msg.classList.remove('privacy-scrambled');
+            return;
+          }
+          const frac = step / 4;
+          body.textContent = resolveText(plaintext, scrambled, frac);
+        }, 35);
+      }, i * 30); // stagger
+    }
+
+    privacyOriginals.clear();
+    privacyShieldActive = false;
+
+    // Update status strip
+    const strip = document.querySelector('.chat-status-strip .micro-text');
+    if (strip) strip.innerHTML = '&#9656;&#9656; E2E ENCRYPTED // AES-256-GCM // DIRECT P2P';
+
+  } else {
+    // Encrypt all — cascade scramble
+    btn.innerHTML = '&#128275;'; // unlocked (to indicate click will unlock)
+    btn.title = 'Reveal messages';
+    btn.classList.add('shield-active');
+
+    const msgArray = Array.from(messages);
+    for (let i = 0; i < msgArray.length; i++) {
+      const msg = msgArray[i];
+
+      // Handle voicenote messages
+      const vnPlayer = msg.querySelector('.voicenote-player');
+      if (vnPlayer) {
+        setTimeout(() => {
+          msg.classList.add('privacy-scrambled');
+          const playBtn = msg.querySelector('.vn-play-btn');
+          if (playBtn) playBtn.disabled = true;
+          // Add scramble overlay
+          if (!msg.querySelector('.vn-scramble-overlay')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'vn-scramble-overlay';
+            overlay.innerHTML = '<span class="vn-scramble-lock">&#128274;</span> AUDIO ENCRYPTED // AES-256-GCM';
+            vnPlayer.style.position = 'relative';
+            vnPlayer.appendChild(overlay);
+          }
+        }, i * 20);
+        continue;
+      }
+
+      const body = msg.querySelector('.msg-body');
+      if (!body) continue;
+
+      // Store original text content
+      const original = body.textContent;
+      privacyOriginals.set(msg, original);
+
+      // Cascade scramble with stagger
+      setTimeout(() => {
+        let step = 0;
+        const scrambleInterval = setInterval(() => {
+          step++;
+          if (step >= 5) {
+            clearInterval(scrambleInterval);
+            body.textContent = fullScramble(original);
+            msg.classList.add('privacy-scrambled');
+            return;
+          }
+          const frac = step / 5;
+          body.textContent = scrambleText(original, frac);
+        }, 30);
+      }, i * 20); // fast stagger — wave effect
+    }
+
+    privacyShieldActive = true;
+    cryptoSfx.lock();
+
+    // Update status strip
+    const strip = document.querySelector('.chat-status-strip .micro-text');
+    if (strip) strip.innerHTML = '&#9656;&#9656; PRIVACY SHIELD ACTIVE // MESSAGES SCRAMBLED';
+  }
 }
 
 // ─── File Sharing ───────────────────────────────────────────────────────────
@@ -3058,12 +3597,12 @@ function cancelChatVn() {
 }
 
 /** Render a voicenote message bubble in the chat */
-function renderVoicenoteMessageHTML(isMine, vn, time, senderHTML) {
+function renderVoicenoteMessageHTML(isMine, vn, time, senderHTML, msgId) {
   const hasWaveform = vn.waveform && vn.waveform.length > 0;
   const safeId = escapeAttr(vn.contentId);
   const safeWaveform = hasWaveform ? escapeAttr(JSON.stringify(vn.waveform)) : '';
   return `
-    <div class="message ${isMine ? 'sent' : 'received'}">
+    <div class="message ${isMine ? 'sent' : 'received'}" ${msgId ? `id="${msgId}"` : ''}>
       ${senderHTML || ''}
       <div class="voicenote-player">
         <button class="vn-play-btn" onclick="playVoicenote('${safeId}')">&#9654;</button>
@@ -3072,7 +3611,9 @@ function renderVoicenoteMessageHTML(isMine, vn, time, senderHTML) {
           : `<div class="vn-bar"></div>`}
         <span class="vn-duration">${vn.duration ? formatDuration(vn.duration) : '--:--'}</span>
       </div>
-      <div class="msg-time">${time}</div>
+      <div class="msg-time">${time}
+        <span class="msg-crypto-status crypto-encrypting"><span class="status-dot-sm"></span>${isMine ? 'ENCRYPTING' : 'DECRYPTING'}</span>
+      </div>
     </div>`;
 }
 
@@ -3085,17 +3626,129 @@ function appendVoicenoteMessage(msg, scrollDown) {
     const name = msg.fromName || msg.from.slice(0, 12);
     senderHTML = `<div class="msg-sender">${escapeHtml(name)}</div>`;
   }
-  el.innerHTML += renderVoicenoteMessageHTML(isMine, msg.voicenote, time, senderHTML);
+  const msgId = 'vn-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  el.innerHTML += renderVoicenoteMessageHTML(isMine, msg.voicenote, time, senderHTML, msgId);
   // Draw waveform on new canvas
   requestAnimationFrame(() => {
     const canvas = el.querySelector(`canvas.vn-waveform-display[data-contentid="${msg.voicenote.contentId}"]`);
     if (canvas) {
       try { drawPostWaveform(canvas, JSON.parse(canvas.dataset.waveform), 0); } catch (e) {}
     }
+    // Trigger audio encryption animation
+    const msgEl = document.getElementById(msgId);
+    if (msgEl) {
+      animateAudioCrypto(msgEl, isMine);
+    }
   });
   // Store in messages for findVoicenoteAttachment lookup
   state.messages.push(msg);
   if (scrollDown) scrollToBottom();
+}
+
+// Audio encryption/decryption animation
+async function animateAudioCrypto(msgEl, isSend) {
+  const player = msgEl.querySelector('.voicenote-player');
+  const statusEl = msgEl.querySelector('.msg-crypto-status');
+  const waveCanvas = msgEl.querySelector('.vn-waveform-display');
+  const playBtn = msgEl.querySelector('.vn-play-btn');
+  if (!player) return;
+
+  // Insert compact pipeline above the player
+  const pipelineHTML = `<div class="audio-crypto-pipeline">
+    <span class="acp-step" data-s="key">X25519</span>
+    <span class="acp-arrow">&#9654;</span>
+    <span class="acp-step" data-s="enc">${isSend ? 'ENCRYPT' : 'DECRYPT'}</span>
+    <span class="acp-arrow">&#9654;</span>
+    <span class="acp-step" data-s="sign">${isSend ? 'SIGN' : 'VERIFY'}</span>
+    <span class="acp-label">AUDIO STREAM // AES-256-GCM</span>
+  </div>`;
+  player.insertAdjacentHTML('beforebegin', pipelineHTML);
+  const pipeline = msgEl.querySelector('.audio-crypto-pipeline');
+
+  // Disable play during animation
+  if (playBtn) playBtn.disabled = true;
+
+  // Scramble waveform if present
+  let waveformData = null;
+  if (waveCanvas && waveCanvas.dataset.waveform) {
+    try { waveformData = JSON.parse(waveCanvas.dataset.waveform); } catch {}
+  }
+
+  // Step 1: Key exchange
+  const keyStep = pipeline.querySelector('[data-s="key"]');
+  keyStep.classList.add('active');
+  if (statusEl) { statusEl.innerHTML = '<span class="status-dot-sm"></span>KEY EXCHANGE'; statusEl.className = 'msg-crypto-status crypto-encrypting'; }
+  await new Promise(r => setTimeout(r, 350));
+  cryptoSfx.lock();
+  keyStep.classList.remove('active');
+  keyStep.classList.add('done');
+
+  // Step 2: Encrypt/Decrypt with waveform scramble
+  const encStep = pipeline.querySelector('[data-s="enc"]');
+  encStep.classList.add('active');
+  if (statusEl) { statusEl.innerHTML = `<span class="status-dot-sm"></span>${isSend ? 'ENCRYPTING' : 'DECRYPTING'}`; }
+
+  // Animate waveform scramble/reveal
+  if (waveCanvas && waveformData) {
+    const ctx = waveCanvas.getContext('2d');
+    const w = waveCanvas.width;
+    const h = waveCanvas.height;
+    const steps = 12;
+
+    for (let s = 0; s < steps; s++) {
+      const frac = isSend ? (s / steps) : (1 - s / steps);
+      ctx.clearRect(0, 0, w, h);
+      const barW = w / waveformData.length;
+      for (let i = 0; i < waveformData.length; i++) {
+        const realH = waveformData[i] * h * 0.8;
+        const noiseH = (Math.random() * 0.8 + 0.1) * h * 0.8;
+        const barH = realH * (1 - frac) + noiseH * frac;
+        const x = i * barW;
+        const y = (h - barH) / 2;
+        ctx.fillStyle = frac > 0.5 ? 'rgba(50, 224, 196, 0.4)' : 'rgba(50, 224, 196, 0.6)';
+        ctx.fillRect(x + 0.5, y, Math.max(barW - 1, 1), barH);
+      }
+      if (s % 2 === 0) cryptoSfx.tick();
+      await new Promise(r => setTimeout(r, 60));
+    }
+  } else {
+    await new Promise(r => setTimeout(r, 600));
+  }
+
+  cryptoSfx.lock();
+  encStep.classList.remove('active');
+  encStep.classList.add('done');
+
+  // Step 3: Sign/Verify
+  const signStep = pipeline.querySelector('[data-s="sign"]');
+  signStep.classList.add('active');
+  if (statusEl) { statusEl.innerHTML = `<span class="status-dot-sm"></span>${isSend ? 'SIGNING' : 'VERIFYING'}`; }
+  await new Promise(r => setTimeout(r, 300));
+  cryptoSfx.lock();
+  signStep.classList.remove('active');
+  signStep.classList.add('done');
+
+  // Restore waveform
+  if (waveCanvas && waveformData) {
+    drawPostWaveform(waveCanvas, waveformData, 0);
+  }
+
+  // Final status
+  msgEl.classList.add('crypto-locked');
+  if (statusEl) {
+    statusEl.innerHTML = `<span class="status-dot-sm"></span>${isSend ? 'DELIVERED' : 'DECRYPTED'}`;
+    statusEl.className = `msg-crypto-status ${isSend ? 'crypto-delivered' : 'crypto-decrypted'}`;
+  }
+  if (playBtn) playBtn.disabled = false;
+
+  await new Promise(r => setTimeout(r, 400));
+  msgEl.classList.remove('crypto-locked');
+
+  // Fade out pipeline
+  pipeline.style.opacity = '0';
+  pipeline.style.transition = 'opacity 0.3s';
+  await new Promise(r => setTimeout(r, 300));
+  pipeline.remove();
 }
 
 // ─── WebRTC Voice/Video Calls ───────────────────────────────────────────────

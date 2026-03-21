@@ -217,6 +217,7 @@
             <button id="btn-voice-call" class="icon-btn" title="Voice Call">&#128222;</button>
             <button id="btn-video-call" class="icon-btn" title="Video Call">&#128249;</button>
             <button id="btn-share-file" class="icon-btn" title="Share File">&#128206;</button>
+            <button id="btn-privacy-shield" class="icon-btn" title="Privacy Shield — scramble all messages" onclick="togglePrivacyShield()">&#128274;</button>
           </div>
         </div>
 
@@ -238,6 +239,9 @@
           <button class="gif-btn" onclick="showGifPicker(state.activeHub ? 'hub' : 'chat', this)" title="GIF">GIF</button>
           <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
           <button id="btn-send">Send</button>
+        </div>
+        <div id="chat-status-strip" class="chat-status-strip">
+          <span class="micro-text">&#9656;&#9656; E2E ENCRYPTED // AES-256-GCM // DIRECT P2P</span>
         </div>
       </div>
 
