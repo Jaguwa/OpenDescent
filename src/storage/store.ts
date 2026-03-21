@@ -1438,6 +1438,12 @@ export class LocalStore {
     };
   }
 
+  /** Update the storage limit (e.g. when Pro license is activated) */
+  setMaxStorageBytes(maxBytes: number): void {
+    this.maxStorageBytes = maxBytes;
+    console.log(`[Store] Storage limit updated to ${formatBytes(maxBytes)}`);
+  }
+
   // ─── Private ───────────────────────────────────────────────────────────
 
   private async calculateStorageUsage(): Promise<void> {

@@ -1623,6 +1623,9 @@ export class APIServer {
           // Store the valid license key
           await this.deps.store.setMeta('license_key', data.licenseKey.trim());
           this.licenseStatus = status;
+          // Upgrade storage limit
+          const maxStorage = TIER_LIMITS[status.tier].maxStorageMB * 1024 * 1024;
+          this.deps.store.setMaxStorageBytes(maxStorage);
           console.log(`[License] Pro license activated (expires ${new Date(status.expiresAt!).toLocaleDateString()})`);
           return this.ok(id, {
             tier: status.tier,
@@ -1938,6 +1941,9 @@ export class APIServer {
         this.licenseStatus = verifyLicense(key, peerId);
         if (this.licenseStatus.valid) {
           console.log(`[License] Pro license active (expires ${new Date(this.licenseStatus.expiresAt!).toLocaleDateString()})`);
+          // Upgrade storage limit for Pro
+          const maxStorage = TIER_LIMITS[this.licenseStatus.tier].maxStorageMB * 1024 * 1024;
+          this.deps.store.setMaxStorageBytes(maxStorage);
         } else {
           console.log(`[License] Stored license invalid: ${this.licenseStatus.error}`);
         }

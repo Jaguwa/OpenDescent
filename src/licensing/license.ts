@@ -45,12 +45,14 @@ export const TIER_LIMITS = {
     maxGroupMembers: 10,
     maxHubsCreated: 2,
     maxDeadManSwitches: 0,
+    maxStorageMB: 512,
   },
   pro: {
     maxFileSizeMB: 500,
     maxGroupMembers: Infinity,
     maxHubsCreated: Infinity,
     maxDeadManSwitches: Infinity,
+    maxStorageMB: 2048,
   },
 } as const;
 

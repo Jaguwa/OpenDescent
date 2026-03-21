@@ -211,6 +211,8 @@ export class ContentManager {
     const shards: Shard[] = [];
     const neededShards = fileInfo.requiredShards;
 
+    console.log(`[Content] Retrieving shards for ${fileInfo.contentId}: need ${neededShards} of ${fileInfo.shardCount}`);
+
     // Try to collect enough shards
     for (let i = 0; i < fileInfo.shardCount && shards.length < neededShards; i++) {
       const shardId = `${fileInfo.contentId}-${i < fileInfo.requiredShards ? i : 'p' + (i - fileInfo.requiredShards)}`;
@@ -219,9 +221,12 @@ export class ContentManager {
       // Try local first
       const localShard = await this.store.getShard(shardId);
       if (localShard) {
+        console.log(`[Content] Shard ${i} found locally`);
         shards.push(localShard);
         continue;
       }
+
+      console.log(`[Content] Shard ${i} (${shardId}) not local, holders: [${holders.join(', ')}]`);
 
       // Request from remote peers
       let retrieved = false;

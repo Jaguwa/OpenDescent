@@ -196,6 +196,8 @@ const state = {
   commentPostId: null,
   // Avatar cache
   avatarCache: {},
+  // Custom avatar URLs (peerId -> url)
+  peerAvatars: {},
   // Dead Drops
   deadDrops: [],
   deadDropContents: {},
@@ -383,6 +385,25 @@ try {
 
 function generateAvatar(peerId, canvas, size) {
   if (!canvas || !peerId) return;
+
+  // Check for custom avatar (from peer's profile cardData)
+  const customUrl = state.peerAvatars && state.peerAvatars[peerId];
+  if (customUrl && isSafeMediaSrc(customUrl)) {
+    // Replace canvas with an img element
+    const s = size || canvas.width;
+    const img = document.createElement('img');
+    img.src = customUrl;
+    img.style.width = s + 'px';
+    img.style.height = s + 'px';
+    img.style.borderRadius = '50%';
+    img.style.objectFit = 'cover';
+    img.className = canvas.className;
+    if (canvas.onclick) img.onclick = canvas.onclick;
+    if (canvas.dataset.peerid) img.dataset.peerid = canvas.dataset.peerid;
+    if (canvas.parentNode) canvas.parentNode.replaceChild(img, canvas);
+    return;
+  }
+
   const ctx = canvas.getContext('2d');
   const s = size || canvas.width;
   canvas.width = s;
@@ -564,6 +585,14 @@ function connectWS() {
       document.getElementById('my-id').textContent = data.peerId;
       generateAvatar(data.peerId, document.getElementById('my-avatar'), 36);
       generateAvatar(data.peerId, document.getElementById('composer-avatar'), 36);
+      // Load custom avatar if set
+      send('get_profile', { peerId: data.peerId }).then(p => {
+        if (p.profile?.cardData?.avatarUrl) {
+          state.peerAvatars[data.peerId] = p.profile.cardData.avatarUrl;
+          generateAvatar(data.peerId, document.getElementById('my-avatar'), 36);
+          generateAvatar(data.peerId, document.getElementById('composer-avatar'), 36);
+        }
+      }).catch(() => {});
     }).catch(() => showToast('Load Error', 'Failed to load identity', 'error'));
     send('get_account_status').then((status) => {
       if (status.mode === 'legacy') showMnemonicModal();
@@ -755,7 +784,7 @@ function onFileReceived(data) {
 // ─── Data Refresh ───────────────────────────────────────────────────────────
 
 async function refreshAll() {
-  await Promise.all([refreshContacts(), refreshConversations(), refreshGroups(), refreshHubs()]);
+  await Promise.all([refreshContacts(), refreshConversations(), refreshGroups(), refreshHubs(), loadLicenseStatus()]);
 }
 
 const refreshContacts = debounce(async () => {
@@ -1491,6 +1520,12 @@ async function openProfile(peerId) {
 
   try {
     const data = await send('get_profile', { peerId: targetId });
+    // Cache custom avatar URL
+    if (data.profile?.cardData?.avatarUrl) {
+      state.peerAvatars[targetId] = data.profile.cardData.avatarUrl;
+    } else {
+      delete state.peerAvatars[targetId];
+    }
     document.getElementById('btn-edit-profile').classList.toggle('hidden', !data.isSelf);
     renderBentoProfile(data);
   } catch (e) {
@@ -1520,9 +1555,12 @@ function renderBentoProfile(data) {
   for (const card of enabledCards) {
     const sizeClass = 'size-' + card.size;
     switch (card.type) {
-      case 'identity':
+      case 'identity': {
+        const avatarHtml = cardData.avatarUrl && isSafeMediaSrc(cardData.avatarUrl)
+          ? `<img src="${cardData.avatarUrl}" class="profile-avatar-large" style="width:80px;height:80px;border-radius:50%;object-fit:cover">`
+          : `<canvas class="profile-avatar-large" width="80" height="80" data-peerid="${peerId}"></canvas>`;
         html += `<div class="bento-card card-identity ${sizeClass}">
-          <canvas class="profile-avatar-large" width="80" height="80" data-peerid="${peerId}"></canvas>
+          ${avatarHtml}
           <div class="identity-info">
             <h2>${escapeHtml(displayName)}</h2>
             ${cardData.tagline ? `<div class="tagline">${escapeHtml(cardData.tagline)}</div>` : ''}
@@ -1530,6 +1568,7 @@ function renderBentoProfile(data) {
           </div>
         </div>`;
         break;
+      }
       case 'vibe':
         if (cardData.vibe) {
           const v = cardData.vibe;
@@ -1666,6 +1705,15 @@ async function showProfileEditModal() {
   const cd = profile.cardData || {};
   const cards = profile.cards || getDefaultCards();
 
+  // Avatar — Pro only
+  const isPro = state.licenseStatus && state.licenseStatus.valid && state.licenseStatus.tier === 'pro';
+  document.getElementById('btn-avatar-gif').disabled = !isPro;
+  document.getElementById('btn-avatar-upload').disabled = !isPro;
+  document.getElementById('btn-avatar-clear').disabled = !isPro;
+  document.getElementById('avatar-free-hint').classList.toggle('hidden', isPro);
+  state.pendingAvatarUrl = cd.avatarUrl || null;
+  updateAvatarPreview(cd.avatarUrl);
+
   document.getElementById('edit-tagline').value = cd.tagline || '';
   document.getElementById('edit-vibe-emoji').value = cd.vibe?.emoji || '';
   document.getElementById('edit-vibe-text').value = cd.vibe?.text || '';
@@ -1687,6 +1735,44 @@ async function showProfileEditModal() {
   document.getElementById('profile-edit-modal').classList.remove('hidden');
 }
 
+function updateAvatarPreview(url) {
+  const box = document.getElementById('avatar-preview');
+  if (url && isSafeMediaSrc(url)) {
+    box.innerHTML = `<img src="${url}" alt="avatar">`;
+  } else {
+    box.innerHTML = `<canvas id="edit-avatar-canvas" width="64" height="64"></canvas>`;
+    generateAvatar(state.myPeerId, box.querySelector('canvas'), 64);
+  }
+}
+
+function pickAvatarGif() {
+  showGifPicker('avatar', document.getElementById('btn-avatar-gif'));
+}
+
+function clearAvatar() {
+  state.pendingAvatarUrl = null;
+  updateAvatarPreview(null);
+}
+
+// Wire avatar upload input
+document.addEventListener('DOMContentLoaded', () => {
+  const avatarInput = document.getElementById('avatar-upload-input');
+  if (avatarInput) {
+    avatarInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) { showToast('Image too large (max 2MB)'); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.pendingAvatarUrl = reader.result;
+        updateAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+  }
+});
+
 async function saveProfile() {
   const cards = getDefaultCards().map(c => {
     const checkbox = document.querySelector(`#card-toggles input[data-card="${c.type}"]`);
@@ -1694,6 +1780,7 @@ async function saveProfile() {
   });
 
   const cardData = {
+    avatarUrl: state.pendingAvatarUrl || undefined,
     tagline: document.getElementById('edit-tagline').value.trim() || undefined,
     vibe: document.getElementById('edit-vibe-text').value.trim() ? {
       emoji: document.getElementById('edit-vibe-emoji').value || '',
@@ -1967,6 +2054,29 @@ function renderPostCard(post) {
         </div>`;
       } else if (att.type === 'video' && att.data && isSafeMediaSrc(att.data)) {
         mediaHTML += `<div class="post-media-item"><video src="${att.data}" controls style="max-width:100%;max-height:300px"></video></div>`;
+      } else if (att.fileInfo || att.contentId) {
+        // Sharded media — show load button (with thumbnail if available)
+        const safeFileInfo = escapeAttr(JSON.stringify(att.fileInfo || {}));
+        const safeMime = escapeAttr(att.mimeType || 'application/octet-stream');
+        const mediaType = att.type || 'file';
+        const hasThumbnail = att.thumbnail && isSafeMediaSrc(att.thumbnail);
+        const icon = mediaType === 'video' ? '&#9654;' : mediaType === 'image' ? '&#128247;' : mediaType === 'audio' ? '&#9835;' : '&#128190;';
+        if (hasThumbnail) {
+          mediaHTML += `<div class="post-media-item post-media-loadable post-media-thumb" id="media-${safeContentId}" data-fileinfo="${safeFileInfo}" data-mimetype="${safeMime}" data-mediatype="${mediaType}" style="background-image:url('${att.thumbnail}');background-size:cover;background-position:center">
+            <button class="media-load-btn media-load-overlay" onclick="loadPostMedia('${safeContentId}')">
+              <span class="media-load-icon">${icon}</span>
+              <span class="media-load-hint">Click to play</span>
+            </button>
+          </div>`;
+        } else {
+          mediaHTML += `<div class="post-media-item post-media-loadable" id="media-${safeContentId}" data-fileinfo="${safeFileInfo}" data-mimetype="${safeMime}" data-mediatype="${mediaType}">
+            <button class="media-load-btn" onclick="loadPostMedia('${safeContentId}')">
+              <span class="media-load-icon">${icon}</span>
+              <span class="media-load-text">${escapeHtml(att.fileName || mediaType)}</span>
+              <span class="media-load-hint">Click to load</span>
+            </button>
+          </div>`;
+        }
       } else {
         mediaHTML += `<div class="post-media-item" style="display:flex;align-items:center;justify-content:center">
           <span class="subtle">${escapeHtml(att.type)}: ${escapeHtml(att.fileName || att.contentId?.slice(0, 8) || 'file')}</span>
@@ -2151,6 +2261,48 @@ async function deleteMessage(messageId, timestamp, isMine) {
   } catch (e) { showToast('Failed to delete', e.message); }
 }
 
+async function loadPostMedia(contentId) {
+  const container = document.getElementById('media-' + contentId);
+  if (!container) return;
+
+  const fileInfo = JSON.parse(container.dataset.fileinfo || '{}');
+  const mimeType = container.dataset.mimetype || 'application/octet-stream';
+  const mediaType = container.dataset.mediatype || 'file';
+
+  console.log('[Media] Loading:', contentId, 'fileInfo:', fileInfo, 'keys:', Object.keys(fileInfo));
+
+  // Show loading state
+  const btn = container.querySelector('.media-load-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.querySelector('.media-load-hint').textContent = 'Loading...';
+  }
+
+  try {
+    const result = await send('download_media', { fileInfo, mimeType });
+    if (!result || !result.dataUrl) throw new Error('No data returned');
+
+    if (mediaType === 'video') {
+      container.innerHTML = `<video src="${result.dataUrl}" controls style="max-width:100%;max-height:400px;border-radius:8px"></video>`;
+    } else if (mediaType === 'image') {
+      container.innerHTML = `<img src="${result.dataUrl}" alt="" style="max-width:100%;border-radius:8px">`;
+    } else if (mediaType === 'audio') {
+      container.innerHTML = `<audio src="${result.dataUrl}" controls style="width:100%"></audio>`;
+    } else {
+      // Generic file — offer download
+      const a = document.createElement('a');
+      a.href = result.dataUrl;
+      a.download = fileInfo.fileName || 'download';
+      a.click();
+      if (btn) { btn.disabled = false; btn.querySelector('.media-load-hint').textContent = 'Downloaded!'; }
+      return;
+    }
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.querySelector('.media-load-hint').textContent = 'Failed — tap to retry'; }
+    showToast('Load failed', e.message, 'error');
+  }
+}
+
 async function toggleLike(postId, isLiked) {
   try {
     if (isLiked) await send('unlike_post', { postId });
@@ -2214,13 +2366,20 @@ async function handlePostMedia(event, type) {
   const reader = new FileReader();
   reader.onload = async () => {
     const dataUrl = reader.result;
+
+    // Generate thumbnail for videos
+    let thumbnail = type === 'image' ? dataUrl : undefined;
+    if (type === 'video') {
+      try { thumbnail = await generateVideoThumbnail(file); } catch {}
+    }
+
     if (file.size <= INLINE_SIZE_LIMIT) {
       // Small file — inline base64
       state.postAttachments.push({
         type,
         contentId: crypto.randomUUID(),
         mimeType: file.type,
-        thumbnail: type === 'image' ? dataUrl : undefined,
+        thumbnail,
         data: dataUrl,
         fileName: file.name,
         fileSize: file.size,
@@ -2235,7 +2394,7 @@ async function handlePostMedia(event, type) {
           type,
           contentId: result.contentId,
           mimeType: file.type,
-          thumbnail: type === 'image' ? dataUrl : undefined,
+          thumbnail,
           fileName: file.name,
           fileSize: file.size,
           fileInfo: result.fileInfo, // shard metadata for download
@@ -2247,6 +2406,38 @@ async function handlePostMedia(event, type) {
   };
   reader.readAsDataURL(file);
   event.target.value = '';
+}
+
+function generateVideoThumbnail(file) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    video.onloadeddata = () => {
+      video.currentTime = Math.min(1, video.duration * 0.1); // grab frame at 10% or 1s
+    };
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(video.videoWidth, 640);
+        canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const thumb = canvas.toDataURL('image/jpeg', 0.7);
+        URL.revokeObjectURL(url);
+        resolve(thumb);
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        reject(e);
+      }
+    };
+    video.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Video load failed')); };
+    // Timeout fallback
+    setTimeout(() => { URL.revokeObjectURL(url); reject(new Error('Thumbnail timeout')); }, 10000);
+  });
 }
 
 function renderAttachments() {
@@ -3319,6 +3510,9 @@ function selectGif(url) {
     const iconInput = document.getElementById('hs-icon');
     if (iconInput) iconInput.value = url;
     updateHubIconPreview('hs-icon-preview', url);
+  } else if (context === 'avatar') {
+    state.pendingAvatarUrl = url;
+    updateAvatarPreview(url);
   }
 }
 
@@ -3899,6 +4093,7 @@ function isSafeMediaSrc(src) {
   if (!src) return false;
   if (src.startsWith('blob:')) return true;
   if (/^data:(image|video|audio)\/[a-zA-Z0-9+.\-]+;base64,[A-Za-z0-9+/=\s]+$/.test(src)) return true;
+  if (src.startsWith('https://')) return true;
   return false;
 }
 

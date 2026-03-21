@@ -416,6 +416,10 @@ export interface MediaAttachment {
   fileSize?: number;
   /** Inline base64 data URL for small media (<500KB: voicenotes, images, audio) */
   data?: string;
+  /** Shard metadata for large files — needed to reassemble on playback */
+  fileInfo?: Record<string, unknown>;
+  /** Waveform data for voicenotes */
+  waveform?: number[];
 }
 
 /** Post visibility */

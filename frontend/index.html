@@ -528,6 +528,22 @@
       <div class="modal-content profile-edit-content">
         <h3>Edit Profile</h3>
 
+        <div class="settings-section" id="avatar-section">
+          <h4>Profile Avatar <span class="pro-badge-sm" id="avatar-pro-badge">PRO</span></h4>
+          <div id="avatar-preview-row" style="display:flex;align-items:center;gap:12px">
+            <div id="avatar-preview" class="avatar-preview-box">
+              <canvas id="edit-avatar-canvas" width="64" height="64"></canvas>
+            </div>
+            <div>
+              <button class="btn-secondary" id="btn-avatar-gif" onclick="pickAvatarGif()" style="margin-bottom:4px">Choose GIF</button>
+              <button class="btn-secondary" id="btn-avatar-upload" onclick="document.getElementById('avatar-upload-input').click()">Upload Image</button>
+              <input type="file" id="avatar-upload-input" accept="image/*" class="hidden">
+              <button class="btn-secondary" id="btn-avatar-clear" onclick="clearAvatar()" style="margin-left:4px">Clear</button>
+            </div>
+          </div>
+          <p class="subtle" style="margin-top:4px" id="avatar-free-hint">Upgrade to Pro to set a custom avatar</p>
+        </div>
+
         <div class="settings-section">
           <h4>Tagline</h4>
           <input type="text" id="edit-tagline" placeholder="One-liner about you..." maxlength="80">
