@@ -15,6 +15,8 @@
 </head>
 <body>
   <div id="app">
+    <!-- Signal interference removed — will revisit later -->
+
     <!-- ─── Background Animation Layer ─────────────────────────── -->
     <div id="bg-animation-layer"></div>
 
@@ -30,16 +32,20 @@
     <!-- ─── Sidebar ─────────────────────────────────────────── -->
     <aside id="sidebar">
       <div id="identity-bar">
-        <div id="identity-left">
-          <canvas id="my-avatar" width="36" height="36" class="sidebar-avatar"></canvas>
-          <div>
-            <div id="my-name" class="editable-name" onclick="openProfile()" title="Click to view profile">Connecting...</div>
-            <div id="my-id"></div>
+        <div class="micro-strip">&#9656;&#9656; OPENDESCENT // PROTOCOL v0.5.3 // E2E-256-GCM // <span id="micro-status">CONNECTING</span></div>
+        <div id="identity-inner">
+          <div id="identity-left">
+            <canvas id="my-avatar" width="36" height="36" class="sidebar-avatar"></canvas>
+            <div>
+              <div class="micro-label">SUBJECT</div>
+              <div id="my-name" class="editable-name" onclick="openProfile()" title="Click to view profile">Connecting...</div>
+              <div id="my-id"></div>
+            </div>
           </div>
-        </div>
-        <div id="identity-right">
-          <button id="btn-settings" class="icon-btn-sm" title="Settings" onclick="showSettingsModal()">&#9881;</button>
-          <div id="connection-status" class="status-dot offline"></div>
+          <div id="identity-right">
+            <button id="btn-settings" class="icon-btn-sm" title="Settings" onclick="showSettingsModal()">&#9881;</button>
+            <div id="connection-status" class="status-dot offline"></div>
+          </div>
         </div>
       </div>
 
@@ -115,6 +121,15 @@
           </div>
         </div>
       </div>
+
+      <!-- Sidebar Footer — Cassette Label -->
+      <div class="sidebar-footer">
+        <div class="micro-text" style="text-align:center; padding:8px 12px; border-top: 1px solid rgba(13,115,119,0.1)">
+          PRODUCT INTERFACE // OPEN DESCENT &#169;2025<br>
+          オープンディセント // P2P-MESH-NET // NO-CENTRAL-AUTH<br>
+          <span style="letter-spacing:3px">&#9612;&#9612;&#9615;&#9612;&#9615;&#9615;&#9612;&#9612;&#9615;&#9612;&#9615;&#9612;&#9612;&#9615;&#9615;&#9612;&#9615;&#9612;&#9612;&#9615;&#9612;&#9615;&#9615;&#9612;</span>
+        </div>
+      </div>
     </aside>
 
     <!-- ─── Main Chat Area ──────────────────────────────────── -->
@@ -122,15 +137,18 @@
       <!-- Empty state -->
       <div id="empty-state" class="hidden">
         <div class="empty-icon">&#9672;</div>
-        <h2>OpenDescent</h2>
-        <p>Select a conversation or contact to start chatting.</p>
-        <p class="subtle">Peer-to-peer. End-to-end encrypted. No servers.</p>
+        <h2 class="chroma-full" style="font-size:1.8em; margin-bottom: 8px">OpenDescent</h2>
+        <p style="font-family: var(--font-mono); color: var(--text-secondary); font-size: 0.85em">Select a conversation or contact to start chatting.</p>
+        <p class="micro-text" style="margin-top: 8px">P2P MESH // E2E ENCRYPTED // NO CENTRAL SERVERS // オープンディセント</p>
       </div>
 
       <!-- Broadcast View -->
       <div id="feed-view">
         <div id="feed-header">
-          <h2>Broadcast</h2>
+          <div class="header-row">
+            <h2>Broadcast</h2>
+            <span class="micro-text" style="margin-left:auto">&#9656;&#9656; LIVE FEED // ブロードキャスト</span>
+          </div>
         </div>
         <!-- Post Composer -->
         <div id="post-composer">
@@ -314,6 +332,39 @@
       <div class="modal-content settings-modal-content">
         <h3>Settings</h3>
 
+        <!-- ─── Pro License (Top CTA) ──────────────────────── -->
+        <div id="license-section" class="pro-cta-section">
+          <div id="license-free-banner" class="pro-cta pro-cta-free">
+            <div class="pro-cta-header">
+              <div class="pro-cta-badge">FREE TIER</div>
+              <div class="pro-cta-tagline">You're on the free plan</div>
+            </div>
+            <div class="pro-cta-limits">
+              <div class="pro-limit-item"><span class="pro-limit-val">35MB</span><span class="pro-limit-label">FILE LIMIT</span></div>
+              <div class="pro-limit-item"><span class="pro-limit-val">10</span><span class="pro-limit-label">GROUP MAX</span></div>
+              <div class="pro-limit-item"><span class="pro-limit-val">2</span><span class="pro-limit-label">HUBS</span></div>
+            </div>
+            <button class="pro-cta-btn" onclick="upgradeToPro()">&#9656;&#9656; UNLOCK PRO — $5/MO</button>
+            <div class="pro-cta-perks">500MB files · Unlimited groups & hubs · Dead Man's Switch · GIF Avatar</div>
+          </div>
+          <div id="license-pro-banner" class="pro-cta pro-cta-active hidden">
+            <div class="pro-cta-header">
+              <div class="pro-cta-badge pro-badge-active">&#9656; PRO ACTIVE</div>
+              <div class="pro-cta-expires">Renews <span id="license-expiry-date"></span></div>
+            </div>
+            <div class="pro-cta-limits">
+              <div class="pro-limit-item"><span class="pro-limit-val">500MB</span><span class="pro-limit-label">File Limit</span></div>
+              <div class="pro-limit-item"><span class="pro-limit-val">&#8734;</span><span class="pro-limit-label">Groups</span></div>
+              <div class="pro-limit-item"><span class="pro-limit-val">&#8734;</span><span class="pro-limit-label">Hubs</span></div>
+              <div class="pro-limit-item"><span class="pro-limit-val">&#10003;</span><span class="pro-limit-label">Dead Man's Switch</span></div>
+            </div>
+          </div>
+          <div class="pro-key-row">
+            <input type="text" id="setting-license-key" placeholder="Paste license key...">
+            <button class="btn-primary" onclick="activateLicense()">Activate</button>
+          </div>
+        </div>
+
         <div class="settings-section">
           <h4>Theme</h4>
           <div id="theme-presets" class="theme-grid"></div>
@@ -446,28 +497,7 @@
           </div>
         </div>
 
-        <div class="settings-section" id="license-section">
-          <h4>OpenDescent Pro</h4>
-          <div id="license-status-display">
-            <div id="license-free-banner" class="license-banner license-free">
-              <div class="license-tier-badge">FREE</div>
-              <div class="license-limits">35MB files · 10 member groups · 2 hubs</div>
-              <button class="btn-upgrade" onclick="upgradeToPro()">Upgrade to Pro — $5/mo</button>
-              <p class="subtle" style="margin-top:6px">500MB files · Unlimited groups & hubs · Dead Man's Switch</p>
-            </div>
-            <div id="license-pro-banner" class="license-banner license-pro hidden">
-              <div class="license-tier-badge pro">PRO</div>
-              <div class="license-expires">Active until <span id="license-expiry-date"></span></div>
-              <div class="license-limits">500MB files · Unlimited groups & hubs · Dead Man's Switch</div>
-            </div>
-          </div>
-          <div style="margin-top:8px">
-            <div class="settings-row">
-              <label style="flex:1">License Key: <input type="text" id="setting-license-key" placeholder="Paste your license key..." style="margin-bottom:0"></label>
-              <button class="btn-primary" onclick="activateLicense()" style="margin-left:4px">Activate</button>
-            </div>
-          </div>
-        </div>
+        <!-- License section placeholder (moved to top) -->
 
         <div class="settings-section">
           <h4>GIF Library</h4>
