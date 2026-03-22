@@ -3778,23 +3778,23 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 
 /* ─── Theme Spin Wheel ─────────────────────────────────────────────────── */
 
-.theme-wheel-fab {
-  position: fixed;
-  bottom: 80px;
-  right: 24px;
-  width: 44px;
-  height: 44px;
+.theme-wheel-fab, .theme-wheel-hub {
+  position: relative;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 10;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 8px;
   animation: fab-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, fab-pulse 2.5s ease-in-out 0.5s infinite;
   transform: scale(0);
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
 }
 
 .wheel-fab-ring {
@@ -3808,8 +3808,8 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 .wheel-fab-inner {
   position: relative;
   z-index: 1;
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--bg-secondary, #161b22);
   display: flex;
@@ -3823,15 +3823,14 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
   background: var(--bg-tertiary, #21262d);
 }
 
-.theme-wheel-fab.used {
-  transform: translateX(36px);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s;
-  animation: fab-pulse 2.5s ease-in-out infinite;
-  opacity: 0.7;
+.theme-wheel-fab.used, .theme-wheel-hub.used {
+  opacity: 0.5;
+  transition: opacity 0.3s;
+  animation: none;
+  transform: scale(1);
 }
 
-.theme-wheel-fab.used:hover {
-  transform: translateX(0);
+.theme-wheel-fab.used:hover, .theme-wheel-hub.used:hover {
   opacity: 1;
 }
 
@@ -3993,8 +3992,8 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 
 /* Mobile adjustments */
 @media (max-width: 500px) {
-  .theme-wheel-fab { bottom: 16px; right: 16px; width: 50px; height: 50px; }
-  .wheel-fab-inner { width: 40px; height: 40px; }
+  .theme-wheel-fab, .theme-wheel-hub { width: 36px; height: 36px; }
+  .wheel-fab-inner { width: 28px; height: 28px; }
   .theme-spin-label { padding: 10px 24px; }
   .theme-spin-name { font-size: 1.1em; }
 }

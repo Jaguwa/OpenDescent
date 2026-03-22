@@ -1343,7 +1343,7 @@ export class DecentraNode {
       } catch (error) {
         console.error(`[Protocol] Error handling call signal:`, error);
       }
-    }, limitedOk);
+    }, { ...limitedOk, maxInboundStreams: 16 });
 
     // Account bundle storage/retrieval
     await this.node.handle(PROTOCOLS.ACCOUNT_BUNDLE, async ({ stream, connection }) => {

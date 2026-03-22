@@ -621,7 +621,7 @@ function connectWS() {
 
     // Show theme spin wheel button after a short delay
     setTimeout(() => {
-      document.getElementById('theme-wheel-btn').classList.remove('hidden');
+      document.getElementById('theme-wheel-hub').classList.remove('hidden');
     }, 1500);
 
     // Onboarding: show splash on first launch (after auth settles)
@@ -5949,8 +5949,8 @@ function startThemeSpin() {
   spinIndex = 0;
 
   // UI setup
-  document.getElementById('theme-wheel-btn').style.pointerEvents = 'none';
-  document.getElementById('theme-wheel-btn').style.opacity = '0.4';
+  document.getElementById('theme-wheel-hub').style.pointerEvents = 'none';
+  document.getElementById('theme-wheel-hub').style.opacity = '0.4';
   const label = document.getElementById('theme-spin-label');
   label.classList.remove('hidden', 'landed');
   document.getElementById('theme-spin-result').classList.add('hidden');
@@ -6014,8 +6014,8 @@ function landThemeSpin(preset) {
   document.getElementById('theme-spin-result').classList.remove('hidden');
 
   // Show FAB again
-  document.getElementById('theme-wheel-btn').style.pointerEvents = '';
-  document.getElementById('theme-wheel-btn').style.opacity = '';
+  document.getElementById('theme-wheel-hub').style.pointerEvents = '';
+  document.getElementById('theme-wheel-hub').style.opacity = '';
 
   // Remove shapes after a beat
   setTimeout(removeSpinShapes, 600);
@@ -6034,7 +6034,7 @@ function keepSpinTheme() {
   if (confettiFrame) { cancelAnimationFrame(confettiFrame); confettiFrame = null; }
   const cc = document.getElementById('confetti-canvas');
   cc.classList.add('hidden');
-  document.getElementById('theme-wheel-btn').classList.add('used');
+  document.getElementById('theme-wheel-hub').classList.add('used');
   showToast('Theme saved!', state.themePrefs?.presetId || '', 'success');
 }
 
@@ -6050,7 +6050,7 @@ function reSpinTheme() {
     applyTheme(spinSavedPrefs);
   }
 
-  document.getElementById('theme-wheel-btn').classList.add('used');
+  document.getElementById('theme-wheel-hub').classList.add('used');
   setTimeout(startThemeSpin, 200);
 }
 

@@ -103,6 +103,7 @@ export class APIServer {
   private licenseStatus: LicenseStatus = { tier: 'free', valid: false };
   private activeUploads: Map<string, { filePath: string; fileName: string; mimeType: string; totalChunks: number; receivedChunks: number; purpose: string; recipientId?: string }> = new Map();
   private audioClients: Map<string, WebSocket> = new Map(); // peerId -> WS client receiving audio
+  private callSignalQueues: Map<string, Promise<any>> = new Map(); // peerId -> chain of signal sends
   private static readonly DEFAULT_GIF_API_KEY = process.env.KLIPY_API_KEY || '';
 
   constructor(port: number, deps: APIServerDeps) {
@@ -458,16 +459,27 @@ export class APIServer {
         case 'call_signal': {
           const { peerId, signal } = data;
           const recipientId = this.resolveRecipient(peerId);
-          if (!recipientId) return this.err(id, `Unknown peer: ${peerId}`);
+          if (!recipientId) {
+            return this.err(id, `Unknown peer: ${peerId}`);
+          }
 
-          const signalData = new TextEncoder().encode(JSON.stringify({
-            type: 'webrtc_signal',
-            from: this.deps.node.getPeerId(),
-            signal,
-          }));
+          // Queue signals per peer to avoid concurrent stream opens
+          const sendSignal = async (): Promise<Uint8Array | null> => {
+            const signalData = new TextEncoder().encode(JSON.stringify({
+              type: 'webrtc_signal',
+              from: this.deps.node.getPeerId(),
+              signal,
+            }));
+            const { PROTOCOLS } = await import('../network/node.js');
+            return this.deps.node.sendToPeer(recipientId, PROTOCOLS.CALL_SIGNAL, signalData);
+          };
 
-          const { PROTOCOLS } = await import('../network/node.js');
-          const response = await this.deps.node.sendToPeer(recipientId, PROTOCOLS.CALL_SIGNAL, signalData);
+          // Chain onto existing queue for this peer
+          const prev = this.callSignalQueues.get(recipientId) || Promise.resolve();
+          const current = prev.then(() => sendSignal()).catch(() => sendSignal());
+          this.callSignalQueues.set(recipientId, current);
+
+          const response = await current;
           if (!response) {
             return this.err(id, 'Peer not reachable — call signal could not be delivered');
           }
