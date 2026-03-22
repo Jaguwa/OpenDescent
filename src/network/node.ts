@@ -100,6 +100,7 @@ export const PROTOCOLS = {
   HUB_DISCOVERY: `${PROTOCOL_PREFIX}/hub-discovery/1.0.0`,
   DELETE_NOTIFY: `${PROTOCOL_PREFIX}/delete-notify/1.0.0`,
   ONION_RELAY: `${PROTOCOL_PREFIX}/onion-relay/1.0.0`,
+  AUDIO_STREAM: `${PROTOCOL_PREFIX}/audio-stream/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -134,6 +135,8 @@ export class DecentraNode {
   private hubDiscoveryHandler?: (data: string) => Promise<string | void>;
   private onionRelayHandler?: (data: string) => Promise<void>;
   private deleteNotifyHandler?: (data: string) => Promise<void>;
+  private audioStreamHandler?: (peerId: string, chunk: Uint8Array) => void;
+  private activeAudioStreams: Map<string, { pushable: any; stream: any }> = new Map();
   private passphrase: string;
 
   // Rate limiting: 100 messages per 60-second window per peer
@@ -628,6 +631,80 @@ export class DecentraNode {
   /** Register handler for delete notifications */
   setDeleteNotifyHandler(handler: (data: string) => Promise<void>): void {
     this.deleteNotifyHandler = handler;
+  }
+
+  /** Register handler for incoming audio stream chunks */
+  setAudioStreamHandler(handler: (peerId: string, chunk: Uint8Array) => void): void {
+    this.audioStreamHandler = handler;
+  }
+
+  /** Open a persistent bidirectional audio stream to a peer */
+  async openAudioStream(decentraId: string): Promise<boolean> {
+    if (!this.node) return false;
+    if (this.activeAudioStreams.has(decentraId)) return true; // Already open
+
+    const libp2pId = this.decentraToLibp2p.get(decentraId);
+    if (!libp2pId) return false;
+
+    const connections = this.node.getConnections();
+    const conn = connections.find(c => c.remotePeer.toString() === libp2pId);
+    if (!conn) return false;
+
+    try {
+      const stream = await this.node.dialProtocol(
+        conn.remotePeer,
+        PROTOCOLS.AUDIO_STREAM,
+        { runOnLimitedConnection: true }
+      );
+
+      const { pushable } = await import('it-pushable');
+      const outbound = pushable<Uint8Array>();
+      this.activeAudioStreams.set(decentraId, { pushable: outbound, stream });
+
+      // Feed outbound audio to stream sink (runs concurrently)
+      const sinkPromise = stream.sink(outbound).catch(() => {});
+
+      // Read inbound audio from stream source
+      (async () => {
+        try {
+          for await (const chunk of stream.source) {
+            const data = chunk.subarray();
+            if (this.audioStreamHandler) {
+              this.audioStreamHandler(decentraId, data);
+            }
+          }
+        } catch {} finally {
+          outbound.end();
+          this.activeAudioStreams.delete(decentraId);
+          await sinkPromise;
+          console.log(`[Audio] Stream to ${decentraId.slice(0, 12)} ended`);
+        }
+      })();
+
+      console.log(`[Audio] Opened audio stream to ${decentraId.slice(0, 12)}`);
+      return true;
+    } catch (error: any) {
+      console.error(`[Audio] Failed to open stream to ${decentraId.slice(0, 12)}:`, error.message);
+      return false;
+    }
+  }
+
+  /** Push an audio chunk to the active stream for a peer */
+  pushAudioChunk(decentraId: string, chunk: Uint8Array): boolean {
+    const entry = this.activeAudioStreams.get(decentraId);
+    if (!entry) return false;
+    entry.pushable.push(chunk);
+    return true;
+  }
+
+  /** Close the audio stream to a peer */
+  closeAudioStream(decentraId: string): void {
+    const entry = this.activeAudioStreams.get(decentraId);
+    if (entry) {
+      entry.pushable.end();
+      this.activeAudioStreams.delete(decentraId);
+      console.log(`[Audio] Closed stream to ${decentraId.slice(0, 12)}`);
+    }
   }
 
   /** Broadcast data to all connected peers on a given protocol */
@@ -1545,6 +1622,42 @@ export class DecentraNode {
         console.error(`[Protocol] Error handling delete notification:`, error);
       }
     }, limitedOk);
+
+    // Audio streaming — persistent bidirectional stream for voice-over-libp2p
+    await this.node.handle(PROTOCOLS.AUDIO_STREAM, async ({ stream, connection }) => {
+      const libp2pId = connection.remotePeer.toString();
+      const decentraId = this.libp2pToDecentra.get(libp2pId);
+      if (!decentraId) {
+        try { await stream.close(); } catch {}
+        return;
+      }
+
+      console.log(`[Audio] Incoming audio stream from ${decentraId.slice(0, 12)}`);
+
+      const { pushable } = await import('it-pushable');
+      const outbound = pushable<Uint8Array>();
+      this.activeAudioStreams.set(decentraId, { pushable: outbound, stream });
+
+      // Feed outbound audio to the stream sink (runs concurrently)
+      const sinkPromise = stream.sink(outbound).catch(() => {});
+
+      // Read inbound audio chunks from the stream source
+      try {
+        for await (const chunk of stream.source) {
+          const data = chunk.subarray();
+          if (this.audioStreamHandler) {
+            this.audioStreamHandler(decentraId, data);
+          }
+        }
+      } catch {
+        // Stream closed or errored
+      } finally {
+        outbound.end();
+        this.activeAudioStreams.delete(decentraId);
+        await sinkPromise;
+        console.log(`[Audio] Audio stream from ${decentraId.slice(0, 12)} ended`);
+      }
+    }, { ...limitedOk, maxInboundStreams: 2 });
 
     console.log(`[Protocol] Registered handlers for: ${Object.values(PROTOCOLS).join(', ')}`);
   }

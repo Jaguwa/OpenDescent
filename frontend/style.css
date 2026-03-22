@@ -5200,6 +5200,30 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
   font-size: 12px;
 }
 
+/* ─── Call Transport Indicator ───────────────────────────────────────── */
+
+#call-transport {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-left: 6px;
+}
+
+#call-transport.relay {
+  background: rgba(212, 160, 32, 0.15);
+  border: 1px solid rgba(212, 160, 32, 0.3);
+  color: var(--orange);
+}
+
+#call-transport.direct {
+  background: rgba(50, 224, 196, 0.1);
+  border: 1px solid rgba(50, 224, 196, 0.2);
+  color: var(--accent);
+}
+
 /* Incoming Transmission Bar */
 .incoming-bar {
   display: flex;

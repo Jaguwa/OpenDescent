@@ -198,6 +198,14 @@ const state = {
   avatarCache: {},
   // Custom avatar URLs (peerId -> url)
   peerAvatars: {},
+  // Direct calls only (no TURN relay)
+  directCallsOnly: false,
+  // Relay audio state
+  relayAudioActive: false,
+  relayAudioWorklet: null,
+  relayPlaybackWorklet: null,
+  relayAudioContext: null,
+  callTransport: null, // 'webrtc' | 'relay'
   // Dead Drops
   deadDrops: [],
   deadDropContents: {},
@@ -548,6 +556,7 @@ function connectWS() {
   const wsUrl = `ws://${window.location.host}`;
   console.log('[OpenDescent] Connecting to', wsUrl);
   state.ws = new WebSocket(wsUrl);
+  state.ws.binaryType = 'arraybuffer';
 
   state.ws.onopen = () => {
     const token = window.__DECENTRA_TOKEN || '';
@@ -648,6 +657,16 @@ function connectWS() {
 }
 
 function handleWSMessage(event) {
+  // Binary messages are relay audio chunks
+  if (event.data instanceof ArrayBuffer) {
+    handleRelayAudioChunk(event.data);
+    return;
+  }
+  if (event.data instanceof Blob) {
+    event.data.arrayBuffer().then(buf => handleRelayAudioChunk(buf));
+    return;
+  }
+
   const msg = JSON.parse(event.data);
 
   if (msg.type === 'response' && state.pendingRequests[msg.id]) {
@@ -1888,6 +1907,9 @@ function showSettingsModal() {
 
   // Blocked peers
   loadBlockedPeers();
+
+  // Direct calls toggle
+  document.getElementById('setting-direct-calls').checked = state.directCallsOnly;
 
   // Version
   document.getElementById('settings-version').textContent = 'OpenDescent v0.5.3';
@@ -3753,10 +3775,21 @@ async function animateAudioCrypto(msgEl, isSend) {
 
 // ─── WebRTC Voice/Video Calls ───────────────────────────────────────────────
 
-const ICE_SERVERS = [
+const ICE_SERVERS_FULL = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'turn:188.166.151.203:3478', username: 'opendescent', credential: 'Od3sc3nt2025!' },
+  { urls: 'turn:188.166.151.203:3478?transport=tcp', username: 'opendescent', credential: 'Od3sc3nt2025!' },
+];
+
+const ICE_SERVERS_P2P_ONLY = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
 ];
+
+function getIceServers() {
+  return state.directCallsOnly ? ICE_SERVERS_P2P_ONLY : ICE_SERVERS_FULL;
+}
 
 async function startCall(type) {
   if (!state.activeChat || state.activeChat.type !== 'dm') return;
@@ -3783,7 +3816,7 @@ async function startCall(type) {
 }
 
 function createPeerConnection() {
-  state.peerConnection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  state.peerConnection = new RTCPeerConnection({ iceServers: getIceServers() });
   state.peerConnection.onicecandidate = (event) => {
     if (event.candidate) send('call_signal', { peerId: state.callPeerId, signal: { type: 'ice-candidate', candidate: event.candidate } }).catch(() => {});
   };
@@ -3794,8 +3827,9 @@ function createPeerConnection() {
   };
   state.peerConnection.onconnectionstatechange = () => {
     const cs = state.peerConnection.connectionState;
-    if (cs === 'connected') { state.callState = 'connected'; sfx.play('callConnect'); updateCallStatus('Connected'); startCallTimer(); }
-    else if (cs === 'disconnected' || cs === 'failed' || cs === 'closed') endCall();
+    if (cs === 'connected') { state.callState = 'connected'; state.callTransport = 'webrtc'; sfx.play('callConnect'); updateCallStatus('Connected'); startCallTimer(); }
+    else if (cs === 'failed') { attemptRelayFallback(); }
+    else if (cs === 'disconnected' || cs === 'closed') endCall();
   };
 }
 
@@ -3821,14 +3855,118 @@ async function onCallSignal(data) {
   } else if (signal.type === 'ice-candidate') {
     if (state.peerConnection && state.peerConnection.remoteDescription) await state.peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
     else state.iceCandidateQueue.push(signal.candidate);
+  } else if (signal.type === 'switch-to-relay') {
+    // Remote peer's WebRTC failed — switch to relay audio
+    if (state.peerConnection) { state.peerConnection.close(); state.peerConnection = null; }
+    try {
+      const result = await send('start_relay_audio', { peerId: state.callPeerId });
+      if (result.started) {
+        state.callTransport = 'relay';
+        state.callState = 'connected';
+        updateCallStatus('Connected (relay)');
+        if (!state.callTimer) startCallTimer();
+        await startRelayAudioCapture();
+        startRelayAudioPlayback();
+      }
+    } catch (e) { showToast('Relay fallback failed', e.message); endCall(); }
   } else if (signal.type === 'hangup') endCall();
+}
+
+// ─── Relay Audio Fallback ─────────────────────────────────────────────────
+
+async function attemptRelayFallback() {
+  if (!state.callPeerId || state.callTransport === 'relay') return;
+  updateCallStatus('Direct failed — switching to relay...');
+
+  if (state.peerConnection) { state.peerConnection.close(); state.peerConnection = null; }
+
+  try {
+    const result = await send('start_relay_audio', { peerId: state.callPeerId });
+    if (!result.started) throw new Error('Backend refused relay audio');
+
+    state.callTransport = 'relay';
+    state.callState = 'connected';
+    updateCallStatus('Connected (relay)');
+    startCallTimer();
+    sfx.play('callConnect');
+
+    // Tell the other peer to switch too
+    await send('call_signal', { peerId: state.callPeerId, signal: { type: 'switch-to-relay' } });
+
+    await startRelayAudioCapture();
+    startRelayAudioPlayback();
+  } catch (e) {
+    showToast('Call failed', 'Could not establish relay connection');
+    endCall();
+  }
+}
+
+async function startRelayAudioCapture() {
+  if (!state.localStream) {
+    state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  }
+
+  const ctx = new AudioContext({ sampleRate: 48000 });
+  state.relayAudioContext = ctx;
+
+  await ctx.audioWorklet.addModule('audio-capture-worklet.js');
+  const source = ctx.createMediaStreamSource(state.localStream);
+  const captureNode = new AudioWorkletNode(ctx, 'audio-capture-processor');
+  state.relayAudioWorklet = captureNode;
+  source.connect(captureNode);
+
+  captureNode.port.onmessage = (event) => {
+    const mulawBytes = event.data;
+    if (state.ws && state.ws.readyState === WebSocket.OPEN && state.relayAudioActive) {
+      const peerIdBytes = new TextEncoder().encode(state.callPeerId);
+      const frame = new Uint8Array(1 + peerIdBytes.length + mulawBytes.length);
+      frame[0] = peerIdBytes.length;
+      frame.set(peerIdBytes, 1);
+      frame.set(mulawBytes, 1 + peerIdBytes.length);
+      state.ws.send(frame.buffer);
+    }
+  };
+
+  state.relayAudioActive = true;
+}
+
+async function startRelayAudioPlayback() {
+  if (!state.relayAudioContext) {
+    state.relayAudioContext = new AudioContext({ sampleRate: 48000 });
+  }
+  const ctx = state.relayAudioContext;
+
+  await ctx.audioWorklet.addModule('audio-playback-worklet.js');
+  const playbackNode = new AudioWorkletNode(ctx, 'audio-playback-processor');
+  state.relayPlaybackWorklet = playbackNode;
+  playbackNode.connect(ctx.destination);
+}
+
+function handleRelayAudioChunk(buffer) {
+  if (!state.relayPlaybackWorklet) return;
+  const view = new Uint8Array(buffer);
+  if (view.length < 3) return;
+  const peerIdLen = view[0];
+  const audioData = view.subarray(1 + peerIdLen);
+  state.relayPlaybackWorklet.port.postMessage(audioData);
 }
 
 function endCall() {
   sfx.play('callEnd');
-  if (state.callPeerId && state.callState) send('call_signal', { peerId: state.callPeerId, signal: { type: 'hangup' } }).catch(() => {});
+  if (state.callPeerId && state.callState) {
+    send('call_signal', { peerId: state.callPeerId, signal: { type: 'hangup' } }).catch(() => {});
+    if (state.relayAudioActive) {
+      send('stop_relay_audio', { peerId: state.callPeerId }).catch(() => {});
+    }
+  }
   if (state.peerConnection) { state.peerConnection.close(); state.peerConnection = null; }
   if (state.localStream) { state.localStream.getTracks().forEach(t => t.stop()); state.localStream = null; }
+  // Clean up relay audio
+  if (state.relayAudioWorklet) { state.relayAudioWorklet.disconnect(); state.relayAudioWorklet = null; }
+  if (state.relayPlaybackWorklet) { state.relayPlaybackWorklet.disconnect(); state.relayPlaybackWorklet = null; }
+  if (state.relayAudioContext) { state.relayAudioContext.close().catch(() => {}); state.relayAudioContext = null; }
+  state.relayAudioActive = false;
+  state.callTransport = null;
   state.remoteStream = null; state.callState = null; state.callPeerId = null; state.callPeerName = null;
   if (state.callTimer) { clearInterval(state.callTimer); state.callTimer = null; }
   hideCallUI();
@@ -3889,7 +4027,21 @@ function hideCallUI() {
   document.getElementById('remote-video').srcObject = null;
 }
 
-function updateCallStatus(text) { document.getElementById('call-status').textContent = text; }
+function updateCallStatus(text) {
+  document.getElementById('call-status').textContent = text;
+  const transportEl = document.getElementById('call-transport');
+  if (transportEl) {
+    if (state.callTransport === 'relay') {
+      transportEl.textContent = 'RELAY';
+      transportEl.className = 'relay';
+    } else if (state.callTransport === 'webrtc') {
+      transportEl.textContent = 'P2P';
+      transportEl.className = 'direct';
+    } else {
+      transportEl.className = 'hidden';
+    }
+  }
+}
 
 function startCallTimer() {
   state.callStartTime = Date.now();
@@ -3917,6 +4069,15 @@ function switchTab(tabName) {
     if (!state.activeChat) showView('empty');
   }
 }
+
+function toggleDirectCalls(enabled) {
+  state.directCallsOnly = enabled;
+  try { localStorage.setItem('directCallsOnly', enabled ? '1' : '0'); } catch {}
+  showToast(enabled ? 'Direct P2P Only' : 'Relay Enabled', enabled ? 'Calls require direct connection' : 'Calls will use encrypted relay when needed');
+}
+
+// Load direct calls preference
+try { state.directCallsOnly = localStorage.getItem('directCallsOnly') === '1'; } catch {}
 
 function setConnectionStatus(status) {
   const dot = document.getElementById('connection-status');
@@ -6224,7 +6385,7 @@ function toggleVoiceMute() {
 
 // Create a WebRTC peer connection for a voice channel peer
 function createVoicePeerConnection(peerId, peerName) {
-  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  const pc = new RTCPeerConnection({ iceServers: getIceServers() });
 
   pc.onicecandidate = (event) => {
     if (event.candidate) {

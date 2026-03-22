@@ -102,6 +102,7 @@ export class APIServer {
   private wsRateLimiter: Map<WebSocket, { count: number; windowStart: number }> = new Map();
   private licenseStatus: LicenseStatus = { tier: 'free', valid: false };
   private activeUploads: Map<string, { filePath: string; fileName: string; mimeType: string; totalChunks: number; receivedChunks: number; purpose: string; recipientId?: string }> = new Map();
+  private audioClients: Map<string, WebSocket> = new Map(); // peerId -> WS client receiving audio
   private static readonly DEFAULT_GIF_API_KEY = process.env.KLIPY_API_KEY || '';
 
   constructor(port: number, deps: APIServerDeps) {
@@ -194,7 +195,13 @@ export class APIServer {
     this.clients.add(ws);
     console.log(`[API] Browser connected (${this.clients.size} client(s))`);
 
-    ws.on('message', async (raw) => {
+    ws.on('message', async (raw, isBinary) => {
+      // Binary messages are relay audio chunks
+      if (isBinary && this.authenticatedClients.has(ws)) {
+        this.handleAudioFromBrowser(Buffer.isBuffer(raw) ? raw : Buffer.from(raw as ArrayBuffer), ws);
+        return;
+      }
+
       try {
         const msg = JSON.parse(raw.toString());
 
@@ -229,6 +236,13 @@ export class APIServer {
       this.clients.delete(ws);
       this.authenticatedClients.delete(ws);
       this.wsRateLimiter.delete(ws);
+      // Clean up any active audio streams for this client
+      for (const [peerId, client] of this.audioClients) {
+        if (client === ws) {
+          this.deps.node.closeAudioStream(peerId);
+          this.audioClients.delete(peerId);
+        }
+      }
       console.log(`[API] Browser disconnected (${this.clients.size} client(s))`);
     });
   }
@@ -1599,6 +1613,26 @@ export class APIServer {
           }
         }
 
+        // ─── Relay Audio (Voice-over-libp2p) ────────────────────
+
+        case 'start_relay_audio': {
+          const recipientId = this.resolveRecipient(data.peerId);
+          if (!recipientId) return this.err(id, `Unknown peer: ${data.peerId}`);
+          const opened = await this.deps.node.openAudioStream(recipientId);
+          if (!opened) return this.err(id, 'Could not open audio stream to peer');
+          this.audioClients.set(recipientId, ws);
+          return this.ok(id, { started: true, transport: 'relay' });
+        }
+
+        case 'stop_relay_audio': {
+          const stopId = this.resolveRecipient(data.peerId);
+          if (stopId) {
+            this.deps.node.closeAudioStream(stopId);
+            this.audioClients.delete(stopId);
+          }
+          return this.ok(id, { stopped: true });
+        }
+
         // ─── Licensing ──────────────────────────────────────────
 
         case 'get_license_status': {
@@ -1838,6 +1872,19 @@ export class APIServer {
       });
     }
 
+    // Relay audio — forward received audio chunks to browser as binary WS messages
+    this.deps.node.setAudioStreamHandler((peerId: string, chunk: Uint8Array) => {
+      const ws = this.audioClients.get(peerId);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const peerIdBytes = Buffer.from(peerId, 'utf-8');
+        const frame = Buffer.allocUnsafe(1 + peerIdBytes.length + chunk.length);
+        frame[0] = peerIdBytes.length;
+        peerIdBytes.copy(frame, 1);
+        Buffer.from(chunk).copy(frame, 1 + peerIdBytes.length);
+        ws.send(frame);
+      }
+    });
+
     // Call signaling — relay from libp2p to browser
     this.deps.node.on('call:incoming', (event) => {
       if (event.data) {
@@ -1930,6 +1977,16 @@ export class APIServer {
     }
 
     return '';
+  }
+
+  /** Handle binary audio data from browser — forward to libp2p stream */
+  private handleAudioFromBrowser(data: Buffer, ws: WebSocket): void {
+    if (data.length < 3) return;
+    const peerIdLen = data[0];
+    if (data.length < 1 + peerIdLen + 1) return;
+    const peerId = data.subarray(1, 1 + peerIdLen).toString('utf-8');
+    const audioChunk = new Uint8Array(data.subarray(1 + peerIdLen));
+    this.deps.node.pushAudioChunk(peerId, audioChunk);
   }
 
   /** Load and verify stored license key */

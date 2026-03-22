@@ -301,6 +301,7 @@
       <div id="call-panel-header">
         <span id="call-peer-name"></span>
         <span id="call-status">Connecting...</span>
+        <span id="call-transport" class="hidden"></span>
         <span id="call-timer"></span>
       </div>
       <div id="video-container" class="hidden">
@@ -518,6 +519,20 @@
             <input type="checkbox" id="setting-discoverable" checked>
             Allow others to find me via search
           </label>
+        </div>
+
+        <div class="settings-section">
+          <h4>Voice & Video Calls</h4>
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-direct-calls" onchange="toggleDirectCalls(this.checked)">
+            Direct P2P only (no relay)
+          </label>
+          <p class="micro-text" style="margin-top:6px; line-height:1.6; font-size:8px; color:var(--text-muted)">
+            BY DEFAULT, CALLS USE AN ENCRYPTED RELAY (TURN) WHEN DIRECT CONNECTION FAILS.
+            THE RELAY CANNOT DECRYPT YOUR CALL — ALL AUDIO/VIDEO IS END-TO-END ENCRYPTED (DTLS-SRTP).
+            ENABLE THIS OPTION TO ONLY ALLOW DIRECT PEER-TO-PEER CALLS. CALLS WILL FAIL IF BOTH
+            USERS ARE BEHIND STRICT NAT/FIREWALLS.
+          </p>
         </div>
 
         <div class="settings-section">
