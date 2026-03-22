@@ -136,6 +136,22 @@
         </div>
       </div>
 
+      <!-- Voice Channel Indicator (persistent across navigation) -->
+      <div id="voice-indicator" class="voice-indicator hidden">
+        <div class="voice-indicator-info">
+          <span class="voice-indicator-icon">&#128266;</span>
+          <div>
+            <div id="voice-indicator-channel" class="voice-indicator-channel"></div>
+            <div id="voice-indicator-hub" class="voice-indicator-hub"></div>
+          </div>
+        </div>
+        <div id="voice-indicator-users" class="voice-indicator-users"></div>
+        <div class="voice-indicator-actions">
+          <button id="voice-indicator-mute" class="voice-indicator-btn" onclick="toggleVoiceMute()" title="Mute">&#127908;</button>
+          <button class="voice-indicator-btn voice-leave-btn" onclick="leaveVoiceChannel()" title="Leave">&#9724;</button>
+        </div>
+      </div>
+
       <!-- Sidebar Footer — Cassette Label -->
       <div class="sidebar-footer">
         <div class="micro-text" style="text-align:center; padding:8px 12px; border-top: 1px solid rgba(13,115,119,0.1)">

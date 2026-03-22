@@ -303,16 +303,46 @@ export class APIServer {
           const myId = this.deps.node.getPeerId();
           const profiles = this.deps.node.getAllKnownPeers()
             .filter((p) => p.peerId !== myId);
-          const connectedIds = new Set(
-            this.deps.node.getConnectedPeers()
-              .filter((p) => p.decentraId)
-              .map((p) => p.decentraId)
-          );
-          return this.ok(id, profiles.map((p) => ({
-            peerId: p.peerId,
-            displayName: p.displayName,
-            online: connectedIds.has(p.peerId),
-          })));
+          // Check online status: build set of all reachable libp2p peer IDs
+          // from getConnections() (includes relay-routed peers) + getPeers()
+          const allConnectedLibp2p = new Set<string>();
+          try {
+            const libp2p = this.deps.node.getLibp2p();
+            for (const conn of libp2p.getConnections()) {
+              allConnectedLibp2p.add(conn.remotePeer.toString());
+            }
+            for (const peer of libp2p.getPeers()) {
+              allConnectedLibp2p.add(peer.toString());
+            }
+          } catch {}
+          const connectedIds = new Set<string>();
+          for (const p of profiles) {
+            const libp2pId = this.deps.node.resolveDecentraId(p.peerId);
+            if (libp2pId && allConnectedLibp2p.has(libp2pId)) {
+              connectedIds.add(p.peerId);
+            }
+          }
+          const friends = await this.deps.store.getFriends();
+          const friendSet = new Set(friends);
+          const contactsWithMeta = [];
+          for (const p of profiles) {
+            const convoId = [myId, p.peerId].sort().join(':');
+            const unread = await this.deps.store.getUnreadCount(convoId);
+            contactsWithMeta.push({
+              peerId: p.peerId,
+              displayName: p.displayName,
+              online: connectedIds.has(p.peerId),
+              isFriend: friendSet.has(p.peerId),
+              unreadCount: unread || 0,
+            });
+          }
+          // Sort: friends first, then online, then alphabetical
+          contactsWithMeta.sort((a, b) => {
+            if (a.isFriend !== b.isFriend) return a.isFriend ? -1 : 1;
+            if (a.online !== b.online) return a.online ? -1 : 1;
+            return (a.displayName || '').localeCompare(b.displayName || '');
+          });
+          return this.ok(id, contactsWithMeta);
         }
 
         case 'send_message': {
@@ -349,6 +379,12 @@ export class APIServer {
               lastMessage: c.lastMessage,
             };
           }));
+        }
+
+        case 'mark_read': {
+          if (!data.conversationId) return this.err(id, 'Missing conversationId');
+          await this.deps.store.markConversationRead(data.conversationId);
+          return this.ok(id, { marked: true });
         }
 
         case 'get_history': {

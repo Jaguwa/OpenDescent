@@ -71,6 +71,7 @@ const NS = {
   HUB_STATS_SNAP: 'hubsnap:',
   REPORT: 'report:',
   DMS: 'dms:',
+  LAST_READ: 'lastread:',
 } as const;
 
 export class LocalStore {
@@ -343,6 +344,28 @@ export class LocalStore {
       messages.push(JSON.parse(value));
     }
     return messages.reverse(); // oldest first
+  }
+
+  /** Mark a conversation as read up to now */
+  async markConversationRead(conversationId: string): Promise<void> {
+    await this.db.put(NS.LAST_READ + conversationId, String(Date.now()));
+  }
+
+  /** Get unread message count for a conversation */
+  async getUnreadCount(conversationId: string): Promise<number> {
+    let lastRead = 0;
+    try {
+      const val = await this.db.get(NS.LAST_READ + conversationId);
+      lastRead = parseInt(val, 10) || 0;
+    } catch {}
+
+    const prefix = NS.HISTORY + conversationId + ':';
+    let count = 0;
+    for await (const [, value] of this.db.iterator({ gte: prefix, lt: prefix + '\xFF' })) {
+      const msg = JSON.parse(value);
+      if (msg.timestamp > lastRead) count++;
+    }
+    return count;
   }
 
   /**

@@ -228,6 +228,7 @@ const state = {
   // Voice channels
   voiceChannel: null,      // { hubId, channelId, name } | null
   voicePeers: {},          // { [peerId]: { pc, remoteStream, name } }
+  voiceOccupancy: {},      // { ['hubId:channelId']: { [peerId]: { name, joinedAt } } }
   voiceMuted: false,
   voiceLocalStream: null,
 };
@@ -706,6 +707,8 @@ function handleEvent(event, data) {
       showToast(`${data.displayName || 'Peer'} is online`, data.peerId);
       refreshContacts();
       refreshConversations();
+      // Refresh again after a brief delay to catch late mapping updates
+      setTimeout(() => refreshContacts(), 1500);
       break;
     case 'peer_offline':
       showToast(`${data.displayName || 'Peer'} went offline`);
@@ -862,21 +865,46 @@ function renderContacts() {
     el.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128101;</div><div class="empty-state-text"><strong>No contacts yet</strong>Connect with peers to start!</div></div>';
     return;
   }
-  el.innerHTML = state.contacts.map((c) => `
-    <div class="list-item contact-item" onclick="startDM('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')">
+
+  const friends = state.contacts.filter(c => c.isFriend);
+  const others = state.contacts.filter(c => !c.isFriend);
+
+  let html = '';
+
+  if (friends.length > 0) {
+    html += `<div class="contact-section-label">FRIENDS</div>`;
+    html += friends.map(c => renderContactItem(c)).join('');
+  }
+
+  if (others.length > 0) {
+    html += `<div class="contact-section-label">NETWORK</div>`;
+    html += others.map(c => renderContactItem(c)).join('');
+  }
+
+  el.innerHTML = html;
+}
+
+function renderContactItem(c) {
+  const name = escapeHtml(c.displayName || c.peerId.slice(0, 12));
+  const safePeerId = escapeAttr(c.peerId);
+  const safeName = escapeAttr(c.displayName || c.peerId.slice(0, 12));
+  const unreadBadge = c.unreadCount > 0 ? `<span class="unread-badge">${c.unreadCount > 99 ? '99+' : c.unreadCount}</span>` : '';
+  const friendIcon = c.isFriend ? '<span class="friend-icon" title="Friend">&#9733;</span>' : '';
+  const statusDot = c.online ? '<span class="online-dot"></span>' : '<span class="offline-dot-sm"></span>';
+
+  return `
+    <div class="list-item contact-item ${c.unreadCount > 0 ? 'has-unread' : ''}" onclick="startDM('${safePeerId}', '${safeName}')">
       <div class="item-info">
         <div class="item-name">
-          ${c.online ? '<span class="online-dot"></span>' : ''}
-          ${escapeHtml(c.displayName || c.peerId.slice(0, 12))}
+          ${statusDot}${friendIcon}${name}${unreadBadge}
         </div>
         <div class="item-preview">${c.peerId.slice(0, 20)}...</div>
       </div>
       <div class="contact-actions">
-        <button class="btn-icon btn-remove" onclick="event.stopPropagation(); removeFriend('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')" title="Remove"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg></button>
-        <button class="btn-icon btn-block" onclick="event.stopPropagation(); blockPeer('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}')" title="Block"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><line x1="3.1" y1="3.1" x2="10.9" y2="10.9"/></svg></button>
+        <button class="btn-icon btn-remove" onclick="event.stopPropagation(); removeFriend('${safePeerId}', '${safeName}')" title="Remove"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg></button>
+        <button class="btn-icon btn-block" onclick="event.stopPropagation(); blockPeer('${safePeerId}', '${safeName}')" title="Block"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><line x1="3.1" y1="3.1" x2="10.9" y2="10.9"/></svg></button>
       </div>
-    </div>`
-  ).join('');
+    </div>`;
 }
 
 function renderGroups() {
@@ -1049,6 +1077,9 @@ async function openConversation(conversationId, displayName, isGroup) {
     const messages = await send('get_history', { conversationId, limit: 100 });
     state.messages = messages;
     renderMessages(messages);
+    // Mark as read
+    send('mark_read', { conversationId }).catch(() => {});
+    refreshContacts(); // Update unread badges
   } catch (e) { console.error('Failed to load history:', e); }
 }
 
@@ -4944,15 +4975,16 @@ function renderHubStrip() {
   list.innerHTML = state.hubs.map(h => {
     const active = state.activeHub && state.activeHub.hubId === h.hubId ? ' active' : '';
     const iconContent = renderHubIcon(h.icon, h.name, 'hub-icon-img');
-    return `<button class="hub-icon${active}" onclick="selectHub('${escapeAttr(h.hubId)}')" title="${escapeAttr(h.name)}">${iconContent}</button>`;
+    const inVoice = state.voiceChannel && state.voiceChannel.hubId === h.hubId ? ' in-voice' : '';
+    return `<button class="hub-icon${active}${inVoice}" data-hubid="${escapeAttr(h.hubId)}" onclick="selectHub('${escapeAttr(h.hubId)}')" title="${escapeAttr(h.name)}">${iconContent}</button>`;
   }).join('');
 }
 
 async function selectHub(hubId) {
   if (state._selectingHub) return; // Prevent concurrent calls
   state._selectingHub = true;
-  // Leave voice channel if switching hubs
-  if (state.voiceChannel && state.voiceChannel.hubId !== hubId) leaveVoiceChannel();
+  // Don't leave voice when switching hubs — voice persists
+  // Only leave if joining a different voice channel (handled in openChannel)
   try {
     const data = await send('get_hub', { hubId });
     state.activeHub = data.hub;
@@ -5000,9 +5032,7 @@ async function selectHub(hubId) {
 }
 
 function selectDMMode() {
-  // Leave voice channel if active
-  if (state.voiceChannel) leaveVoiceChannel();
-
+  // Don't leave voice — voice persists across navigation
   state.activeHub = null;
   state.activeChannel = null;
   state.hubCategories = [];
@@ -5041,23 +5071,44 @@ function renderHubChannels() {
       const prefix = ch.type === 'text' ? '#' : '&#128266;';
       html += `<div class="channel-item${active}" onclick="openChannel('${escapeAttr(state.activeHub.hubId)}','${escapeAttr(ch.channelId)}','${escapeAttr(ch.name)}')">${prefix} ${escapeAttr(ch.name)}</div>`;
 
-      // Show connected voice users below voice channels
-      if (ch.type === 'voice' && state.voiceChannel && state.voiceChannel.channelId === ch.channelId) {
-        html += '<div class="voice-users-inline">';
-        // Self
-        html += `<div class="voice-user-inline">
-          <canvas class="voice-user-avatar" width="20" height="20" data-peerid="${escapeAttr(state.myPeerId)}"></canvas>
-          <span>${escapeHtml(state.myName || 'You')}</span>
-          ${state.voiceMuted ? '<span class="voice-muted-icon">&#128263;</span>' : ''}
-        </div>`;
-        // Other peers
-        for (const [peerId, peer] of Object.entries(state.voicePeers)) {
-          html += `<div class="voice-user-inline">
-            <canvas class="voice-user-avatar" width="20" height="20" data-peerid="${escapeAttr(peerId)}"></canvas>
-            <span>${escapeHtml(peer.name || peerId.slice(0, 12))}</span>
-          </div>`;
+      // Show voice channel occupancy
+      if (ch.type === 'voice') {
+        const vcKey = `${state.activeHub.hubId}:${ch.channelId}`;
+        const inThisChannel = state.voiceChannel && state.voiceChannel.channelId === ch.channelId;
+        const occupants = (state.voiceOccupancy && state.voiceOccupancy[vcKey]) || {};
+        const hasOccupants = inThisChannel || Object.keys(occupants).length > 0;
+
+        if (hasOccupants) {
+          html += '<div class="voice-users-inline">';
+          // Self (if joined)
+          if (inThisChannel) {
+            html += `<div class="voice-user-inline">
+              <canvas class="voice-user-avatar" width="20" height="20" data-peerid="${escapeAttr(state.myPeerId)}"></canvas>
+              <span>${escapeHtml(state.myName || 'You')}</span>
+              ${state.voiceMuted ? '<span class="voice-muted-icon">&#128263;</span>' : ''}
+            </div>`;
+          }
+          // Other peers (from occupancy tracking or voicePeers)
+          const shownPeers = new Set();
+          for (const [peerId, peer] of Object.entries(state.voicePeers || {})) {
+            if (inThisChannel) {
+              shownPeers.add(peerId);
+              html += `<div class="voice-user-inline">
+                <canvas class="voice-user-avatar" width="20" height="20" data-peerid="${escapeAttr(peerId)}"></canvas>
+                <span>${escapeHtml(peer.name || peerId.slice(0, 12))}</span>
+              </div>`;
+            }
+          }
+          // Show occupants we haven't connected to yet
+          for (const [peerId, info] of Object.entries(occupants)) {
+            if (peerId === state.myPeerId || shownPeers.has(peerId)) continue;
+            html += `<div class="voice-user-inline">
+              <canvas class="voice-user-avatar" width="20" height="20" data-peerid="${escapeAttr(peerId)}"></canvas>
+              <span>${escapeHtml(info.name || peerId.slice(0, 12))}</span>
+            </div>`;
+          }
+          html += '</div>';
         }
-        html += '</div>';
       }
     }
     html += '</div></div>';
@@ -6299,9 +6350,11 @@ async function joinVoiceChannel(hubId, channelId, name) {
   state.voiceMuted = false;
   sfx.play('voiceJoin');
 
-  // Show voice status bar at bottom of sidebar + re-render channel list with users
+  // Show voice indicator + re-render channel list with users
   showVoiceStatusBar();
+  updateVoiceIndicator();
   renderHubChannels();
+  highlightVoiceHub();
 
   // Notify hub members we joined
   const members = state.hubMembers || [];
@@ -6341,8 +6394,11 @@ function leaveVoiceChannel() {
   state.voicePeers = {};
   state.voiceMuted = false;
 
-  // Hide voice status bar + re-render channels
+  // Hide voice status bar + indicator + re-render channels
   hideVoiceStatusBar();
+  document.getElementById('voice-indicator').classList.add('hidden');
+  highlightVoiceHub();
+  if (state.speakingDetector) { clearInterval(state.speakingDetector); state.speakingDetector = null; }
   renderHubChannels();
 }
 
@@ -6413,6 +6469,9 @@ function createVoicePeerConnection(peerId, peerName) {
         document.body.appendChild(audio);
       }
       audio.srcObject = event.streams[0];
+      // Start speaking detection and update indicator
+      startSpeakingDetection();
+      updateVoiceIndicator();
     }
   };
 
@@ -6432,6 +6491,76 @@ function createVoicePeerConnection(peerId, peerName) {
   return pc;
 }
 
+function updateVoiceIndicator() {
+  const el = document.getElementById('voice-indicator');
+  if (!state.voiceChannel) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  document.getElementById('voice-indicator-channel').textContent = state.voiceChannel.name;
+
+  // Find hub name
+  const hubName = state.activeHub?.name || state.voiceChannel.hubId.slice(0, 8);
+  document.getElementById('voice-indicator-hub').textContent = hubName;
+
+  // Render user pills
+  const usersEl = document.getElementById('voice-indicator-users');
+  let usersHtml = `<div class="voice-user-pill ${state.voiceMuted ? '' : 'speaking'}" id="voice-pill-self">
+    ${state.voiceMuted ? '' : '<span class="speaking-dot"></span>'}${escapeHtml(state.myName || 'You')}
+  </div>`;
+  for (const [peerId, peer] of Object.entries(state.voicePeers)) {
+    const isSpeaking = state.speakingPeers && state.speakingPeers[peerId];
+    usersHtml += `<div class="voice-user-pill ${isSpeaking ? 'speaking' : ''}" id="voice-pill-${escapeAttr(peerId)}">
+      ${isSpeaking ? '<span class="speaking-dot"></span>' : ''}${escapeHtml(peer.name || peerId.slice(0, 12))}
+    </div>`;
+  }
+  usersEl.innerHTML = usersHtml;
+
+  // Update mute button
+  const muteBtn = document.getElementById('voice-indicator-mute');
+  if (muteBtn) {
+    muteBtn.classList.toggle('muted', state.voiceMuted);
+    muteBtn.innerHTML = state.voiceMuted ? '&#128263;' : '&#127908;';
+  }
+}
+
+function highlightVoiceHub() {
+  document.querySelectorAll('.hub-icon.in-voice').forEach(el => el.classList.remove('in-voice'));
+  if (state.voiceChannel) {
+    const icon = document.querySelector(`.hub-icon[data-hubid="${state.voiceChannel.hubId}"]`);
+    if (icon) icon.classList.add('in-voice');
+  }
+}
+
+// Speaking detection — monitor remote audio levels
+function startSpeakingDetection() {
+  if (state.speakingDetector) clearInterval(state.speakingDetector);
+  if (!state.speakingPeers) state.speakingPeers = {};
+
+  state.speakingDetector = setInterval(() => {
+    let changed = false;
+    for (const [peerId, peer] of Object.entries(state.voicePeers)) {
+      if (!peer.analyser && peer.remoteStream) {
+        try {
+          const ctx = new AudioContext();
+          const source = ctx.createMediaStreamSource(peer.remoteStream);
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+          peer.analyser = analyser;
+          peer.analyserData = new Uint8Array(analyser.frequencyBinCount);
+        } catch {}
+      }
+      if (peer.analyser) {
+        peer.analyser.getByteFrequencyData(peer.analyserData);
+        const avg = peer.analyserData.reduce((sum, v) => sum + v, 0) / peer.analyserData.length;
+        const wasSpeaking = !!state.speakingPeers[peerId];
+        state.speakingPeers[peerId] = avg > 15;
+        if (wasSpeaking !== state.speakingPeers[peerId]) changed = true;
+      }
+    }
+    if (changed) updateVoiceIndicator();
+  }, 200);
+}
+
 function removeVoicePeer(peerId) {
   const peer = state.voicePeers[peerId];
   if (peer) {
@@ -6440,7 +6569,9 @@ function removeVoicePeer(peerId) {
     const audio = document.getElementById(`voice-audio-${peerId}`);
     if (audio) audio.remove();
     delete state.voicePeers[peerId];
+    if (state.speakingPeers) delete state.speakingPeers[peerId];
     renderHubChannels();
+    updateVoiceIndicator();
   }
 }
 
@@ -6451,7 +6582,14 @@ function handleVoiceSignal(data) {
   const fromName = data.fromName || fromId?.slice(0, 12);
 
   if (signal.type === 'voice_join') {
-    // Someone joined — if we're in the same channel, create offer
+    // Track who's in which voice channel (even if we haven't joined)
+    if (!state.voiceOccupancy) state.voiceOccupancy = {};
+    const vcKey = `${signal.hubId}:${signal.channelId}`;
+    if (!state.voiceOccupancy[vcKey]) state.voiceOccupancy[vcKey] = {};
+    state.voiceOccupancy[vcKey][fromId] = { name: signal.fromName || fromName, joinedAt: Date.now() };
+    renderHubChannels();
+
+    // If we're not in this channel, don't create WebRTC offer
     if (!state.voiceChannel) return;
     if (signal.hubId !== state.voiceChannel.hubId || signal.channelId !== state.voiceChannel.channelId) return;
     if (state.voicePeers[fromId]) return; // Already connected
@@ -6512,7 +6650,17 @@ function handleVoiceSignal(data) {
     }
 
   } else if (signal.type === 'voice_leave') {
+    // Remove from occupancy tracking
+    if (state.voiceOccupancy) {
+      for (const key of Object.keys(state.voiceOccupancy)) {
+        if (state.voiceOccupancy[key][fromId]) {
+          delete state.voiceOccupancy[key][fromId];
+          if (Object.keys(state.voiceOccupancy[key]).length === 0) delete state.voiceOccupancy[key];
+        }
+      }
+    }
     removeVoicePeer(fromId);
+    renderHubChannels();
   }
 }
 

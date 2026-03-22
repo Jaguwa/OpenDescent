@@ -147,8 +147,8 @@ export class DecentraNode {
   private peerLastLibp2pId: Map<string, string> = new Map();  // decentraId -> last known libp2pId
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
   private reconnectAttempts: Map<string, number> = new Map();
-  private static MAX_RECONNECT_ATTEMPTS = 3;
-  private static RECONNECT_DELAYS = [3000, 10000, 30000];
+  private static MAX_RECONNECT_ATTEMPTS = 5;
+  private static RECONNECT_DELAYS = [3000, 8000, 20000, 45000, 90000];
 
   // DHT directory publishing
   private directoryPublishTimer?: ReturnType<typeof setInterval>;
@@ -527,10 +527,15 @@ export class DecentraNode {
         if (relayAddr.includes('/ws/')) continue; // skip WS duplicates
         const circuitAddr = `${relayAddr}/p2p-circuit/p2p/${libp2pId}`;
         try {
+          console.log(`[Reconnect] Trying relay circuit: ${circuitAddr.slice(0, 60)}...`);
           await this.node.dial(multiaddr(circuitAddr), { signal: AbortSignal.timeout(10000) });
           return true;
-        } catch {}
+        } catch (err: any) {
+          console.log(`[Reconnect] Relay dial failed: ${err?.message?.slice(0, 80) || 'unknown'}`);
+        }
       }
+    } else {
+      console.log(`[Reconnect] No last-known libp2p ID for ${decentraId.slice(0, 12)} — cannot construct relay address`);
     }
 
     return false;
@@ -705,6 +710,11 @@ export class DecentraNode {
       this.activeAudioStreams.delete(decentraId);
       console.log(`[Audio] Closed stream to ${decentraId.slice(0, 12)}`);
     }
+  }
+
+  /** Public wrapper for reconnectPeer — used by startup reconnection */
+  async reconnectPeerPublic(decentraId: string): Promise<boolean> {
+    return this.reconnectPeer(decentraId);
   }
 
   /** Broadcast data to all connected peers on a given protocol */
@@ -1180,7 +1190,14 @@ export class DecentraNode {
       }
 
       // Auto-exchange profiles after a short delay (let the connection stabilize)
-      setTimeout(() => this.initiateProfileExchange(libp2pId), 500);
+      // Retry once at 3s if the first attempt fails
+      setTimeout(async () => {
+        await this.initiateProfileExchange(libp2pId);
+        // If no mapping established, retry once
+        if (!this.libp2pToDecentra.has(libp2pId)) {
+          setTimeout(() => this.initiateProfileExchange(libp2pId), 2500);
+        }
+      }, 500);
     });
 
     this.node.addEventListener('peer:disconnect', (event) => {

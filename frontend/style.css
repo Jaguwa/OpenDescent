@@ -3551,6 +3551,195 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
   50% { box-shadow: 0 0 0 3px rgba(63, 185, 80, 0); }
 }
 
+/* ─── Voice Channel Indicator (Persistent) ───────────────────────────── */
+
+.voice-indicator {
+  background: linear-gradient(180deg, rgba(50, 224, 196, 0.06), rgba(50, 224, 196, 0.02));
+  padding: 10px 14px;
+  position: relative;
+}
+.voice-indicator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50, 224, 196, 0.2), transparent);
+}
+
+.voice-indicator-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.voice-indicator-icon {
+  font-size: 1.1em;
+  color: var(--accent);
+  animation: onlinePulse 2s ease-in-out infinite;
+}
+
+.voice-indicator-channel {
+  font-family: 'Array', sans-serif;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.voice-indicator-hub {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.voice-indicator-users {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.voice-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(13, 115, 119, 0.1);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-secondary);
+}
+
+.voice-user-pill.speaking {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 4px rgba(50, 224, 196, 0.2);
+}
+
+.voice-user-pill .speaking-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: speakPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes speakPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.4); opacity: 1; }
+}
+
+.voice-indicator-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.voice-indicator-btn {
+  flex: 1;
+  padding: 4px;
+  background: transparent;
+  border: 1px solid rgba(13, 115, 119, 0.15);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+
+.voice-indicator-btn:hover {
+  background: rgba(50, 224, 196, 0.06);
+  border-color: rgba(50, 224, 196, 0.3);
+  color: var(--accent);
+}
+
+.voice-leave-btn:hover {
+  background: rgba(224, 64, 80, 0.08);
+  border-color: rgba(224, 64, 80, 0.3);
+  color: var(--red);
+}
+
+.voice-indicator-btn.muted {
+  color: var(--red);
+  border-color: rgba(224, 64, 80, 0.2);
+}
+
+/* Hub icon glow when in voice */
+.hub-icon.in-voice {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 8px rgba(50, 224, 196, 0.2);
+  animation: onlinePulse 2s ease-in-out infinite;
+}
+
+/* ─── Contact List Enhancements ───────────────────────────────────────── */
+
+.contact-section-label {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 12px 16px 6px;
+  position: relative;
+}
+.contact-section-label::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50, 224, 196, 0.06), transparent);
+}
+
+.friend-icon {
+  color: var(--accent);
+  font-size: 0.7em;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+
+.offline-dot-sm {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-ghost);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.unread-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #0d1117;
+  font-family: 'Array', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+  min-width: 16px;
+  text-align: center;
+}
+
+.list-item.has-unread {
+  background: rgba(50, 224, 196, 0.03);
+}
+
+.list-item.has-unread .item-name {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
 /* Theme preview swatch improvements */
 .theme-preset-btn {
   position: relative;

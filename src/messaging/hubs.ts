@@ -528,9 +528,10 @@ export class HubManager {
         case 'hub_invite':
           await this.handleHubInvite(msg);
           return 'OK';
-        case 'hub_join_accept':
-          await this.handleJoinAccept(msg);
-          return 'OK';
+        case 'hub_join_accept': {
+          const stateResponse = await this.handleJoinAccept(msg);
+          return stateResponse || 'OK';
+        }
         case 'hub_key_update':
           await this.handleKeyUpdate(msg);
           return 'OK';
@@ -936,20 +937,18 @@ export class HubManager {
     console.log(`[Hubs] Invited to "${hub.name}" by ${senderName}`);
   }
 
-  private async handleJoinAccept(msg: HubSyncMessage): Promise<void> {
+  private async handleJoinAccept(msg: HubSyncMessage): Promise<string | void> {
     const payload = msg.payload as any;
     if (payload.action === 'state_request') {
-      // They're requesting our hub state — send it
+      // They're requesting our hub state — send it back as the response
       const state = await this.getHubState(msg.hubId);
       if (state) {
-        // Don't send the hubKey in state (they already have it)
         const safeState = {
           categories: state.categories,
           channels: state.channels,
           members: state.members,
         };
-        // The response will be sent back automatically via the stream
-        return;
+        return JSON.stringify(safeState);
       }
     }
   }

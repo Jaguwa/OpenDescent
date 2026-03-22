@@ -792,6 +792,20 @@ Options:
     node.startDirectoryPublishing();
   }
 
+  // Proactively reconnect to known peers after startup (5s delay for relay to stabilize)
+  setTimeout(async () => {
+    const myId = node.getPeerId();
+    const knownPeers = node.getAllKnownPeers().filter(p => p.peerId !== myId);
+    if (knownPeers.length > 0) {
+      console.log(`[Startup] Reconnecting to ${knownPeers.length} known peer(s)...`);
+      for (const peer of knownPeers) {
+        // Skip if already connected
+        if (node.resolveDecentraId(peer.peerId)) continue;
+        node.reconnectPeerPublic(peer.peerId).catch(() => {});
+      }
+    }
+  }, 5000);
+
   const messaging = new MessagingService(node, store);
   const calls = new CallManager(node);
   const groups = new GroupManager(node, store);
