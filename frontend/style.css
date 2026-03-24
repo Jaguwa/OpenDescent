@@ -5390,6 +5390,39 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
   font-size: 12px;
 }
 
+/* ─── Feed Filter Tabs ───────────────────────────────────────────────── */
+
+.feed-filter-tabs {
+  display: flex;
+  gap: 2px;
+  margin-left: 16px;
+}
+
+.feed-filter-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: 'Array', sans-serif;
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feed-filter-btn:hover {
+  color: var(--text-primary);
+  border-color: rgba(50, 224, 196, 0.2);
+}
+
+.feed-filter-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(50, 224, 196, 0.06);
+}
+
 /* ─── Typing Indicator ───────────────────────────────────────────────── */
 
 .typing-indicator {

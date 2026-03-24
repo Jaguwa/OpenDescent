@@ -2635,12 +2635,14 @@ const loadFeed = debounce(async () => {
     feedEl.innerHTML = '<div class="loading-state"><div class="spinner"></div>Loading feed...</div>';
   }
   try {
-    const [posts, polls] = await Promise.all([
+    const [posts, polls, friends] = await Promise.all([
       send('get_timeline', { limit: 50 }),
       send('get_polls', { scope: 'public', limit: 50 }).catch(() => []),
+      send('get_friends').catch(() => []),
     ]);
     state.feedPosts = posts;
     state.polls = polls;
+    feedFriendIds = new Set(friends.map(f => f.peerId));
     // Cache vote/results state
     for (const p of polls) {
       if (p.hasVoted) state.pollReceipts[p.pollId] = p.votedOptionIndex;
@@ -2661,13 +2663,20 @@ function renderFeed() {
   for (const poll of state.polls) {
     items.push({ type: 'poll', data: poll, timestamp: poll.createdAt });
   }
-  items.sort((a, b) => b.timestamp - a.timestamp);
 
-  if (items.length === 0) {
-    el.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128172;</div><div class="empty-state-text"><strong>No posts yet</strong>Be the first to share something!</div></div>';
+  // Apply feed algorithm (filter + sort + diversity)
+  const processed = applyFeedAlgorithm(items);
+
+  if (processed.length === 0) {
+    const emptyMsg = feedFilter === 'friends'
+      ? '<strong>No friend posts yet</strong>Add friends to see their posts here!'
+      : feedFilter === 'trending'
+      ? '<strong>No trending posts</strong>Posts with likes and comments will appear here!'
+      : '<strong>No posts yet</strong>Be the first to share something!';
+    el.innerHTML = `<div class="empty-state-rich"><div class="empty-state-icon">&#128172;</div><div class="empty-state-text">${emptyMsg}</div></div>`;
     return;
   }
-  el.innerHTML = items.map(item => item.type === 'post' ? renderPostCard(item.data) : renderPollCard(item.data)).join('');
+  el.innerHTML = processed.map(item => item.type === 'post' ? renderPostCard(item.data) : renderPollCard(item.data)).join('');
   // Render avatars + voicenote waveforms (cancel any pending rAF to avoid stacking)
   cancelAnimationFrame(_feedRafId);
   _feedRafId = requestAnimationFrame(() => {
@@ -2780,6 +2789,89 @@ function renderPostCard(post) {
       ${!isMe ? `<button class="post-action-btn" onclick="showReportModal('${safePostId}','post')" title="Report">&#9873;</button>` : ''}
     </div>
   </div>`;
+}
+
+// ─── Feed Filter & Algorithm ──────────────────────────────────────────────
+
+let feedFilter = 'all'; // 'all' | 'friends' | 'trending'
+let feedFriendIds = new Set();
+
+function setFeedFilter(filter) {
+  feedFilter = filter;
+  document.querySelectorAll('.feed-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderFeed();
+}
+
+function applyFeedAlgorithm(items) {
+  let filtered = [...items];
+
+  // Filter by tab
+  if (feedFilter === 'friends') {
+    filtered = filtered.filter(item => {
+      const authorId = item.type === 'post' ? item.data.authorId : item.data.creatorId;
+      return feedFriendIds.has(authorId) || authorId === state.myPeerId;
+    });
+  }
+
+  // Engagement score for ranking
+  for (const item of filtered) {
+    if (item.type === 'post') {
+      const post = item.data;
+      const age = (Date.now() - post.timestamp) / (1000 * 60 * 60); // hours
+      const engagement = (post.likeCount || 0) * 3 + (post.commentCount || 0) * 5;
+      const isFriend = feedFriendIds.has(post.authorId);
+      const isSelf = post.authorId === state.myPeerId;
+
+      // Score: engagement weighted, friend boost, recency decay
+      item.score = engagement + (isFriend ? 10 : 0) + (isSelf ? 5 : 0) - (age * 0.5);
+    } else {
+      item.score = 0;
+    }
+  }
+
+  if (feedFilter === 'trending') {
+    // Sort by engagement score (highest first)
+    filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
+  } else {
+    // Default: chronological but with diversity mixing
+    // Don't show more than 3 consecutive posts from the same author
+    filtered = diversityMix(filtered);
+  }
+
+  return filtered;
+}
+
+function diversityMix(items) {
+  if (items.length <= 3) return items;
+
+  // First sort chronologically
+  items.sort((a, b) => b.timestamp - a.timestamp);
+
+  const result = [];
+  const deferred = [];
+  let lastAuthor = null;
+  let consecutiveCount = 0;
+
+  for (const item of items) {
+    const authorId = item.type === 'post' ? item.data.authorId : item.data.creatorId;
+    if (authorId === lastAuthor) {
+      consecutiveCount++;
+      if (consecutiveCount >= 3) {
+        deferred.push(item);
+        continue;
+      }
+    } else {
+      consecutiveCount = 1;
+      lastAuthor = authorId;
+    }
+    result.push(item);
+  }
+
+  // Append deferred items at the end
+  result.push(...deferred);
+  return result;
 }
 
 let postVisibility = 'public';
