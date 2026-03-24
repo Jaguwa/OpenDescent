@@ -101,6 +101,7 @@ export const PROTOCOLS = {
   DELETE_NOTIFY: `${PROTOCOL_PREFIX}/delete-notify/1.0.0`,
   ONION_RELAY: `${PROTOCOL_PREFIX}/onion-relay/1.0.0`,
   AUDIO_STREAM: `${PROTOCOL_PREFIX}/audio-stream/1.0.0`,
+  FEED_SYNC: `${PROTOCOL_PREFIX}/feed-sync/1.0.0`,
 } as const;
 
 type EventHandler = (event: NetworkEvent) => void;
@@ -136,6 +137,7 @@ export class DecentraNode {
   private onionRelayHandler?: (data: string) => Promise<void>;
   private deleteNotifyHandler?: (data: string) => Promise<void>;
   private audioStreamHandler?: (peerId: string, chunk: Uint8Array) => void;
+  private feedSyncHandler?: (data: string) => Promise<string>;
   private activeAudioStreams: Map<string, { pushable: any; stream: any }> = new Map();
   private passphrase: string;
 
@@ -636,6 +638,11 @@ export class DecentraNode {
   /** Register handler for delete notifications */
   setDeleteNotifyHandler(handler: (data: string) => Promise<void>): void {
     this.deleteNotifyHandler = handler;
+  }
+
+  /** Register handler for feed sync requests */
+  setFeedSyncHandler(handler: (data: string) => Promise<string>): void {
+    this.feedSyncHandler = handler;
   }
 
   /** Register handler for incoming audio stream chunks */
@@ -1190,14 +1197,13 @@ export class DecentraNode {
       }
 
       // Auto-exchange profiles after a short delay (let the connection stabilize)
-      // Retry once at 3s if the first attempt fails
+      // Retry once at 2s if the first attempt fails
       setTimeout(async () => {
         await this.initiateProfileExchange(libp2pId);
-        // If no mapping established, retry once
         if (!this.libp2pToDecentra.has(libp2pId)) {
-          setTimeout(() => this.initiateProfileExchange(libp2pId), 2500);
+          setTimeout(() => this.initiateProfileExchange(libp2pId), 1500);
         }
-      }, 500);
+      }, 300);
     });
 
     this.node.addEventListener('peer:disconnect', (event) => {
@@ -1639,6 +1645,23 @@ export class DecentraNode {
         console.error(`[Protocol] Error handling delete notification:`, error);
       }
     }, limitedOk);
+
+    // Feed sync — exchange broadcast posts between peers
+    await this.node.handle(PROTOCOLS.FEED_SYNC, async ({ stream, connection }) => {
+      if (this.isRateLimited(connection.remotePeer.toString())) { try { await stream.close(); } catch {} return; }
+      try {
+        const data = await readFromSource(stream.source);
+        const text = new TextDecoder().decode(data);
+        if (this.feedSyncHandler) {
+          const response = await this.feedSyncHandler(text);
+          await writeToSink(stream, new TextEncoder().encode(response));
+        } else {
+          await writeToSink(stream, new TextEncoder().encode('UNSUPPORTED'));
+        }
+      } catch (error) {
+        console.error(`[Protocol] Error handling feed sync:`, error);
+      }
+    }, { ...limitedOk, maxInboundStreams: 4 });
 
     // Audio streaming — persistent bidirectional stream for voice-over-libp2p
     await this.node.handle(PROTOCOLS.AUDIO_STREAM, async ({ stream, connection }) => {

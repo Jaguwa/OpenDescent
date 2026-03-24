@@ -1661,6 +1661,13 @@ export class APIServer {
           }
         }
 
+        case 'get_feed_status': {
+          const feedLatest = await this.deps.store.getLatestPostTimestamp();
+          const feedCount = await this.deps.store.getPostCount();
+          const feedPeers = this.deps.node.getConnectedPeers().filter(p => p.decentraId).length;
+          return this.ok(id, { latestTimestamp: feedLatest, totalPosts: feedCount, connectedPeers: feedPeers });
+        }
+
         // ─── Relay Audio (Voice-over-libp2p) ────────────────────
 
         case 'start_relay_audio': {

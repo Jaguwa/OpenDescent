@@ -46,6 +46,63 @@ export class PostService {
     clearInterval(this.pruneTimer);
   }
 
+  // ─── Feed Sync Methods ──────────────────────────────────────────────────
+
+  /** Get all posts since a timestamp (for responding to sync requests) */
+  async getPostsSince(since: number, limit: number = 200): Promise<Post[]> {
+    return this.store.getPostsSince(since, limit);
+  }
+
+  /** Get the timestamp of the most recent post */
+  async getLatestTimestamp(): Promise<number> {
+    return this.store.getLatestPostTimestamp();
+  }
+
+  /** Get a digest of posts since a timestamp (lightweight sync negotiation) */
+  async getPostDigest(since: number): Promise<{ latestTimestamp: number; count: number; postIds: string[] }> {
+    const postIds = await this.store.getPostIds(since);
+    const latestTimestamp = await this.store.getLatestPostTimestamp();
+    return { latestTimestamp, count: postIds.length, postIds };
+  }
+
+  /** Import posts received from a sync peer. Returns count of new posts imported. */
+  async importPosts(posts: Post[]): Promise<number> {
+    let imported = 0;
+    for (const post of posts) {
+      // Skip if already seen
+      if (this.seenPostIds.has(post.postId)) continue;
+      const existing = await this.store.getPost(post.postId);
+      if (existing) { this.seenPostIds.set(post.postId, post.timestamp); continue; }
+
+      // Only sync public posts
+      if (post.visibility === 'friends') continue;
+
+      // Verify signature
+      const authorProfile = this.node.getKnownPeer(post.authorId);
+      if (authorProfile && post.signature) {
+        try {
+          const sigData = getPostSignableData(post);
+          const sigBytes = new Uint8Array(Buffer.from(post.signature, 'base64'));
+          if (!verify(sigData, sigBytes, authorProfile.publicKey)) {
+            console.warn(`[FeedSync] Rejected post ${post.postId} — invalid signature`);
+            continue;
+          }
+        } catch {
+          // If we can't verify (unknown author), still accept — they'll be verified when we meet the author
+        }
+      }
+
+      // Store and notify
+      await this.store.storePost(post);
+      this.seenPostIds.set(post.postId, post.timestamp);
+      imported++;
+
+      // Notify UI
+      for (const cb of this.onPostCallbacks) cb(post);
+    }
+    return imported;
+  }
+
   onPost(callback: (post: Post) => void): void {
     this.onPostCallbacks.push(callback);
   }

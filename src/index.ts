@@ -792,7 +792,7 @@ Options:
     node.startDirectoryPublishing();
   }
 
-  // Proactively reconnect to known peers after startup (5s delay for relay to stabilize)
+  // Proactively reconnect to known peers after startup (2s delay for relay to stabilize)
   setTimeout(async () => {
     const myId = node.getPeerId();
     const knownPeers = node.getAllKnownPeers().filter(p => p.peerId !== myId);
@@ -804,7 +804,7 @@ Options:
         node.reconnectPeerPublic(peer.peerId).catch(() => {});
       }
     }
-  }, 5000);
+  }, 2000);
 
   const messaging = new MessagingService(node, store);
   const calls = new CallManager(node);
@@ -832,6 +832,97 @@ Options:
   node.setPollVoteHandler(async (data) => {
     await polls.handleIncomingVote(data);
   });
+
+  // Wire feed sync handler
+  const FEED_WINDOW_DAYS = 35;
+  node.setFeedSyncHandler(async (data) => {
+    try {
+      const msg = JSON.parse(data);
+      if (msg.type === 'digest_request') {
+        const digest = await posts.getPostDigest(msg.since || 0);
+        return JSON.stringify({ type: 'digest', ...digest });
+      }
+      if (msg.type === 'sync_request') {
+        const allPosts = await posts.getPostsSince(msg.since || 0, 200);
+        const excludeSet = new Set(msg.exclude || []);
+        const filtered = allPosts.filter((p: any) => !excludeSet.has(p.postId));
+        return JSON.stringify({ type: 'sync_response', posts: filtered });
+      }
+      return 'OK';
+    } catch {
+      return 'ERROR';
+    }
+  });
+
+  // Feed sync function — sync broadcast posts with a peer
+  async function syncFeedWithPeer(peerId: string): Promise<void> {
+    const peerName = node.getKnownPeer(peerId)?.displayName || peerId.slice(0, 12);
+    console.log(`[FeedSync] Starting sync with ${peerName}...`);
+    try {
+      const since = Date.now() - (FEED_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+      const { PROTOCOLS: P } = await import('./network/node.js');
+
+      // Step 1: Request digest
+      const digestReq = new TextEncoder().encode(JSON.stringify({ type: 'digest_request', since }));
+      const digestResp = await node.sendToPeer(peerId, P.FEED_SYNC, digestReq);
+      if (!digestResp) { console.log(`[FeedSync] No response from ${peerName}`); return; }
+
+      const digest = JSON.parse(new TextDecoder().decode(digestResp));
+      console.log(`[FeedSync] ${peerName} has ${digest.count} posts`);
+      if (digest.type !== 'digest' || digest.count === 0) return;
+
+      // Step 2: Compare with our posts
+      const ourPostIds = await store.getPostIds(since);
+      const ourSet = new Set(ourPostIds);
+      const missingIds = digest.postIds.filter((id: string) => !ourSet.has(id));
+      if (missingIds.length === 0) return;
+
+      // Step 3: Request missing posts
+      const syncReq = new TextEncoder().encode(JSON.stringify({
+        type: 'sync_request',
+        since,
+        exclude: ourPostIds,
+      }));
+      const syncResp = await node.sendToPeer(peerId, P.FEED_SYNC, syncReq);
+      if (!syncResp) return;
+
+      const syncData = JSON.parse(new TextDecoder().decode(syncResp));
+      if (syncData.type !== 'sync_response' || !syncData.posts) return;
+
+      const imported = await posts.importPosts(syncData.posts);
+      if (imported > 0) {
+        const peerName = node.getKnownPeer(peerId)?.displayName || peerId.slice(0, 12);
+        console.log(`[FeedSync] Synced ${imported} new post(s) from ${peerName}`);
+      }
+    } catch (err: any) {
+      console.log(`[FeedSync] Sync with ${peerName} failed: ${err?.message?.slice(0, 60) || 'unknown'}`);
+    }
+  }
+
+  // Trigger feed sync when a peer connects (with delay to let connection stabilize)
+  node.on('peer:connected', async (event) => {
+    if (event.peerId) {
+      // Longer delay to avoid competing with profile exchange and other streams
+      setTimeout(() => syncFeedWithPeer(event.peerId!), 6000);
+    }
+  });
+
+  // Startup feed sync: sync with all connected peers after startup (staggered)
+  setTimeout(async () => {
+    const connectedPeers = node.getConnectedPeers().filter(p => p.decentraId);
+    for (let i = 0; i < connectedPeers.length; i++) {
+      const peer = connectedPeers[i];
+      if (peer.decentraId) {
+        setTimeout(() => syncFeedWithPeer(peer.decentraId!), i * 2000);
+      }
+    }
+  }, 8000);
+
+  // Periodic post cleanup — remove posts older than FEED_WINDOW_DAYS
+  const postCleanupTimer = setInterval(async () => {
+    const cleaned = await store.cleanOldPosts(FEED_WINDOW_DAYS);
+    if (cleaned > 0) console.log(`[FeedSync] Cleaned ${cleaned} expired post(s)`);
+  }, 6 * 60 * 60 * 1000); // every 6 hours
 
   // Wire dead drop handlers
   node.setDeadDropBroadcastHandler(async (data) => {
@@ -1189,6 +1280,7 @@ Options:
       clearInterval(pollCleanupTimer);
       clearInterval(messageCleanupTimer);
       clearInterval(bundleDistTimer);
+      clearInterval(postCleanupTimer);
       clearInterval(dmsTimer);
       posts.stop();
       polls.stop();

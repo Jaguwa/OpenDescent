@@ -1060,6 +1060,7 @@ function mobileBackToSidebar() {
 // ─── Chat Navigation ────────────────────────────────────────────────────────
 
 async function openConversation(conversationId, displayName, isGroup) {
+  clearTypingIndicators();
   const type = isGroup ? 'group' : 'dm';
   let peerId = null, groupId = null;
   if (isGroup) { groupId = conversationId.replace('group:', ''); }
@@ -1200,6 +1201,75 @@ async function sendMessage() {
     sfx.play('msgSend');
     refreshConversations();
   } catch (e) { showToast('Failed to send message', e.message); }
+}
+
+// ─── Typing Indicator ────────────────────────────────────────────────────────
+
+let typingTimeout = null;
+let typingSent = false;
+const typingPeers = {}; // peerId -> { name, timeout }
+
+function sendTypingIndicator() {
+  if (!state.activeChat || state.activeChat.type !== 'dm') return;
+  if (typingSent) return; // Don't spam
+  typingSent = true;
+  send('call_signal', {
+    peerId: state.activeChat.peerId,
+    signal: { type: 'typing', from: state.myPeerId, fromName: state.myName },
+  }).catch(() => {});
+  // Allow next typing signal after 2s
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => { typingSent = false; }, 2000);
+}
+
+function onTypingReceived(fromId, fromName) {
+  // Don't show if not in this conversation
+  const convoId = state.activeChat && state.activeChat.type === 'dm' ? state.activeChat.id : null;
+  const expectedConvo = convoId ? [state.myPeerId, fromId].sort().join(':') : null;
+  if (!convoId || convoId !== expectedConvo) return;
+
+  // Set/reset the typing indicator
+  if (typingPeers[fromId]) clearTimeout(typingPeers[fromId].timeout);
+  typingPeers[fromId] = {
+    name: fromName || fromId.slice(0, 12),
+    timeout: setTimeout(() => {
+      delete typingPeers[fromId];
+      renderTypingIndicator();
+    }, 3000),
+  };
+  renderTypingIndicator();
+}
+
+function renderTypingIndicator() {
+  let el = document.getElementById('typing-indicator');
+  const names = Object.values(typingPeers).map(p => p.name);
+
+  if (names.length === 0) {
+    if (el) el.classList.add('hidden');
+    return;
+  }
+
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'typing-indicator';
+    el.className = 'typing-indicator';
+    const container = document.getElementById('messages-container');
+    if (container) container.appendChild(el);
+  }
+
+  const who = names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1];
+  el.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div><span class="typing-text">${escapeHtml(who)} is typing</span>`;
+  el.classList.remove('hidden');
+  scrollToBottom();
+}
+
+// Clear typing indicators when sending a message or switching chats
+function clearTypingIndicators() {
+  for (const id of Object.keys(typingPeers)) {
+    clearTimeout(typingPeers[id].timeout);
+    delete typingPeers[id];
+  }
+  renderTypingIndicator();
 }
 
 // ─── Encryption Visualization Engine ─────────────────────────────────────────
@@ -3886,6 +3956,9 @@ async function onCallSignal(data) {
   } else if (signal.type === 'ice-candidate') {
     if (state.peerConnection && state.peerConnection.remoteDescription) await state.peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
     else state.iceCandidateQueue.push(signal.candidate);
+  } else if (signal.type === 'typing') {
+    onTypingReceived(data.from, data.fromName);
+    return;
   } else if (signal.type === 'switch-to-relay') {
     // Remote peer's WebRTC failed — switch to relay audio
     if (state.peerConnection) { state.peerConnection.close(); state.peerConnection = null; }
@@ -3901,6 +3974,12 @@ async function onCallSignal(data) {
       }
     } catch (e) { showToast('Relay fallback failed', e.message); endCall(); }
   } else if (signal.type === 'hangup') endCall();
+}
+
+function openCallChat() {
+  if (state.callPeerId) {
+    startDM(state.callPeerId, state.callPeerName || state.callPeerId.slice(0, 12));
+  }
 }
 
 // ─── Relay Audio Fallback ─────────────────────────────────────────────────
@@ -4123,7 +4202,12 @@ function setConnectionStatus(status) {
 
 function scrollToBottom() {
   const container = document.getElementById('messages-container');
+  if (!container) return;
   container.scrollTop = container.scrollHeight;
+  // Scroll again after animations expand (cipher machine, route strip)
+  requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+  setTimeout(() => { container.scrollTop = container.scrollHeight; }, 150);
+  setTimeout(() => { container.scrollTop = container.scrollHeight; }, 400);
 }
 
 function showToast(title, body, type) {
@@ -6201,6 +6285,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Send message
   document.getElementById('btn-send').addEventListener('click', sendMessage);
   document.getElementById('message-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+  document.getElementById('message-input').addEventListener('input', () => sendTypingIndicator());
 
   // Call buttons
   document.getElementById('btn-voice-call').addEventListener('click', () => startCall('voice'));

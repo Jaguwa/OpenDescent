@@ -1674,6 +1674,8 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 .call-btn:hover { background: var(--bg-hover); }
 .call-btn.end { background: var(--red); border-color: var(--red); color: #fff; }
 .call-btn.end:hover { opacity: 0.9; }
+.call-btn.chat { background: transparent; border-color: var(--accent); color: var(--accent); }
+.call-btn.chat:hover { background: rgba(50, 224, 196, 0.08); }
 .call-btn.accept { background: var(--green); border-color: var(--green); color: #fff; }
 .call-btn.accept:hover { opacity: 0.9; }
 .call-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -5386,6 +5388,47 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 
 .vn-scramble-lock {
   font-size: 12px;
+}
+
+/* ─── Typing Indicator ───────────────────────────────────────────────── */
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.4;
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+.typing-text {
+  color: var(--text-muted);
 }
 
 /* ─── Call Transport Indicator ───────────────────────────────────────── */

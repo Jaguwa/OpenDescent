@@ -744,6 +744,55 @@ export class LocalStore {
     return posts;
   }
 
+  /** Get posts since a timestamp (for feed sync) */
+  async getPostsSince(since: number, limit: number = 200): Promise<Post[]> {
+    const posts: Post[] = [];
+    const gte = NS.POST_IDX + since.toString().padStart(15, '0');
+    for await (const [, postId] of this.db.iterator({ gte, lt: NS.POST_IDX + '\xFF', limit })) {
+      try {
+        const post = JSON.parse(await this.db.get(NS.POST + postId));
+        posts.push(post);
+      } catch {}
+    }
+    return posts;
+  }
+
+  /** Get post IDs since a timestamp (lightweight, for sync digest) */
+  async getPostIds(since: number): Promise<string[]> {
+    const ids: string[] = [];
+    const gte = NS.POST_IDX + since.toString().padStart(15, '0');
+    for await (const [, postId] of this.db.iterator({ gte, lt: NS.POST_IDX + '\xFF' })) {
+      ids.push(postId);
+    }
+    return ids;
+  }
+
+  /** Get the timestamp of the most recent post */
+  async getLatestPostTimestamp(): Promise<number> {
+    for await (const [key] of this.db.iterator({ gte: NS.POST_IDX, lt: NS.POST_IDX + '\xFF', reverse: true, limit: 1 })) {
+      const tsStr = key.slice(NS.POST_IDX.length).split(':')[0];
+      return parseInt(tsStr, 10) || 0;
+    }
+    return 0;
+  }
+
+  /** Delete posts older than maxAgeDays and their reactions/comments */
+  async cleanOldPosts(maxAgeDays: number): Promise<number> {
+    const cutoff = Date.now() - (maxAgeDays * 24 * 60 * 60 * 1000);
+    const cutoffKey = NS.POST_IDX + cutoff.toString().padStart(15, '0');
+    const toDelete: string[] = [];
+
+    for await (const [, postId] of this.db.iterator({ gte: NS.POST_IDX, lt: cutoffKey })) {
+      toDelete.push(postId);
+    }
+
+    for (const postId of toDelete) {
+      await this.deletePost(postId);
+    }
+
+    return toDelete.length;
+  }
+
   async deletePost(postId: string): Promise<void> {
     // Delete post record
     try { await this.db.del(NS.POST + postId); } catch {}
