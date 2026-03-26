@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenDescent — Decentralized P2P Social Network</title>
+<meta name="description" content="End-to-end encrypted. Peer-to-peer. No central servers. OpenDescent is a decentralized social network where you own your identity and your data.">
+<style>
+@font-face { font-family: 'Array'; src: url('fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('fonts/Array-Semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('fonts/Array-Wide.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('fonts/Array-BoldWide.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+:root {
+  --bg: #212121;
+  --bg-deep: #1a1a1a;
+  --bg-surface: #262626;
+  --teal: #32E0C4;
+  --teal-dim: #0D7377;
+  --red: #e04050;
+  --text: #EEEEEE;
+  --text-mid: #aaaaaa;
+  --text-dim: #666666;
+  --text-ghost: #444444;
+  --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Array', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* Noise texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+
+/* Vignette */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.3) 100%);
+}
+
+/* ─── Chromatic Aberration ─────────────────────────── */
+@keyframes chroma-hero {
+  0%, 100% { text-shadow: -3px 0 rgba(224,64,80,0.6), 3px 0 rgba(50,224,196,0.6); }
+  25% { text-shadow: -3.5px 1px rgba(224,64,80,0.5), 3.5px -0.5px rgba(50,224,196,0.65); }
+  50% { text-shadow: -2px 0 rgba(224,64,80,0.55), 2.5px 1px rgba(50,224,196,0.6); }
+  75% { text-shadow: -4px -0.5px rgba(224,64,80,0.5), 2px 0 rgba(50,224,196,0.7); }
+}
+@keyframes chroma-section {
+  0%, 100% { text-shadow: -1.5px 0 rgba(224,64,80,0.35), 1.5px 0 rgba(50,224,196,0.4); }
+  50% { text-shadow: -2px 0.5px rgba(224,64,80,0.3), 2px -0.5px rgba(50,224,196,0.45); }
+}
+
+/* ─── Micro Strip ──────────────────────────────────── */
+.micro-strip {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-ghost);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 0;
+  text-align: center;
+  border-bottom: 1px solid rgba(50,224,196,0.06);
+}
+.micro-strip span { color: var(--teal); }
+
+/* ─── Holographic Divider ──────────────────────────── */
+.holo-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50,224,196,0.2) 30%, rgba(50,224,196,0.2) 70%, transparent);
+  margin: 0 auto;
+  width: 80%;
+}
+
+/* ─── Layout ───────────────────────────────────────── */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+section {
+  padding: 80px 0;
+  position: relative;
+}
+
+/* ─── Navigation ───────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(33,33,33,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(50,224,196,0.08);
+}
+
+nav .nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-weight: 700;
+  font-size: 1em;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+  animation: chroma-section 4s ease-in-out infinite;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--teal); }
+
+.nav-cta {
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid var(--teal);
+  color: var(--teal) !important;
+  border-radius: 3px;
+  transition: all 0.2s !important;
+}
+.nav-cta:hover {
+  background: rgba(50,224,196,0.08) !important;
+  box-shadow: 0 0 12px rgba(50,224,196,0.15);
+}
+
+/* ─── Hero ─────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 50%, rgba(50,224,196,0.04) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 30%, rgba(224,64,80,0.02) 0%, transparent 50%);
+}
+
+#mesh-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  opacity: 0.4;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-micro {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-ghost);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.hero-title {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 700;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  animation: chroma-hero 3s ease-in-out infinite, hero-flicker 8s step-end infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes hero-flicker {
+  0%, 100% { opacity: 1; }
+  7% { opacity: 1; }
+  7.5% { opacity: 0.65; }
+  8% { opacity: 1; }
+  30% { opacity: 1; }
+  30.3% { opacity: 0.7; }
+  30.6% { opacity: 1; }
+  30.8% { opacity: 0.8; }
+  31% { opacity: 1; }
+  55% { opacity: 1; }
+  55.2% { opacity: 0.6; }
+  55.4% { opacity: 0.85; }
+  55.6% { opacity: 0.55; }
+  55.9% { opacity: 1; }
+  80% { opacity: 1; }
+  80.2% { opacity: 0.75; }
+  80.4% { opacity: 1; }
+}
+
+.hero-subtitle {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text-mid);
+  max-width: 500px;
+  margin: 0 auto 40px;
+  line-height: 1.8;
+}
+
+.hero-cta {
+  display: inline-block;
+  padding: 14px 40px;
+  background: transparent;
+  color: var(--teal);
+  border: 2px solid var(--teal);
+  border-radius: 4px;
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.hero-cta:hover {
+  background: rgba(50,224,196,0.08);
+  box-shadow: 0 0 25px rgba(50,224,196,0.2), inset 0 0 15px rgba(50,224,196,0.04);
+}
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 60px;
+}
+
+.hero-stat {
+  text-align: center;
+}
+.hero-stat-val {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--teal);
+}
+.hero-stat-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text-ghost);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ─── Features Grid ────────────────────────────────── */
+.features-section { background: var(--bg-deep); }
+
+.section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--teal-dim);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 2em;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  animation: chroma-section 4s ease-in-out infinite;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.feature-card {
+  background: var(--bg-surface);
+  padding: 32px 24px;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50,224,196,0.15), transparent);
+}
+
+.feature-card:hover {
+  background: #2a2a2a;
+  box-shadow: 0 0 30px rgba(50,224,196,0.04);
+}
+
+.feature-icon {
+  font-size: 1.8em;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.feature-title {
+  font-family: 'Array', sans-serif;
+  font-size: 0.95em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  color: var(--teal);
+}
+
+.feature-desc {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.feature-micro {
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--text-ghost);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 12px;
+}
+
+/* ─── Use Cases ────────────────────────────────────── */
+.usecases-section { background: var(--bg); padding: 80px 0; }
+
+.usecases-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+}
+
+.usecase-card {
+  background: var(--bg-surface);
+  padding: 32px 28px;
+  position: relative;
+  transition: all 0.3s;
+}
+.usecase-card::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  bottom: 15%;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(50,224,196,0.15), transparent);
+}
+.usecase-card:hover { background: #2a2a2a; }
+
+.usecase-icon { font-size: 1.6em; margin-bottom: 12px; }
+.usecase-title {
+  font-family: 'Array', sans-serif;
+  font-size: 1em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+.usecase-desc {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+
+/* ─── Encryption Viz Section ───────────────────────── */
+.encrypt-section {
+  background: var(--bg);
+}
+
+.encrypt-demo {
+  max-width: 700px;
+  margin: 0 auto;
+  background: var(--bg-deep);
+  border: 1px solid rgba(50,224,196,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.encrypt-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(50,224,196,0.03);
+  position: relative;
+}
+.encrypt-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50,224,196,0.15), transparent);
+}
+
+.encrypt-header-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--teal);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.encrypt-body {
+  padding: 20px 16px;
+}
+
+.encrypt-pipeline {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+
+.pipeline-step {
+  flex: 1;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(50,224,196,0.08);
+  border-radius: 2px;
+  text-align: center;
+  transition: all 0.6s;
+}
+
+.pipeline-step.active {
+  border-color: var(--teal);
+  background: rgba(50,224,196,0.06);
+}
+
+.pipeline-step-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text-ghost);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.pipeline-step.active .pipeline-step-label { color: var(--teal); }
+
+.pipeline-step-status {
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--text-ghost);
+  margin-top: 3px;
+}
+.pipeline-step.active .pipeline-step-status { color: var(--teal-dim); }
+
+.encrypt-message {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(50,224,196,0.06);
+  border-radius: 3px;
+  padding: 12px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--teal);
+  min-height: 44px;
+  margin-bottom: 12px;
+  transition: color 0.3s;
+  word-break: break-all;
+}
+
+.encrypt-message.plaintext { color: var(--text); }
+
+.encrypt-route {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 8px 0;
+}
+
+.route-node {
+  color: var(--text-ghost);
+  transition: all 0.3s;
+}
+.route-node.lit {
+  color: var(--teal);
+  text-shadow: 0 0 4px rgba(50,224,196,0.3);
+}
+.route-dash { color: var(--text-ghost); }
+.route-dash.lit { color: rgba(50,224,196,0.4); }
+
+.encrypt-footer {
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--text-ghost);
+  text-align: center;
+  padding: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-top: 1px solid rgba(50,224,196,0.04);
+}
+
+.encrypt-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.encrypt-input-row input {
+  flex: 1;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(50,224,196,0.15);
+  border-radius: 3px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.encrypt-input-row input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 8px rgba(50,224,196,0.12);
+}
+.encrypt-input-row input::placeholder { color: var(--text-ghost); }
+
+#demo-encrypt-btn {
+  background: transparent;
+  border: 1px solid var(--teal);
+  color: var(--teal);
+  font-family: 'Array', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0 20px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+#demo-encrypt-btn:hover {
+  background: rgba(50,224,196,0.08);
+  box-shadow: 0 0 12px rgba(50,224,196,0.15);
+}
+#demo-encrypt-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.encrypt-header-hint {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text-ghost);
+  margin-left: auto;
+  letter-spacing: 1px;
+}
+
+.encrypt-caption {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 24px;
+  line-height: 1.7;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ─── Trust Signals ────────────────────────────────── */
+.trust-section { background: var(--bg-deep); padding: 60px 0; }
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+}
+
+.trust-item {
+  background: var(--bg-surface);
+  padding: 28px 20px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s;
+}
+.trust-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50,224,196,0.12), transparent);
+}
+.trust-item:hover {
+  background: #2a2a2a;
+}
+
+.trust-icon {
+  font-size: 1.6em;
+  margin-bottom: 12px;
+}
+.trust-title {
+  font-family: 'Array', sans-serif;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+.trust-desc {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+/* ─── Download Section ─────────────────────────────── */
+.download-section {
+  background: var(--bg-deep);
+  text-align: center;
+}
+
+.download-box {
+  display: inline-block;
+  background: var(--bg-surface);
+  border: 1px solid rgba(50,224,196,0.1);
+  border-radius: 4px;
+  padding: 40px 60px;
+  position: relative;
+}
+.download-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50,224,196,0.25), transparent);
+}
+
+.download-title {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 1.2em;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.download-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+}
+
+.download-btn {
+  display: inline-block;
+  padding: 14px 48px;
+  background: transparent;
+  color: var(--teal);
+  border: 2px solid var(--teal);
+  border-radius: 4px;
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+.download-btn:hover {
+  background: rgba(50,224,196,0.08);
+  box-shadow: 0 0 25px rgba(50,224,196,0.2);
+}
+
+.download-meta {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text-ghost);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.download-platforms {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.platform-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  padding: 4px 12px;
+  border: 1px solid rgba(50,224,196,0.1);
+  border-radius: 2px;
+}
+
+/* ─── Footer ───────────────────────────────────────── */
+footer {
+  padding: 40px 0;
+  text-align: center;
+  background: var(--bg);
+  position: relative;
+}
+footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50,224,196,0.12), transparent);
+}
+
+.footer-brand {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 0.9em;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.footer-micro {
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--text-ghost);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 2;
+}
+
+.footer-barcode {
+  font-size: 8px;
+  letter-spacing: 3px;
+  margin-top: 8px;
+  color: var(--text-ghost);
+}
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.footer-links a {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  text-decoration: none;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--teal); }
+
+/* ─── Scroll Animations ───────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Responsive ───────────────────────────────────── */
+@media (max-width: 768px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .trust-grid { grid-template-columns: repeat(2, 1fr); }
+  .usecases-grid { grid-template-columns: 1fr; }
+  .hero-stats { flex-direction: column; gap: 20px; }
+  .hero-title { letter-spacing: 4px; }
+  .nav-links { display: none; }
+  .download-box { padding: 30px 24px; }
+  .encrypt-pipeline { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-brand">OpenDescent</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#download" class="nav-cta">Download</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Micro Strip -->
+<div class="micro-strip" style="margin-top:49px">
+  &#9656;&#9656; PROTOCOL v0.5.3 // <span>E2E-256-GCM</span> // P2P-MESH-NET // NO-CENTRAL-AUTH // &#12458;&#12540;&#12503;&#12531;&#12487;&#12451;&#12475;&#12531;&#12488;
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <canvas id="mesh-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-micro">&#9656;&#9656; Encrypted Communication Platform // &#20998;&#25955;&#22411;&#12477;&#12540;&#12471;&#12515;&#12523;</div>
+    <h1 class="hero-title">Open<br>Descent</h1>
+    <p class="hero-subtitle">
+      Group chats. Voice &amp; video calls. Community hubs. Anonymous drops.<br>
+      All encrypted. All peer-to-peer. No servers. No surveillance. No compromise.
+    </p>
+    <a href="#download" class="hero-cta">&#9656;&#9656; Download Now</a>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">AES-256</div>
+        <div class="hero-stat-label">Encryption</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">Ed25519</div>
+        <div class="hero-stat-label">Identity</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">0</div>
+        <div class="hero-stat-label">Central Servers</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- Features -->
+<section class="features-section" id="features">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">&#9656;&#9656; System Capabilities</div>
+      <h2 class="section-title">Features</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <span class="feature-icon">&#128274;</span>
+        <div class="feature-title">E2E Encryption</div>
+        <div class="feature-desc">Every message encrypted with AES-256-GCM. Ephemeral X25519 key exchange. Forward secrecy. Even we can't read your messages — because there is no "we."</div>
+        <div class="feature-micro">X25519 DH + HKDF + AES-256-GCM</div>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">&#127760;</span>
+        <div class="feature-title">P2P Mesh Network</div>
+        <div class="feature-desc">No central servers. Your messages travel directly between peers through an encrypted mesh. Circuit relay for NAT traversal. DCUtR hole-punching.</div>
+        <div class="feature-micro">libp2p // KadDHT // Circuit Relay v2</div>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">&#128100;</span>
+        <div class="feature-title">Cryptographic Identity</div>
+        <div class="feature-desc">Your identity is an Ed25519 keypair. No email. No phone number. No password. Back it up with a 12-word mnemonic. Recover anywhere.</div>
+        <div class="feature-micro">Ed25519 // BIP39 Mnemonic // TOFU Pinning</div>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">&#128222;</span>
+        <div class="feature-title">Voice &amp; Video Calls</div>
+        <div class="feature-desc">WebRTC calls with DTLS-SRTP encryption. TURN relay fallback. Voice-over-libp2p when all else fails. Your calls, your way.</div>
+        <div class="feature-micro">WebRTC // STUN/TURN // G.711 Fallback</div>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">&#127984;</span>
+        <div class="feature-title">Hubs</div>
+        <div class="feature-desc">Create community spaces with text channels, voice channels, roles, and invites. Like servers, but decentralized. No one can shut them down.</div>
+        <div class="feature-micro">Categories // Channels // Role Management</div>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">&#128123;</span>
+        <div class="feature-title">Dead Drops</div>
+        <div class="feature-desc">Anonymous onion-routed posts. No identity attached. Proof-of-work spam prevention. Daily rotating network key. Untraceable.</div>
+        <div class="feature-micro">Onion Routing // PoW // Anonymity</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- Use Cases -->
+<section class="usecases-section">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">&#9656;&#9656; Built For</div>
+      <h2 class="section-title">Your World. Your Rules.</h2>
+    </div>
+    <div class="usecases-grid reveal">
+      <div class="usecase-card">
+        <div class="usecase-icon">&#127918;</div>
+        <div class="usecase-title">Communities</div>
+        <div class="usecase-desc">Create hubs with voice channels, text channels, and roles. Game with friends, run a study group, build a movement — without anyone listening in.</div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128240;</div>
+        <div class="usecase-title">Journalists &amp; Sources</div>
+        <div class="usecase-desc">Dead Drops let sources share information anonymously with onion routing. No metadata. No trace. No identity attached.</div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#127758;</div>
+        <div class="usecase-title">Activists &amp; Organisers</div>
+        <div class="usecase-desc">Coordinate across borders without a central authority that can be pressured, subpoenaed, or shut down. The network has no off switch.</div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">&#128119;</div>
+        <div class="usecase-title">Everyone Else</div>
+        <div class="usecase-desc">Or just talk to your mates without being the product. No ads. No algorithmic manipulation. No data harvesting. Just conversation.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- Encryption Visualization -->
+<section class="encrypt-section" id="security">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">&#9656;&#9656; Visible Security</div>
+      <h2 class="section-title">Watch It Encrypt</h2>
+    </div>
+
+    <div class="encrypt-demo reveal" id="encrypt-demo">
+      <div class="encrypt-header">
+        <div class="encrypt-header-label">&#128274; Cipher Machine // AES-256-GCM</div>
+        <div class="encrypt-header-hint">Type below and press Enter</div>
+      </div>
+      <div class="encrypt-body">
+        <div class="encrypt-input-row">
+          <input type="text" id="demo-input" placeholder="Type a message and watch it encrypt..." maxlength="80" autocomplete="off">
+          <button id="demo-encrypt-btn" onclick="triggerDemoEncrypt()">&#9656; ENCRYPT</button>
+        </div>
+        <div class="encrypt-pipeline">
+          <div class="pipeline-step" id="step-key">
+            <div class="pipeline-step-label">X25519 Key</div>
+            <div class="pipeline-step-status" id="step-key-status">Waiting</div>
+          </div>
+          <div class="pipeline-step" id="step-enc">
+            <div class="pipeline-step-label">AES-256-GCM</div>
+            <div class="pipeline-step-status" id="step-enc-status">Waiting</div>
+          </div>
+          <div class="pipeline-step" id="step-sign">
+            <div class="pipeline-step-label">Ed25519 Sign</div>
+            <div class="pipeline-step-status" id="step-sign-status">Waiting</div>
+          </div>
+        </div>
+        <div class="encrypt-message plaintext" id="demo-message">Your messages are encrypted before they leave your device.</div>
+        <div class="encrypt-route" id="demo-route">
+          <span>ROUTE</span>
+          <span class="route-node" id="rn0">EU-W7</span><span class="route-dash">—</span>
+          <span class="route-node" id="rn1">REL-1</span><span class="route-dash">—</span>
+          <span class="route-node" id="rn2">NAC-4</span><span class="route-dash">—</span>
+          <span class="route-node" id="rn3">AS-E2</span>
+        </div>
+      </div>
+      <div class="encrypt-footer">
+        &#9656; SHA f7a3:2c91:8b4e:d012 // DELIVERED // &#26263;&#21495;&#21270;&#12373;&#12428;&#12383;
+      </div>
+    </div>
+
+    <p class="encrypt-caption reveal">
+      Every message passes through a visible encryption pipeline.<br>
+      Type your own message above and <strong style="color:var(--teal)">watch it encrypt in real time</strong>.
+    </p>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- Trust Signals -->
+<section class="trust-section">
+  <div class="container">
+    <div class="trust-grid reveal">
+      <div class="trust-item">
+        <div class="trust-icon">&#128194;</div>
+        <div class="trust-title">100% Open Source</div>
+        <div class="trust-desc">Every line of code is public on GitHub. Audit it yourself. Fork it. Build on it.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">&#128683;</div>
+        <div class="trust-title">Zero Data Collection</div>
+        <div class="trust-desc">No analytics. No tracking. No telemetry. We don't know who you are — by design.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">&#128737;</div>
+        <div class="trust-title">Zero Data Breaches</div>
+        <div class="trust-desc">There's no server to breach. Your data lives on your device, encrypted at rest.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">&#128268;</div>
+        <div class="trust-title">No Kill Switch</div>
+        <div class="trust-desc">There's no off switch. No server to unplug. The network exists as long as its users do.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- Download -->
+<section class="download-section" id="download">
+  <div class="container">
+    <div class="download-box reveal">
+      <div class="download-title">Get OpenDescent</div>
+      <div class="download-sub">Free to use. Pro unlocks larger files, unlimited hubs, and more.</div>
+      <a href="#" class="download-btn">&#9656;&#9656; Download for Windows</a>
+      <div class="download-meta">v0.5.3 // Windows 10+ // ~90MB</div>
+      <div class="download-platforms">
+        <span class="platform-badge">Windows x64</span>
+        <span class="platform-badge">macOS — Soon</span>
+        <span class="platform-badge">Linux — Soon</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-brand">OpenDescent</div>
+    <div class="footer-micro">
+      Product Interface // Open Descent &copy;2025<br>
+      &#12458;&#12540;&#12503;&#12531;&#12487;&#12451;&#12475;&#12531;&#12488; // P2P-Mesh-Net // No-Central-Auth
+    </div>
+    <div class="footer-barcode">&#9612;&#9612;&#9615;&#9612;&#9615;&#9615;&#9612;&#9612;&#9615;&#9612;&#9615;&#9612;&#9612;&#9615;&#9615;&#9612;&#9615;&#9612;&#9612;&#9615;&#9612;&#9615;&#9615;&#9612;</div>
+    <div class="footer-links">
+      <a href="https://github.com/Jaguwa/OpenDescent">GitHub</a>
+      <a href="#">Documentation</a>
+      <a href="#">Privacy</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 80);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.15 });
+reveals.forEach(el => observer.observe(el));
+
+// ─── P2P Mesh Canvas Animation ─────────────────────
+const canvas = document.getElementById('mesh-canvas');
+const ctx = canvas.getContext('2d');
+const nodes = [];
+const NODE_COUNT = 40;
+const CONNECT_DIST = 150;
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+for (let i = 0; i < NODE_COUNT; i++) {
+  nodes.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    r: 2 + Math.random() * 2,
+    pulse: Math.random() * Math.PI * 2,
+  });
+}
+
+function drawMesh() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Draw connections
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < CONNECT_DIST) {
+        const alpha = (1 - dist / CONNECT_DIST) * 0.15;
+        ctx.beginPath();
+        ctx.moveTo(nodes[i].x, nodes[i].y);
+        ctx.lineTo(nodes[j].x, nodes[j].y);
+        ctx.strokeStyle = `rgba(50, 224, 196, ${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+  // Draw nodes
+  for (const node of nodes) {
+    node.pulse += 0.02;
+    const glow = 0.3 + Math.sin(node.pulse) * 0.15;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(50, 224, 196, ${glow})`;
+    ctx.fill();
+    // Move
+    node.x += node.vx;
+    node.y += node.vy;
+    if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+    if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+  }
+  requestAnimationFrame(drawMesh);
+}
+drawMesh();
+
+// Occasionally send a "data pulse" along a connection
+setInterval(() => {
+  const i = Math.floor(Math.random() * nodes.length);
+  for (let j = 0; j < nodes.length; j++) {
+    if (i === j) continue;
+    const dx = nodes[i].x - nodes[j].x;
+    const dy = nodes[i].y - nodes[j].y;
+    if (Math.sqrt(dx * dx + dy * dy) < CONNECT_DIST) {
+      animatePulse(nodes[i], nodes[j]);
+      break;
+    }
+  }
+}, 2000);
+
+function animatePulse(from, to) {
+  let t = 0;
+  const dur = 30;
+  function step() {
+    t++;
+    if (t > dur) return;
+    const frac = t / dur;
+    const x = from.x + (to.x - from.x) * frac;
+    const y = from.y + (to.y - from.y) * frac;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(50, 224, 196, ${0.6 * (1 - frac)})`;
+    ctx.fill();
+    requestAnimationFrame(step);
+  }
+  step();
+}
+
+// ─── Interactive Encryption Demo ───────────────────
+const HEX = '0123456789abcdef';
+let defaultPlaintext = 'Your messages are encrypted before they leave your device.';
+let demoRunning = false;
+
+function randomHex(len) {
+  let s = '';
+  for (let i = 0; i < len; i++) s += HEX[Math.floor(Math.random() * 16)];
+  return s;
+}
+
+function triggerDemoEncrypt() {
+  const input = document.getElementById('demo-input');
+  const text = input.value.trim();
+  if (text) {
+    runEncryptDemo(text);
+    input.value = '';
+  } else {
+    runEncryptDemo(defaultPlaintext);
+  }
+}
+
+document.getElementById('demo-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') triggerDemoEncrypt();
+});
+
+async function runEncryptDemo(text) {
+  if (demoRunning) return;
+  demoRunning = true;
+  const plaintext = text || defaultPlaintext;
+  const msg = document.getElementById('demo-message');
+  const btn = document.getElementById('demo-encrypt-btn');
+  btn.disabled = true;
+
+  // Reset
+  msg.textContent = plaintext;
+  msg.classList.add('plaintext');
+  ['step-key', 'step-enc', 'step-sign'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+    document.getElementById(id + '-status').textContent = 'Waiting';
+  });
+  document.querySelectorAll('.route-node, .route-dash').forEach(n => n.classList.remove('lit'));
+
+  await sleep(300);
+
+  // Key exchange
+  document.getElementById('step-key').classList.add('active');
+  document.getElementById('step-key-status').textContent = 'Agreeing...';
+  await sleep(500);
+  document.getElementById('step-key-status').textContent = 'Agreed \u2713';
+  document.getElementById('step-key').classList.remove('active');
+
+  // Encrypt
+  document.getElementById('step-enc').classList.add('active');
+  document.getElementById('step-enc-status').textContent = 'Processing...';
+  const steps = Math.min(Math.ceil(plaintext.length / 2), 20);
+  for (let i = 0; i <= steps; i++) {
+    const frac = i / steps;
+    let t = '';
+    for (let j = 0; j < plaintext.length; j++) {
+      t += Math.random() < frac * frac ? HEX[Math.floor(Math.random() * 16)] : plaintext[j];
+    }
+    msg.textContent = t;
+    await sleep(50);
+  }
+  msg.textContent = randomHex(plaintext.length);
+  msg.classList.remove('plaintext');
+  document.getElementById('step-enc-status').textContent = 'Done \u2713';
+  document.getElementById('step-enc').classList.remove('active');
+
+  // Sign
+  document.getElementById('step-sign').classList.add('active');
+  document.getElementById('step-sign-status').textContent = 'Signing...';
+  await sleep(350);
+  document.getElementById('step-sign-status').textContent = 'Signed \u2713';
+  document.getElementById('step-sign').classList.remove('active');
+
+  // Route
+  const routeNodes = document.querySelectorAll('.route-node');
+  const routeDashes = document.querySelectorAll('.route-dash');
+  for (let i = 0; i < routeNodes.length; i++) {
+    routeNodes[i].classList.add('lit');
+    if (routeDashes[i]) routeDashes[i].classList.add('lit');
+    await sleep(180);
+  }
+
+  await sleep(500);
+
+  // Decrypt
+  let current = msg.textContent;
+  for (let i = 1; i <= 10; i++) {
+    const frac = i / 10;
+    let t = '';
+    for (let j = 0; j < plaintext.length; j++) {
+      t += Math.random() < frac * frac ? plaintext[j] : current[j] || HEX[Math.floor(Math.random() * 16)];
+    }
+    current = t;
+    msg.textContent = t;
+    await sleep(35);
+  }
+  msg.textContent = plaintext;
+  msg.classList.add('plaintext');
+
+  btn.disabled = false;
+  await sleep(2000);
+  demoRunning = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Auto-run demo when visible
+const demoObs = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting) {
+    runEncryptDemo(defaultPlaintext);
+    demoObs.unobserve(entries[0].target);
+  }
+}, { threshold: 0.3 });
+demoObs.observe(document.getElementById('encrypt-demo'));
+</script>
+
+</body>
+</html>
