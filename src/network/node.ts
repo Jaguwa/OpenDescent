@@ -414,8 +414,8 @@ export class DecentraNode {
     }
 
     entry.count++;
-    if (entry.count > 100) {
-      console.warn(`[RateLimit] Peer ${peerId} exceeded 100 msg/60s — dropping message`);
+    if (entry.count > 500) {
+      console.warn(`[RateLimit] Peer ${peerId} exceeded 500 msg/60s — dropping message`);
       return true;
     }
     return false;
