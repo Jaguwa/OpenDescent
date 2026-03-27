@@ -263,8 +263,8 @@ export class APIServer {
       return false;
     }
     entry.count++;
-    if (entry.count > 200) {
-      console.warn(`[API] WebSocket client exceeded 200 req/60s — rate limited`);
+    if (entry.count > 500) {
+      if (entry.count === 501) console.warn(`[API] WebSocket client exceeded 500 req/60s — rate limited`);
       return true;
     }
     return false;

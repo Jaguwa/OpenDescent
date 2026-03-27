@@ -705,8 +705,14 @@ export class DecentraNode {
   pushAudioChunk(decentraId: string, chunk: Uint8Array): boolean {
     const entry = this.activeAudioStreams.get(decentraId);
     if (!entry) return false;
-    entry.pushable.push(chunk);
-    return true;
+    try {
+      entry.pushable.push(chunk);
+      return true;
+    } catch {
+      // Pushable ended — clean up
+      this.activeAudioStreams.delete(decentraId);
+      return false;
+    }
   }
 
   /** Close the audio stream to a peer */
@@ -1122,9 +1128,17 @@ export class DecentraNode {
       return chunks.length > 0 ? concatenateUint8Arrays(chunks) : null;
     } catch (error: any) {
       const msg = error?.message || error?.code || String(error);
-      // Suppress noisy connection errors (dead peers, EOF, reset)
-      if (msg.includes('EOF') || msg.includes('ECONNRESET') || msg.includes('stream ended')) {
-        console.log(`[Node] Connection to ${libp2pId} lost (${error?.code || 'EOF'})`);
+      // Suppress noisy/repetitive connection errors
+      if (msg.includes('EOF') || msg.includes('ECONNRESET') || msg.includes('stream ended') ||
+          msg.includes('ended pushable') || msg.includes('stream reset') || msg.includes('Remote closed')) {
+        // Only log once per peer per 10 seconds to avoid flood
+        const errKey = `err:${libp2pId}`;
+        const now = Date.now();
+        const last = (this as any)[errKey] || 0;
+        if (now - last > 10000) {
+          console.log(`[Node] Connection issue with ${libp2pId.slice(0, 16)}: ${msg.slice(0, 40)}`);
+          (this as any)[errKey] = now;
+        }
       } else {
         console.error(`[Node] Failed to send to ${libp2pId}:`, msg);
       }
