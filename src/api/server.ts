@@ -657,6 +657,27 @@ export class APIServer {
           const myId = this.deps.node.getPeerId();
           const isVouched = targetId !== myId ? !!(await this.deps.store.getVouchByPair(myId, targetId)) : false;
           const isFriendOfTarget = await this.deps.store.isFriend(targetId);
+          // Vital signs
+          const connectedPeers = this.deps.node.getConnectedPeers().filter(p => p.decentraId);
+          const targetOnline = targetId === myId || !!this.deps.node.resolveDecentraId(targetId);
+          const meshDepth = connectedPeers.length;
+
+          // Vouch constellation
+          let vouchGraph: { fromId: string; fromName: string; isOnline: boolean; isMutual: boolean }[] = [];
+          try {
+            const received = await this.deps.store.getVouchesFor(targetId);
+            for (const v of received) {
+              const voucherProfile = this.deps.node.getKnownPeer(v.fromId);
+              const mutual = await this.deps.store.getVouchByPair(targetId, v.fromId);
+              vouchGraph.push({
+                fromId: v.fromId,
+                fromName: voucherProfile?.displayName || v.fromId.slice(0, 12),
+                isOnline: !!this.deps.node.resolveDecentraId(v.fromId),
+                isMutual: !!mutual,
+              });
+            }
+          } catch {}
+
           return this.ok(id, {
             profile,
             displayName: peerProfile?.displayName || targetId.slice(0, 12),
@@ -667,6 +688,9 @@ export class APIServer {
             isVouched,
             isFriend: isFriendOfTarget,
             isSelf: targetId === this.deps.node.getPeerId(),
+            isOnline: targetOnline,
+            meshDepth,
+            vouchGraph,
           });
         }
 

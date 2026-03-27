@@ -1414,6 +1414,121 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 }
 
 .identity-info h2 { font-size: 1.3em; margin-bottom: 2px; }
+
+/* ─── Vital Signs Card ───────────────────────────────────────────────── */
+
+.card-vitals {
+  grid-column: 1 / -1;
+}
+
+.vitals-header {
+  margin-bottom: 16px;
+}
+
+.vitals-grid {
+  display: flex;
+  gap: 2px;
+}
+
+.vital-item {
+  flex: 1;
+  text-align: center;
+  padding: 12px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(13, 115, 119, 0.06);
+  border-radius: 2px;
+}
+
+.vital-ring {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vital-ring-inner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+}
+
+.pulse-online .vital-ring-inner {
+  animation: vitalPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(50, 224, 196, 0.3);
+}
+
+.pulse-offline .vital-ring-inner {
+  border-color: var(--text-ghost);
+}
+
+@keyframes vitalPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(50, 224, 196, 0.2); transform: scale(1); }
+  50% { box-shadow: 0 0 12px rgba(50, 224, 196, 0.4); transform: scale(1.1); }
+}
+
+.vital-big {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 1.6em;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.vital-label {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.vital-value {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.vital-sub {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  color: var(--text-ghost);
+  letter-spacing: 0.5px;
+}
+
+/* ─── Trust Constellation Card ───────────────────────────────────────── */
+
+.card-constellation {
+  grid-column: 1 / -1;
+}
+
+.constellation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+#constellation-canvas {
+  width: 100%;
+  display: block;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.constellation-empty {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-ghost);
+  text-align: center;
+  padding: 20px;
+  letter-spacing: 0.5px;
+}
 .identity-info .tagline { color: var(--text-secondary); font-size: 0.9em; }
 
 /* Vibe Card */

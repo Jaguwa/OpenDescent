@@ -725,6 +725,14 @@ function handleEvent(event, data) {
     case 'post_interaction':
       if (state.activeView === 'feed') loadFeed();
       break;
+    case 'vouch_updated':
+    case 'vouch_revoked':
+      // Refresh profile if we're viewing one — constellation updates in real-time
+      if (state.activeView === 'profile') {
+        const profilePeerId = document.querySelector('#profile-bento .card-identity')?.closest('[data-peerid]')?.dataset?.peerid;
+        openProfile(profilePeerId || state.myPeerId);
+      }
+      break;
     case 'friend_request':
       showToast('Friend request received!', data.fromName);
       loadFriendRequests();
@@ -2261,11 +2269,7 @@ function renderBentoProfile(data) {
         }
         break;
       case 'stats':
-        html += `<div class="bento-card card-stats ${sizeClass}">
-          <div class="stat-item"><div class="stat-value">${data.friendCount || 0}</div><div class="stat-label">Friends</div></div>
-          <div class="stat-item"><div class="stat-value">${data.postCount || 0}</div><div class="stat-label">Posts</div></div>
-          <div class="stat-item"><div class="stat-value">${data.vouchCount || 0}</div><div class="stat-label">Vouches</div></div>
-        </div>`;
+        // Replaced by Vital Signs card below
         break;
       case 'music':
         if (cardData.music) {
@@ -2279,13 +2283,55 @@ function renderBentoProfile(data) {
         }
         break;
       case 'connections':
-        html += `<div class="bento-card card-connections ${sizeClass}">
-          <h4 style="margin-bottom:8px;color:var(--text-secondary)">Connections</h4>
-          <div class="connections-avatars" id="connections-avatars-${peerId}"></div>
-        </div>`;
+        // Replaced by Trust Constellation card below
         break;
     }
   }
+
+  // ─── Vital Signs Card ──────────────────────────────
+  const pulseClass = data.isOnline ? 'pulse-online' : 'pulse-offline';
+  const statusText = data.isOnline ? 'SIGNAL LOCKED' : 'OFFLINE';
+  const statusColor = data.isOnline ? 'var(--accent)' : 'var(--text-ghost)';
+  html += `<div class="bento-card card-vitals size-large">
+    <div class="vitals-header">
+      <div class="micro-label">&#9656;&#9656; VITAL SIGNS // &#29983;&#21629;&#24500;&#20505;</div>
+    </div>
+    <div class="vitals-grid">
+      <div class="vital-item">
+        <div class="vital-ring ${pulseClass}">
+          <div class="vital-ring-inner" style="border-color:${statusColor}"></div>
+        </div>
+        <div class="vital-label">STATUS</div>
+        <div class="vital-value" style="color:${statusColor}">${statusText}</div>
+      </div>
+      <div class="vital-item">
+        <div class="vital-big">${data.meshDepth || 0}</div>
+        <div class="vital-label">MESH DEPTH</div>
+        <div class="vital-sub">reachable peers</div>
+      </div>
+      <div class="vital-item">
+        <div class="vital-big">${data.friendCount || 0}</div>
+        <div class="vital-label">CONNECTIONS</div>
+        <div class="vital-sub">trusted links</div>
+      </div>
+      <div class="vital-item">
+        <div class="vital-big">${data.vouchCount || 0}</div>
+        <div class="vital-label">VOUCHES</div>
+        <div class="vital-sub">reputation score</div>
+      </div>
+    </div>
+  </div>`;
+
+  // ─── Trust Constellation ──────────────────────────
+  const vouchGraph = data.vouchGraph || [];
+  html += `<div class="bento-card card-constellation size-large">
+    <div class="constellation-header">
+      <div class="micro-label">&#9656;&#9656; TRUST WEB // &#20449;&#38972;&#32178;</div>
+      <span class="micro-text">${vouchGraph.length} vouch${vouchGraph.length !== 1 ? 'es' : ''}</span>
+    </div>
+    <canvas id="constellation-canvas" width="600" height="250"></canvas>
+    ${vouchGraph.length === 0 ? '<div class="constellation-empty">No vouches yet. Ask trusted peers to vouch for you.</div>' : ''}
+  </div>`;
 
   // Trust section (after bento cards)
   const isSelf = data.isSelf;
@@ -2343,7 +2389,150 @@ function renderBentoProfile(data) {
         connEl.querySelectorAll('canvas').forEach(c => generateAvatar(c.dataset.peerid, c, 36));
       }).catch(() => {});
     }
+
+    // Draw trust constellation
+    drawConstellation(peerId, displayName, data.vouchGraph || [], data.isOnline);
   });
+}
+
+function drawConstellation(centerId, centerName, vouchGraph, isOnline) {
+  const canvas = document.getElementById('constellation-canvas');
+  if (!canvas || vouchGraph.length === 0) return;
+
+  // Size canvas to actual container width
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const displayW = Math.floor(rect.width - 40); // padding
+  const displayH = Math.min(280, Math.max(200, displayW * 0.4));
+  canvas.width = displayW * dpr;
+  canvas.height = displayH * dpr;
+  canvas.style.width = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = displayW;
+  const h = displayH;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Position voucher nodes in a circle around center
+  const nodes = vouchGraph.map((v, i) => {
+    const angle = (i / vouchGraph.length) * Math.PI * 2 - Math.PI / 2;
+    const radius = 80 + Math.random() * 30;
+    return {
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+      name: v.fromName,
+      isOnline: v.isOnline,
+      isMutual: v.isMutual,
+      peerId: v.fromId,
+    };
+  });
+
+  // Animate
+  let frame = 0;
+  function draw() {
+    frame++;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    // Draw connections from center to each voucher
+    for (const node of nodes) {
+      const lineAlpha = node.isMutual ? 0.25 : 0.1;
+      const lineWidth = node.isMutual ? 1.5 : 0.8;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(node.x, node.y);
+      ctx.strokeStyle = `rgba(50, 224, 196, ${lineAlpha})`;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+
+      // Data pulse along connection
+      if (node.isOnline && frame % 120 < 30) {
+        const t = (frame % 120) / 30;
+        const px = cx + (node.x - cx) * t;
+        const py = cy + (node.y - cy) * t;
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(50, 224, 196, ${0.5 * (1 - t)})`;
+        ctx.fill();
+      }
+    }
+
+    // Draw voucher nodes
+    for (const node of nodes) {
+      const glow = node.isOnline ? 0.6 + Math.sin(frame * 0.03) * 0.2 : 0.2;
+      const r = node.isMutual ? 5 : 4;
+
+      // Outer glow
+      if (node.isOnline) {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r + 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(50, 224, 196, ${glow * 0.15})`;
+        ctx.fill();
+      }
+
+      // Node dot
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = node.isOnline ? `rgba(50, 224, 196, ${glow})` : 'rgba(100, 100, 100, 0.4)';
+      ctx.fill();
+
+      // Name label
+      ctx.font = '8px monospace';
+      ctx.fillStyle = node.isOnline ? 'rgba(170, 170, 170, 0.8)' : 'rgba(100, 100, 100, 0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText(node.name, node.x, node.y + r + 12);
+
+      // Mutual badge
+      if (node.isMutual) {
+        ctx.fillStyle = 'rgba(50, 224, 196, 0.6)';
+        ctx.fillText('\u2194', node.x, node.y - r - 4);
+      }
+    }
+
+    // Draw center node (the profile owner)
+    const centerGlow = isOnline ? 0.8 + Math.sin(frame * 0.04) * 0.2 : 0.3;
+
+    // Center outer ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(50, 224, 196, ${centerGlow * 0.3})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Center pulse ring
+    if (isOnline) {
+      const pulseR = 14 + (frame % 60) * 0.5;
+      const pulseA = 0.3 * (1 - (frame % 60) / 60);
+      ctx.beginPath();
+      ctx.arc(cx, cy, pulseR, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(50, 224, 196, ${pulseA})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(50, 224, 196, ${centerGlow})`;
+    ctx.fill();
+
+    // Center name
+    ctx.font = '600 10px Array, sans-serif';
+    ctx.fillStyle = 'rgba(238, 238, 238, 0.9)';
+    ctx.textAlign = 'center';
+    ctx.fillText(centerName.toUpperCase(), cx, cy + 24);
+
+    requestAnimationFrame(draw);
+  }
+  draw();
 }
 
 function getDefaultCards() {

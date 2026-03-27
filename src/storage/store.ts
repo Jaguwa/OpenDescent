@@ -931,6 +931,34 @@ export class LocalStore {
     return vouches;
   }
 
+  /** Get all vouches (for sync) */
+  async getAllVouches(): Promise<Vouch[]> {
+    const vouches: Vouch[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.VOUCH, lt: NS.VOUCH + '\xFF' })) {
+      vouches.push(JSON.parse(value) as Vouch);
+    }
+    return vouches;
+  }
+
+  /** Get all vouch IDs (for sync digest) */
+  async getAllVouchIds(): Promise<string[]> {
+    const ids: string[] = [];
+    for await (const [, value] of this.db.iterator({ gte: NS.VOUCH, lt: NS.VOUCH + '\xFF' })) {
+      const vouch = JSON.parse(value) as Vouch;
+      ids.push(vouch.vouchId);
+    }
+    return ids;
+  }
+
+  /** Get all revocation IDs (for sync) */
+  async getAllRevocationIds(): Promise<string[]> {
+    const ids: string[] = [];
+    for await (const [key] of this.db.iterator({ gte: NS.VOUCH_REV, lt: NS.VOUCH_REV + '\xFF' })) {
+      ids.push(key.slice(NS.VOUCH_REV.length));
+    }
+    return ids;
+  }
+
   async getVouchCount(peerId: PeerId): Promise<{ given: number; received: number }> {
     let given = 0;
     let received = 0;
@@ -940,14 +968,6 @@ export class LocalStore {
       if (vouch.toId === peerId) received++;
     }
     return { given, received };
-  }
-
-  async getAllVouches(): Promise<Vouch[]> {
-    const vouches: Vouch[] = [];
-    for await (const [, value] of this.db.iterator({ gte: NS.VOUCH, lt: NS.VOUCH + '\xFF' })) {
-      vouches.push(JSON.parse(value));
-    }
-    return vouches;
   }
 
   // ─── Dead Drops ──────────────────────────────────────────────────────────

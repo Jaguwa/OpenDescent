@@ -840,13 +840,19 @@ Options:
       const msg = JSON.parse(data);
       if (msg.type === 'digest_request') {
         const digest = await posts.getPostDigest(msg.since || 0);
-        return JSON.stringify({ type: 'digest', ...digest });
+        const vouchIds = await store.getAllVouchIds();
+        const revocationIds = await store.getAllRevocationIds();
+        return JSON.stringify({ type: 'digest', ...digest, vouchIds, revocationIds });
       }
       if (msg.type === 'sync_request') {
         const allPosts = await posts.getPostsSince(msg.since || 0, 200);
         const excludeSet = new Set(msg.exclude || []);
         const filtered = allPosts.filter((p: any) => !excludeSet.has(p.postId));
-        return JSON.stringify({ type: 'sync_response', posts: filtered });
+        // Include vouches the requester doesn't have
+        const excludeVouches = new Set(msg.excludeVouches || []);
+        const allVouches = await store.getAllVouches();
+        const newVouches = allVouches.filter(v => !excludeVouches.has(v.vouchId));
+        return JSON.stringify({ type: 'sync_response', posts: filtered, vouches: newVouches });
       }
       return 'OK';
     } catch {
@@ -868,31 +874,50 @@ Options:
       if (!digestResp) { console.log(`[FeedSync] No response from ${peerName}`); return; }
 
       const digest = JSON.parse(new TextDecoder().decode(digestResp));
-      console.log(`[FeedSync] ${peerName} has ${digest.count} posts`);
-      if (digest.type !== 'digest' || digest.count === 0) return;
+      console.log(`[FeedSync] ${peerName} has ${digest.count} posts, ${(digest.vouchIds || []).length} vouches`);
+      if (digest.type !== 'digest') return;
 
-      // Step 2: Compare with our posts
+      // Step 2: Compare posts and vouches
       const ourPostIds = await store.getPostIds(since);
-      const ourSet = new Set(ourPostIds);
-      const missingIds = digest.postIds.filter((id: string) => !ourSet.has(id));
-      if (missingIds.length === 0) return;
+      const ourVouchIds = await store.getAllVouchIds();
+      const missingPosts = (digest.postIds || []).filter((id: string) => !new Set(ourPostIds).has(id));
+      const missingVouches = (digest.vouchIds || []).filter((id: string) => !new Set(ourVouchIds).has(id));
 
-      // Step 3: Request missing posts
+      if (missingPosts.length === 0 && missingVouches.length === 0) return;
+
+      // Step 3: Request missing data
       const syncReq = new TextEncoder().encode(JSON.stringify({
         type: 'sync_request',
         since,
         exclude: ourPostIds,
+        excludeVouches: ourVouchIds,
       }));
       const syncResp = await node.sendToPeer(peerId, P.FEED_SYNC, syncReq);
       if (!syncResp) return;
 
       const syncData = JSON.parse(new TextDecoder().decode(syncResp));
-      if (syncData.type !== 'sync_response' || !syncData.posts) return;
+      if (syncData.type !== 'sync_response') return;
 
-      const imported = await posts.importPosts(syncData.posts);
-      if (imported > 0) {
-        const peerName = node.getKnownPeer(peerId)?.displayName || peerId.slice(0, 12);
-        console.log(`[FeedSync] Synced ${imported} new post(s) from ${peerName}`);
+      // Import posts
+      let importedPosts = 0;
+      if (syncData.posts && syncData.posts.length > 0) {
+        importedPosts = await posts.importPosts(syncData.posts);
+      }
+
+      // Import vouches
+      let importedVouches = 0;
+      if (syncData.vouches && syncData.vouches.length > 0) {
+        for (const vouch of syncData.vouches) {
+          const existing = await store.getVouch(vouch.vouchId);
+          if (!existing && !await store.isRevoked(vouch.vouchId)) {
+            await store.storeVouch(vouch);
+            importedVouches++;
+          }
+        }
+      }
+
+      if (importedPosts > 0 || importedVouches > 0) {
+        console.log(`[FeedSync] Synced ${importedPosts} post(s), ${importedVouches} vouch(es) from ${peerName}`);
       }
     } catch (err: any) {
       console.log(`[FeedSync] Sync with ${peerName} failed: ${err?.message?.slice(0, 60) || 'unknown'}`);
@@ -932,9 +957,19 @@ Options:
     await deadDrops.handleRelayMessage(data);
   });
 
-  // Wire vouch broadcast handler (Trust Web)
+  // Wire vouch broadcast handler (Trust Web) — also notify UI
+  let vouchUIBroadcast: ((event: string, data: Record<string, unknown>) => void) | null = null;
   node.setVouchBroadcastHandler(async (data) => {
     await trustWeb.handleIncomingVouch(data);
+    // Notify browser UI so profiles/constellations update in real-time
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed.vouchId) {
+        vouchUIBroadcast?.('vouch_updated', { vouchId: parsed.vouchId, fromId: parsed.fromId, toId: parsed.toId });
+      } else if (parsed.revocationId) {
+        vouchUIBroadcast?.('vouch_revoked', { revocationId: parsed.revocationId, vouchId: parsed.vouchId, fromId: parsed.fromId });
+      }
+    } catch {}
   });
 
   // Wire hub handlers
@@ -1191,6 +1226,7 @@ Options:
 
   // Connect delete-notification handler to the UI broadcast
   deleteNotifyBroadcast = (event, data) => apiServer.broadcastEvent(event, data);
+  vouchUIBroadcast = (event, data) => apiServer.broadcastEvent(event, data);
 
   // Dead Man's Switch: auto check-in on startup + 1-minute trigger check
   dmsService.checkIn().catch(() => {});
