@@ -814,6 +814,7 @@ export class APIServer {
 
         case 'send_friend_request': {
           const { peerId: frPeerId, message: frMsg } = data;
+          if (frPeerId === this.deps.node.getPeerId()) return this.err(id, 'Cannot send friend request to yourself');
           const myProfile = this.deps.node.getIdentity();
           const friendReq: FriendRequest = {
             requestId: crypto.randomUUID(),
@@ -846,7 +847,10 @@ export class APIServer {
 
         case 'get_friend_requests': {
           const requests = await this.deps.store.getPendingFriendRequests();
-          return this.ok(id, requests);
+          // Filter out self-requests (bug: relay can echo your own requests back)
+          const myFrId = this.deps.node.getPeerId();
+          const filtered = requests.filter((r: any) => r.from !== myFrId);
+          return this.ok(id, filtered);
         }
 
         case 'respond_friend_request': {

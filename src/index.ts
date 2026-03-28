@@ -1088,6 +1088,9 @@ Options:
       const msg = JSON.parse(data);
 
       // Silently reject friend requests from blocked peers
+      // Ignore requests from ourselves
+      if (msg.from === node.getPeerId()) return 'OK';
+
       if (msg.from && await store.isBlocked(msg.from)) {
         return 'BLOCKED';
       }
