@@ -757,10 +757,12 @@ function handleEvent(event, data) {
       break;
     case 'hub_joined':
       showToast(`Joined hub "${data.name}"`);
+      addHubNotification('Joined Hub', `You joined "${data.name}"`, data.hubId);
       refreshHubs();
       break;
     case 'hub_member_joined':
       showToast(`${data.displayName || 'Someone'} joined the hub`);
+      addHubNotification('New Member', `${data.displayName || 'Someone'} joined`, data.hubId);
       if (state.activeHub && state.activeHub.hubId === data.hubId) refreshHubMembers(data.hubId);
       break;
     case 'hub_member_left':
@@ -768,6 +770,7 @@ function handleEvent(event, data) {
       break;
     case 'hub_invite_received':
       showToast(`Invited to hub "${data.hubName}"`, `by ${data.fromName}`);
+      addHubNotification('Hub Invite', `${data.fromName} invited you to "${data.hubName}"`, data.hubId);
       refreshHubs();
       break;
     case 'message_deleted': {
@@ -2017,7 +2020,8 @@ function showSettingsModal() {
   // Blocked peers
   loadBlockedPeers();
 
-  // Direct calls toggle
+  // Audio settings
+  document.getElementById('setting-noise-gate').checked = noiseGateEnabled;
   document.getElementById('setting-direct-calls').checked = state.directCallsOnly;
 
   // Version
@@ -4157,6 +4161,111 @@ async function animateAudioCrypto(msgEl, isSend) {
 
 // ─── WebRTC Voice/Video Calls ───────────────────────────────────────────────
 
+// ─── Audio Processing (Noise Suppression + Gate) ─────────────────────────────
+
+const AUDIO_CONSTRAINTS = {
+  noiseSuppression: true,
+  echoCancellation: true,
+  autoGainControl: true,
+};
+
+let noiseGateEnabled = true;
+const NOISE_GATE_THRESHOLD = -50; // dB — audio below this is silenced
+let noiseGateNode = null;
+
+function getAudioConstraints(includeVideo) {
+  return {
+    audio: AUDIO_CONSTRAINTS,
+    video: includeVideo || false,
+  };
+}
+
+// Apply noise gate to an audio stream — returns processed stream
+function applyNoiseGate(stream) {
+  if (!noiseGateEnabled) return stream;
+
+  try {
+    const ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    // Mic volume gain
+    const micGain = ctx.createGain();
+    micGainNode = micGain;
+    const micVol = document.getElementById('call-mic-vol');
+    if (micVol) micGain.gain.value = parseInt(micVol.value) / 100;
+    // Noise gate gain
+    const gateGain = ctx.createGain();
+    const destination = ctx.createMediaStreamDestination();
+
+    source.connect(micGain);
+    micGain.connect(analyser);
+    micGain.connect(gateGain);
+    gateGain.connect(destination);
+    const gainNode = gateGain;
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    // Monitor audio level and gate
+    const gateInterval = setInterval(() => {
+      analyser.getByteFrequencyData(dataArray);
+      const avg = dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
+      // Convert to rough dB scale (0-255 → -100 to 0 dB)
+      const dB = avg > 0 ? 20 * Math.log10(avg / 255) : -100;
+
+      if (dB < NOISE_GATE_THRESHOLD) {
+        // Below threshold — fade to silence quickly
+        gainNode.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
+      } else {
+        // Above threshold — open gate
+        gainNode.gain.setTargetAtTime(1, ctx.currentTime, 0.01);
+      }
+    }, 20); // Check every 20ms
+
+    // Store cleanup reference
+    noiseGateNode = { ctx, interval: gateInterval, stream: destination.stream };
+
+    // Copy video tracks if present
+    for (const track of stream.getVideoTracks()) {
+      destination.stream.addTrack(track);
+    }
+
+    return destination.stream;
+  } catch (e) {
+    console.warn('[Audio] Noise gate failed, using raw stream:', e.message);
+    return stream;
+  }
+}
+
+// ─── Volume Controls ─────────────────────────────────
+let micGainNode = null;
+let speakerGainNode = null;
+let speakerCtx = null;
+
+function setMicVolume(val) {
+  const pct = parseInt(val);
+  document.getElementById('mic-vol-val').textContent = pct + '%';
+  if (micGainNode) micGainNode.gain.value = pct / 100;
+}
+
+function setSpeakerVolume(val) {
+  const pct = parseInt(val);
+  document.getElementById('speaker-vol-val').textContent = pct + '%';
+  // Adjust all remote audio/video elements
+  document.querySelectorAll('#remote-video, audio[id^="voice-audio-"]').forEach(el => {
+    el.volume = pct / 100;
+  });
+}
+
+function cleanupNoiseGate() {
+  if (noiseGateNode) {
+    clearInterval(noiseGateNode.interval);
+    try { noiseGateNode.ctx.close(); } catch {}
+    noiseGateNode = null;
+  }
+  micGainNode = null;
+}
+
 const ICE_SERVERS_FULL = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
@@ -4183,7 +4292,8 @@ async function startCall(type) {
   showCallUI();
   updateCallStatus('Calling...');
   try {
-    state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
+    const rawStream = await navigator.mediaDevices.getUserMedia(getAudioConstraints(type === 'video'));
+    state.localStream = applyNoiseGate(rawStream);
     if (type === 'video') {
       document.getElementById('local-video').srcObject = state.localStream;
       document.getElementById('video-container').classList.remove('hidden');
@@ -4294,7 +4404,8 @@ async function attemptRelayFallback() {
 
 async function startRelayAudioCapture() {
   if (!state.localStream) {
-    state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const rawRelay = await navigator.mediaDevices.getUserMedia(getAudioConstraints(false));
+    state.localStream = applyNoiseGate(rawRelay);
   }
 
   const ctx = new AudioContext({ sampleRate: 48000 });
@@ -4358,6 +4469,7 @@ function endCall() {
   if (state.relayAudioContext) { state.relayAudioContext.close().catch(() => {}); state.relayAudioContext = null; }
   state.relayAudioActive = false;
   state.callTransport = null;
+  cleanupNoiseGate();
   state.remoteStream = null; state.callState = null; state.callPeerId = null; state.callPeerName = null;
   if (state.callTimer) { clearInterval(state.callTimer); state.callTimer = null; }
   hideCallUI();
@@ -4370,7 +4482,8 @@ async function acceptCall() {
   document.getElementById('call-controls').classList.remove('hidden');
   updateCallStatus('Connecting...');
   try {
-    state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: state.callType === 'video' });
+    const rawAccept = await navigator.mediaDevices.getUserMedia(getAudioConstraints(state.callType === 'video'));
+    state.localStream = applyNoiseGate(rawAccept);
     if (state.callType === 'video') { document.getElementById('local-video').srcObject = state.localStream; document.getElementById('video-container').classList.remove('hidden'); document.getElementById('btn-toggle-video').classList.remove('hidden'); }
     createPeerConnection();
     state.localStream.getTracks().forEach(track => state.peerConnection.addTrack(track, state.localStream));
@@ -4460,6 +4573,15 @@ function switchTab(tabName) {
     if (!state.activeChat) showView('empty');
   }
 }
+
+function toggleNoiseGate(enabled) {
+  noiseGateEnabled = enabled;
+  try { localStorage.setItem('noiseGateEnabled', enabled ? '1' : '0'); } catch {}
+  showToast(enabled ? 'Noise Gate On' : 'Noise Gate Off', enabled ? 'Background noise will be suppressed' : 'All audio passes through');
+}
+
+// Load noise gate preference
+try { noiseGateEnabled = localStorage.getItem('noiseGateEnabled') !== '0'; } catch {}
 
 function toggleDirectCalls(enabled) {
   state.directCallsOnly = enabled;
@@ -5331,6 +5453,65 @@ const refreshHubs = debounce(async () => {
     renderHubStrip();
   } catch (e) { console.error('Failed to refresh hubs:', e); }
 }, 300);
+
+// ─── Hub Notifications ─────────────────────────────────────────────────────
+
+const hubNotifications = [];
+const MAX_HUB_NOTIFICATIONS = 20;
+
+function addHubNotification(title, desc, hubId) {
+  hubNotifications.unshift({
+    title,
+    desc,
+    hubId,
+    timestamp: Date.now(),
+  });
+  if (hubNotifications.length > MAX_HUB_NOTIFICATIONS) hubNotifications.pop();
+  updateHubNotifBadge();
+}
+
+function updateHubNotifBadge() {
+  const btn = document.getElementById('hub-notif-btn');
+  const badge = document.getElementById('hub-notif-badge');
+  if (hubNotifications.length > 0) {
+    btn.classList.remove('hidden');
+    badge.classList.remove('hidden');
+    badge.textContent = hubNotifications.length;
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function showHubNotifications() {
+  const panel = document.getElementById('hub-notif-panel');
+  panel.classList.toggle('hidden');
+
+  const list = document.getElementById('hub-notif-list');
+  if (hubNotifications.length === 0) {
+    list.innerHTML = '<div class="hub-notif-empty">No notifications</div>';
+    return;
+  }
+
+  list.innerHTML = hubNotifications.map(n => `
+    <div class="hub-notif-item" onclick="handleHubNotifClick('${escapeAttr(n.hubId || '')}')">
+      <div class="hub-notif-title">${escapeHtml(n.title)}</div>
+      <div class="hub-notif-desc">${escapeHtml(n.desc)}</div>
+      <div class="hub-notif-time">${relativeTime(n.timestamp)}</div>
+    </div>
+  `).join('');
+}
+
+function handleHubNotifClick(hubId) {
+  document.getElementById('hub-notif-panel').classList.add('hidden');
+  if (hubId) selectHub(hubId);
+}
+
+function clearHubNotifications() {
+  hubNotifications.length = 0;
+  updateHubNotifBadge();
+  document.getElementById('hub-notif-list').innerHTML = '<div class="hub-notif-empty">No notifications</div>';
+  document.getElementById('hub-notif-panel').classList.add('hidden');
+}
 
 function renderHubStrip() {
   const strip = document.getElementById('hub-strip');
@@ -6705,7 +6886,8 @@ async function joinVoiceChannel(hubId, channelId, name) {
   if (state.callState) endCall();
 
   try {
-    state.voiceLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const rawVoice = await navigator.mediaDevices.getUserMedia(getAudioConstraints(false));
+    state.voiceLocalStream = applyNoiseGate(rawVoice);
   } catch (e) {
     showToast('Microphone access denied', e.message);
     return;

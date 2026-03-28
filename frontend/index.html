@@ -27,6 +27,9 @@
       <div id="hub-icons-list"></div>
       <button id="hub-add-btn" class="hub-icon hub-add-icon" onclick="showCreateHubModal()" title="Create Hub">+</button>
       <button id="hub-browse-btn" class="hub-icon hub-browse-icon" onclick="showBrowseHubsModal()" title="Browse Hubs">&#9788;</button>
+      <button id="hub-notif-btn" class="hub-icon hub-notif-icon hidden" onclick="showHubNotifications()" title="Notifications">
+        &#128276;<span id="hub-notif-badge" class="hub-notif-badge hidden">0</span>
+      </button>
       <div style="flex:1"></div>
       <button id="theme-wheel-hub" class="theme-wheel-hub hidden" onclick="startThemeSpin()" title="Spin for a random theme!">
         <div class="wheel-fab-ring"></div>
@@ -343,6 +346,18 @@
         <video id="remote-video" autoplay playsinline></video>
         <video id="local-video" autoplay playsinline muted></video>
       </div>
+      <div id="call-audio-controls" class="call-audio-controls">
+        <div class="audio-slider-row">
+          <span class="audio-slider-icon" title="Microphone">&#127908;</span>
+          <input type="range" id="call-mic-vol" min="0" max="150" value="100" class="audio-slider" oninput="setMicVolume(this.value)">
+          <span class="audio-slider-val" id="mic-vol-val">100%</span>
+        </div>
+        <div class="audio-slider-row">
+          <span class="audio-slider-icon" title="Speaker">&#128266;</span>
+          <input type="range" id="call-speaker-vol" min="0" max="150" value="100" class="audio-slider" oninput="setSpeakerVolume(this.value)">
+          <span class="audio-slider-val" id="speaker-vol-val">100%</span>
+        </div>
+      </div>
       <div id="call-controls">
         <button id="btn-toggle-mute" class="call-btn">Mute</button>
         <button id="btn-toggle-video" class="call-btn hidden">Camera</button>
@@ -352,6 +367,17 @@
       <div id="incoming-call-controls" class="hidden">
         <button id="btn-accept-call" class="call-btn accept">Accept</button>
         <button id="btn-reject-call" class="call-btn end">Reject</button>
+      </div>
+    </div>
+
+    <!-- ─── Hub Notifications Panel ──────────────────────────── -->
+    <div id="hub-notif-panel" class="hub-notif-panel hidden">
+      <div class="hub-notif-header">
+        <span class="micro-label">&#9656;&#9656; NOTIFICATIONS</span>
+        <button class="hub-notif-clear" onclick="clearHubNotifications()">Clear</button>
+      </div>
+      <div id="hub-notif-list" class="hub-notif-list">
+        <div class="hub-notif-empty">No notifications</div>
       </div>
     </div>
 
@@ -560,14 +586,17 @@
         <div class="settings-section">
           <h4>Voice & Video Calls</h4>
           <label class="toggle-label">
+            <input type="checkbox" id="setting-noise-gate" checked onchange="toggleNoiseGate(this.checked)">
+            Noise gate (suppress background noise)
+          </label>
+          <label class="toggle-label" style="margin-top:6px">
             <input type="checkbox" id="setting-direct-calls" onchange="toggleDirectCalls(this.checked)">
             Direct P2P only (no relay)
           </label>
           <p class="micro-text" style="margin-top:6px; line-height:1.6; font-size:8px; color:var(--text-muted)">
-            BY DEFAULT, CALLS USE AN ENCRYPTED RELAY (TURN) WHEN DIRECT CONNECTION FAILS.
-            THE RELAY CANNOT DECRYPT YOUR CALL — ALL AUDIO/VIDEO IS END-TO-END ENCRYPTED (DTLS-SRTP).
-            ENABLE THIS OPTION TO ONLY ALLOW DIRECT PEER-TO-PEER CALLS. CALLS WILL FAIL IF BOTH
-            USERS ARE BEHIND STRICT NAT/FIREWALLS.
+            NOISE GATE SILENCES AUDIO BELOW A THRESHOLD — CUTS KEYBOARD CLICKS, FAN NOISE, AND ROOM AMBIENCE.
+            BROWSER NOISE SUPPRESSION AND ECHO CANCELLATION ARE ALWAYS ENABLED.
+            DIRECT P2P MODE DISABLES RELAY FALLBACK — CALLS MAY FAIL BEHIND STRICT NAT.
           </p>
         </div>
 

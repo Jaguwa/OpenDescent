@@ -1789,6 +1789,193 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 .call-btn:hover { background: var(--bg-hover); }
 .call-btn.end { background: var(--red); border-color: var(--red); color: #fff; }
 .call-btn.end:hover { opacity: 0.9; }
+/* ─── Call Audio Controls ─────────────────────────────────────────────── */
+
+.call-audio-controls {
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.audio-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.audio-slider-icon {
+  font-size: 0.85em;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.audio-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-hover);
+  border-radius: 2px;
+  outline: none;
+}
+
+.audio-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+.audio-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 6px rgba(50, 224, 196, 0.3);
+}
+
+.audio-slider-val {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── Hub Notifications ───────────────────────────────────────────────── */
+
+.hub-notif-icon {
+  position: relative;
+  font-size: 14px;
+}
+
+.hub-notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--red);
+  color: #fff;
+  font-size: 7px;
+  font-family: 'Array', sans-serif;
+  font-weight: 700;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+.hub-notif-panel {
+  position: fixed;
+  left: 60px;
+  bottom: 80px;
+  width: 300px;
+  max-height: 400px;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(13, 115, 119, 0.12);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(50, 224, 196, 0.04);
+  z-index: 200;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.hub-notif-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50, 224, 196, 0.2), transparent);
+}
+
+.hub-notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  position: relative;
+}
+.hub-notif-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50, 224, 196, 0.1), transparent);
+}
+
+.hub-notif-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.hub-notif-clear:hover { color: var(--accent); }
+
+.hub-notif-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.hub-notif-item {
+  padding: 10px 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.hub-notif-item:hover { background: rgba(50, 224, 196, 0.03); }
+.hub-notif-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50, 224, 196, 0.05), transparent);
+}
+
+.hub-notif-title {
+  font-family: 'Array', sans-serif;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.hub-notif-desc {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.hub-notif-time {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  color: var(--text-ghost);
+  margin-top: 2px;
+}
+
+.hub-notif-empty {
+  padding: 20px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-ghost);
+}
+
 .call-btn.chat { background: transparent; border-color: var(--accent); color: var(--accent); }
 .call-btn.chat:hover { background: rgba(50, 224, 196, 0.08); }
 .call-btn.accept { background: var(--green); border-color: var(--green); color: #fff; }
