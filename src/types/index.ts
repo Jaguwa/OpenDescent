@@ -517,6 +517,10 @@ export interface DeadDrop {
   powNonce: number;        // nonce that produces the PoW hash
   votes: number;           // net score (up - down)
   difficulty?: number;     // PoW difficulty (bits), default 18
+  zone?: string;           // drop zone: 'signals' | 'leaks' | 'confessions' | 'local'
+  parentDropId?: string;   // for reply chains — references parent drop
+  replyCount?: number;     // number of replies
+  isFlare?: boolean;       // signal flare — broadcast to all peers, higher PoW
 }
 
 /** Deletion notification — for DMs and posts */

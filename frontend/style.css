@@ -2751,6 +2751,144 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 .deaddrop-score { font-size: 14px; font-weight: 600; min-width: 30px; text-align: center; }
 .deaddrop-expiry { font-size: 11px; color: var(--text-muted); margin-left: auto; }
 
+/* ─── Message Links ──────────────────────────────────────────────────── */
+
+.msg-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(50, 224, 196, 0.3);
+  transition: all 0.2s;
+  word-break: break-all;
+}
+.msg-link:hover {
+  border-bottom-color: var(--accent);
+  text-shadow: 0 0 4px rgba(50, 224, 196, 0.2);
+}
+
+/* ─── Drop Zones + Chains ─────────────────────────────────────────────── */
+
+.deaddrop-zones {
+  display: flex;
+  gap: 4px;
+  padding: 8px 20px;
+  flex-wrap: wrap;
+}
+
+.zone-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: 'Array', sans-serif;
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.zone-btn:hover { color: var(--text-primary); border-color: rgba(50,224,196,0.2); }
+.zone-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(50,224,196,0.06); }
+
+.deaddrop-composer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.deaddrop-zone-select {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 4px 8px;
+  background: var(--bg-primary);
+  border: 1px solid rgba(13,115,119,0.2);
+  border-radius: var(--radius);
+  color: var(--accent);
+}
+
+.deaddrop-flare-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.deaddrop-zone-badge {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--accent);
+  background: rgba(50,224,196,0.06);
+  border: 1px solid rgba(50,224,196,0.12);
+  padding: 1px 6px;
+  border-radius: 2px;
+  margin-left: 4px;
+}
+
+.deaddrop-flare-badge {
+  font-family: 'Array', sans-serif;
+  font-size: 8px;
+  color: #ff6b35;
+  background: rgba(255,107,53,0.08);
+  border: 1px solid rgba(255,107,53,0.2);
+  padding: 1px 6px;
+  border-radius: 2px;
+  margin-left: 4px;
+  letter-spacing: 1px;
+}
+
+.deaddrop-card.deaddrop-flare {
+  border-left-width: 2px;
+}
+.deaddrop-card.deaddrop-flare::before {
+  background: linear-gradient(180deg, transparent, rgba(255,107,53,0.25), transparent) !important;
+}
+
+.deaddrop-time {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-ghost);
+}
+
+.deaddrop-reply-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+.deaddrop-reply-btn:hover { color: var(--accent); border-color: rgba(50,224,196,0.2); }
+
+.deaddrop-replies {
+  margin-left: 24px;
+  border-left: none;
+  position: relative;
+}
+.deaddrop-replies::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(50,224,196,0.15), transparent);
+}
+
+.deaddrop-card.deaddrop-reply {
+  margin-bottom: 8px;
+  padding: 10px 14px;
+}
+
 /* ─── Encrypted Polls ──────────────────────────────────────────────────── */
 
 .poll-card {

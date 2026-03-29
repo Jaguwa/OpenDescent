@@ -86,7 +86,7 @@ export class DeadDropService {
 
   // ─── Create & Submit ────────────────────────────────────────────────────
 
-  async createDeadDrop(content: string): Promise<{ drop: DeadDrop; warning?: string }> {
+  async createDeadDrop(content: string, options?: { zone?: string; parentDropId?: string; isFlare?: boolean }): Promise<{ drop: DeadDrop; warning?: string }> {
     if (!content || content.length > MAX_DROP_LENGTH) {
       throw new Error(`Drop content must be 1-${MAX_DROP_LENGTH} characters`);
     }
@@ -117,6 +117,9 @@ export class DeadDropService {
       powNonce: pow.nonce,
       votes: 0,
       difficulty,
+      zone: options?.zone || 'signals',
+      parentDropId: options?.parentDropId,
+      isFlare: options?.isFlare || false,
     };
 
     // Pick relay peers for onion routing

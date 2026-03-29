@@ -115,7 +115,7 @@
       <!-- Dead Drops tab -->
       <div id="tab-deaddrops" class="tab-content">
         <div class="sidebar-hint">
-          <p class="subtle">Anonymous posts. No identity. No trace.</p>
+          <p class="subtle">Onion-routed anonymous posts. No identity attached. Self-destruct in 24 hours.</p>
         </div>
       </div>
 
@@ -230,14 +230,32 @@
       <div id="deaddrops-view" class="hidden">
         <div id="deaddrops-header">
           <h2>Dead Drops</h2>
-          <span class="subtle">Anonymous &middot; Encrypted &middot; Ephemeral (24h)</span>
+          <p class="subtle" style="margin-top:4px">Say what needs to be said. No identity. No trace. Onion-routed through the mesh. Gone in 24 hours.</p>
+        </div>
+        <div id="deaddrop-zones" class="deaddrop-zones">
+          <button class="zone-btn active" data-zone="all" onclick="setDropZone('all')">All</button>
+          <button class="zone-btn" data-zone="signals" onclick="setDropZone('signals')"># Signals</button>
+          <button class="zone-btn" data-zone="leaks" onclick="setDropZone('leaks')"># Leaks</button>
+          <button class="zone-btn" data-zone="confessions" onclick="setDropZone('confessions')"># Confessions</button>
+          <button class="zone-btn" data-zone="local" onclick="setDropZone('local')"># Local</button>
         </div>
         <div id="deaddrop-composer">
-          <textarea id="deaddrop-input" placeholder="Drop an anonymous message..." rows="3" maxlength="1000"></textarea>
+          <div class="deaddrop-composer-row">
+            <select id="deaddrop-zone-select" class="deaddrop-zone-select">
+              <option value="signals"># signals</option>
+              <option value="leaks"># leaks</option>
+              <option value="confessions"># confessions</option>
+              <option value="local"># local</option>
+            </select>
+            <label class="deaddrop-flare-label" title="Signal Flare — broadcasts to ALL peers (higher proof-of-work)">
+              <input type="checkbox" id="deaddrop-flare"> &#128293; Flare
+            </label>
+          </div>
+          <textarea id="deaddrop-input" placeholder="Drop something into the void..." rows="3" maxlength="1000"></textarea>
           <div id="deaddrop-composer-bottom">
             <span id="deaddrop-char-counter">0/1000</span>
             <span id="deaddrop-pow-status" class="hidden subtle">Computing proof-of-work...</span>
-            <button id="btn-dead-drop" class="btn-primary" onclick="submitDeadDrop()">Drop</button>
+            <button id="btn-dead-drop" class="btn-primary" onclick="submitDeadDrop()">&#9656; Drop</button>
           </div>
         </div>
         <div id="deaddrop-feed"></div>

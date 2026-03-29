@@ -4677,8 +4677,23 @@ function renderContentWithGifs(text) {
     if (isGifLine(line)) {
       return `<img class="gif-message" src="${escapeAttr(line.trim())}" alt="GIF" loading="lazy">`;
     }
-    return escapeHtml(line);
+    return linkify(escapeHtml(line));
   }).join('<br>');
+}
+
+function linkify(escapedHtml) {
+  // Match URLs in already-escaped HTML text
+  const urlRegex = /(https?:\/\/[^\s<>&"']+)/g;
+  return escapedHtml.replace(urlRegex, (url) => {
+    const decoded = url.replace(/&amp;/g, '&');
+    return `<a href="#" class="msg-link" onclick="event.preventDefault(); openExternalLink('${escapeAttr(decoded)}')" title="${escapeAttr(decoded)}">${url}</a>`;
+  });
+}
+
+function openExternalLink(url) {
+  showConfirm(`Open external link?\n\n${url}\n\nThis will open in your browser. OpenDescent cannot guarantee the safety of external sites.`).then(confirmed => {
+    if (confirmed) window.open(url, '_blank', 'noopener,noreferrer');
+  });
 }
 
 let _gifPickerContext = null; // 'post' | 'chat' | 'hub'
@@ -4987,21 +5002,54 @@ function renderDeadDrops() {
   if (!feed) return;
   feed.innerHTML = '';
 
-  if (state.deadDrops.length === 0) {
-    feed.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128123;</div><div class="empty-state-text"><strong>The void is silent</strong>Drop something anonymous.</div></div>';
+  let filtered = [...state.deadDrops];
+
+  // Filter by zone
+  if (activeDropZone !== 'all') {
+    filtered = filtered.filter(d => (d.zone || 'signals') === activeDropZone);
+  }
+
+  // Separate top-level drops from replies
+  const topLevel = filtered.filter(d => !d.parentDropId);
+  const replies = filtered.filter(d => d.parentDropId);
+  const replyMap = {};
+  for (const r of replies) {
+    if (!replyMap[r.parentDropId]) replyMap[r.parentDropId] = [];
+    replyMap[r.parentDropId].push(r);
+  }
+
+  if (topLevel.length === 0) {
+    const zoneText = activeDropZone === 'all' ? '' : ` in #${activeDropZone}`;
+    feed.innerHTML = `<div class="empty-state-rich"><div class="empty-state-icon">&#128123;</div><div class="empty-state-text"><strong>The void is silent${zoneText}</strong>Drop something anonymous.</div></div>`;
     return;
   }
 
-  // Sort by timestamp desc
-  const sorted = [...state.deadDrops].sort((a, b) => b.timestamp - a.timestamp);
-  for (const drop of sorted) {
+  // Sort: flares first, then by timestamp desc
+  topLevel.sort((a, b) => {
+    if (a.isFlare && !b.isFlare) return -1;
+    if (!a.isFlare && b.isFlare) return 1;
+    return b.timestamp - a.timestamp;
+  });
+
+  for (const drop of topLevel) {
     feed.appendChild(renderDeadDropCard(drop));
+    // Render replies inline
+    const dropReplies = replyMap[drop.dropId];
+    if (dropReplies && dropReplies.length > 0) {
+      const replyContainer = document.createElement('div');
+      replyContainer.className = 'deaddrop-replies';
+      dropReplies.sort((a, b) => a.timestamp - b.timestamp);
+      for (const reply of dropReplies) {
+        replyContainer.appendChild(renderDeadDropCard(reply, true));
+      }
+      feed.appendChild(replyContainer);
+    }
   }
 }
 
-function renderDeadDropCard(drop) {
+function renderDeadDropCard(drop, isReply) {
   const card = document.createElement('div');
-  card.className = 'deaddrop-card';
+  card.className = `deaddrop-card${drop.isFlare ? ' deaddrop-flare' : ''}${isReply ? ' deaddrop-reply' : ''}`;
   card.id = `deaddrop-${drop.dropId}`;
 
   const content = state.deadDropContents[drop.dropId] || '(encrypted)';
@@ -5011,29 +5059,54 @@ function renderDeadDropCard(drop) {
   const minsLeft = Math.max(0, Math.floor((expiresIn % (60 * 60 * 1000)) / (60 * 1000)));
   const expiryText = expiresIn > 0 ? `${hoursLeft}h ${minsLeft}m left` : 'Expired';
 
-  // Random anonymous icon characters
   const anonIcons = ['?', '!', '*', '~', '#', '&', '%', '@'];
   const iconChar = anonIcons[Math.abs(hashCode(drop.dropId)) % anonIcons.length];
 
   const voted = state.deadDropVoted[drop.dropId];
+  const zone = drop.zone || 'signals';
+  const zoneBadge = `<span class="deaddrop-zone-badge">#${escapeHtml(zone)}</span>`;
+  const flareBadge = drop.isFlare ? '<span class="deaddrop-flare-badge">&#128293; FLARE</span>' : '';
 
   card.innerHTML = `
     <div class="deaddrop-header">
       <div class="deaddrop-anon-icon">${iconChar}</div>
       <span>Anonymous</span>
-      <span>&middot;</span>
-      <span>${time}</span>
+      ${zoneBadge}${flareBadge}
+      <span class="deaddrop-time">${time}</span>
     </div>
     <div class="deaddrop-content">${renderContentWithGifs(content)}</div>
     <div class="deaddrop-actions">
       <button class="deaddrop-vote-btn ${voted === 'up' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'up')">&#9650;</button>
       <span class="deaddrop-score">${drop.votes || 0}</span>
       <button class="deaddrop-vote-btn ${voted === 'down' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'down')">&#9660;</button>
+      ${!isReply ? `<button class="deaddrop-reply-btn" onclick="replyToDrop('${escapeAttr(drop.dropId)}')" title="Reply anonymously">&#8617; Reply</button>` : ''}
       <span class="deaddrop-expiry">${expiryText}</span>
     </div>
   `;
 
   return card;
+}
+
+let activeDropZone = 'all';
+let replyingToDropId = null;
+
+function setDropZone(zone) {
+  activeDropZone = zone;
+  document.querySelectorAll('.zone-btn').forEach(b => b.classList.toggle('active', b.dataset.zone === zone));
+  renderDeadDrops();
+}
+
+function replyToDrop(dropId) {
+  replyingToDropId = dropId;
+  const input = document.getElementById('deaddrop-input');
+  input.placeholder = 'Reply anonymously...';
+  input.focus();
+  showToast('Replying', 'Your reply will be anonymous and linked to this drop');
+}
+
+function cancelReply() {
+  replyingToDropId = null;
+  document.getElementById('deaddrop-input').placeholder = 'Drop something into the void...';
 }
 
 async function submitDeadDrop() {
@@ -5045,13 +5118,22 @@ async function submitDeadDrop() {
     return;
   }
 
+  const zone = document.getElementById('deaddrop-zone-select').value;
+  const isFlare = document.getElementById('deaddrop-flare').checked;
+
   const btn = document.getElementById('btn-dead-drop');
   const powStatus = document.getElementById('deaddrop-pow-status');
   btn.disabled = true;
   powStatus.classList.remove('hidden');
+  if (isFlare) powStatus.textContent = 'Computing high-intensity proof-of-work (flare)...';
 
   try {
-    const result = await send('create_dead_drop', { content: text });
+    const result = await send('create_dead_drop', {
+      content: text,
+      zone,
+      parentDropId: replyingToDropId || undefined,
+      isFlare,
+    });
     input.value = '';
     document.getElementById('deaddrop-char-counter').textContent = '0/1000';
     if (result && result.warning) {
@@ -5064,6 +5146,9 @@ async function submitDeadDrop() {
   } finally {
     btn.disabled = false;
     powStatus.classList.add('hidden');
+    powStatus.textContent = 'Computing proof-of-work...';
+    cancelReply();
+    document.getElementById('deaddrop-flare').checked = false;
   }
 }
 
