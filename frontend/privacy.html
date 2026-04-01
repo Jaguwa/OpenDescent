@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenDescent — Privacy Policy</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>
+  @font-face { font-family: 'Array'; src: url('fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Array'; src: url('fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Array', -apple-system, sans-serif; background: #212121; color: #EEEEEE; line-height: 1.8; }
+  .container { max-width: 720px; margin: 0 auto; padding: 60px 24px; }
+  h1 { font-size: 2em; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 8px; color: #32E0C4; }
+  .subtitle { font-family: 'SF Mono', 'Consolas', monospace; font-size: 11px; color: #666; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 40px; }
+  h2 { font-size: 1.1em; letter-spacing: 2px; text-transform: uppercase; color: #32E0C4; margin: 32px 0 12px; }
+  p, li { font-size: 0.95em; color: #aaa; margin-bottom: 12px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  strong { color: #EEEEEE; }
+  a { color: #32E0C4; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .back { display: inline-block; margin-bottom: 24px; font-family: 'SF Mono', monospace; font-size: 11px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(50,224,196,0.15), transparent); margin: 32px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back">&larr; Back to OpenDescent</a>
+  <h1>Privacy Policy</h1>
+  <div class="subtitle">Last updated: April 2025</div>
+
+  <h2>The Short Version</h2>
+  <p>We don't collect your data. We can't read your messages. We don't track you. OpenDescent is designed so that your privacy isn't a setting you enable — it's how the system works.</p>
+
+  <div class="divider"></div>
+
+  <h2>What We Don't Collect</h2>
+  <ul>
+    <li><strong>No analytics or tracking.</strong> No cookies, no fingerprinting, no usage data, no telemetry. We have no idea how you use the app.</li>
+    <li><strong>No personal information.</strong> No email address, phone number, real name, or any identifying information is required to use OpenDescent.</li>
+    <li><strong>No message content.</strong> All messages are end-to-end encrypted on your device before transmission. We cannot read, access, or store your messages.</li>
+    <li><strong>No contact lists.</strong> Your friends, contacts, and social graph are stored on your device, not on any server.</li>
+    <li><strong>No location data.</strong> We don't request or store your location.</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>Your Identity</h2>
+  <p>Your identity on OpenDescent is an Ed25519 cryptographic keypair generated on your device. It is not linked to any real-world identity. You can back it up with a 12-word mnemonic phrase. If you lose your keys and mnemonic, your identity cannot be recovered — because we never had it.</p>
+
+  <div class="divider"></div>
+
+  <h2>What the Relay Sees</h2>
+  <p>OpenDescent uses relay nodes to help peers connect through firewalls and NAT. When your data passes through a relay:</p>
+  <ul>
+    <li>The relay can see that <strong>two peers are communicating</strong> (network metadata — IP addresses and connection timing)</li>
+    <li>The relay <strong>cannot see what is being communicated</strong> — all content is end-to-end encrypted</li>
+    <li>The relay <strong>does not log or store</strong> connection metadata beyond what's needed for active connections</li>
+    <li>Voice and video calls use DTLS-SRTP encryption — the relay cannot listen to or record calls</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>Broadcast Posts</h2>
+  <p>Public broadcast posts are shared openly across the peer network. They are signed with your cryptographic identity but are readable by anyone on the network. Friends-only posts are encrypted and only shared with your direct contacts. Anonymous Dead Drop posts are onion-routed and carry no identity information.</p>
+
+  <div class="divider"></div>
+
+  <h2>Payments</h2>
+  <p>If you purchase OpenDescent Pro, payment is processed by <strong>Stripe</strong>. We do not store your credit card details, billing address, or any payment information. Stripe's privacy policy applies to payment transactions: <a href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy</a></p>
+  <p>Your Pro license key is tied to your OpenDescent peer ID (a cryptographic hash) — not to your name, email, or payment details.</p>
+
+  <div class="divider"></div>
+
+  <h2>Data Storage</h2>
+  <p>All your data — messages, contacts, posts, settings, encryption keys — is stored <strong>locally on your device</strong> in an encrypted database. We do not have access to this data. If you uninstall the app or delete your account, the data is permanently erased from your device.</p>
+
+  <div class="divider"></div>
+
+  <h2>Third-Party Services</h2>
+  <ul>
+    <li><strong>Stripe</strong> — payment processing for Pro subscriptions</li>
+    <li><strong>Klipy</strong> — GIF search (if you use the GIF picker, your search queries go to Klipy's API)</li>
+    <li><strong>Google STUN servers</strong> — used for NAT traversal during calls (Google sees a connection request from your IP, nothing else)</li>
+  </ul>
+  <p>No other third-party services receive any data from OpenDescent.</p>
+
+  <div class="divider"></div>
+
+  <h2>Open Source</h2>
+  <p>OpenDescent is open source. You can verify every claim in this policy by reading the code: <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">github.com/Jaguwa/OpenDescent</a></p>
+
+  <div class="divider"></div>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the update will be published here with a new date. Since we don't have your email, we can't notify you directly — check back occasionally or follow the project on GitHub.</p>
+
+  <div class="divider"></div>
+
+  <h2>Contact</h2>
+  <p>Questions about privacy? Open an issue on <a href="https://github.com/Jaguwa/OpenDescent/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+</div>
+</body>
+</html>

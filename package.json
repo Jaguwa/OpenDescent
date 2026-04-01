@@ -1,7 +1,14 @@
 {
   "name": "open-descent",
   "version": "0.5.3",
-  "description": "OpenDescent",
+  "description": "Decentralized P2P social network — encrypted messaging, voice/video calls, community hubs, and anonymous drops",
+  "author": "OpenDescent",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jaguwa/OpenDescent.git"
+  },
+  "homepage": "https://open-descent.com",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
