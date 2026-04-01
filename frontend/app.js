@@ -4383,24 +4383,41 @@ function cleanupNoiseGate() {
   micGainNode = null;
 }
 
-const ICE_SERVERS_FULL = [
+const ICE_SERVERS_STUN = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'turn:188.166.151.203:3478', username: 'opendescent', credential: 'Od3sc3nt2025!' },
-  { urls: 'turn:188.166.151.203:3478?transport=tcp', username: 'opendescent', credential: 'Od3sc3nt2025!' },
 ];
 
-const ICE_SERVERS_P2P_ONLY = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-];
+let cachedTurnConfig = null;
+let turnConfigExpiry = 0;
+
+async function fetchTurnConfig() {
+  // Cache for 5 minutes
+  if (cachedTurnConfig && Date.now() < turnConfigExpiry) return cachedTurnConfig;
+  try {
+    const data = await send('get_turn_config');
+    if (data && data.servers && data.servers.length > 0) {
+      cachedTurnConfig = data.servers;
+      turnConfigExpiry = Date.now() + 5 * 60 * 1000;
+      return cachedTurnConfig;
+    }
+  } catch {}
+  return [];
+}
 
 function getIceServers() {
-  return state.directCallsOnly ? ICE_SERVERS_P2P_ONLY : ICE_SERVERS_FULL;
+  if (state.directCallsOnly) return ICE_SERVERS_STUN;
+  const turn = cachedTurnConfig || [];
+  return [...ICE_SERVERS_STUN, ...turn];
 }
+
+// Pre-fetch TURN config on startup
+setTimeout(() => { fetchTurnConfig().catch(() => {}); }, 3000);
 
 async function startCall(type) {
   if (!state.activeChat || state.activeChat.type !== 'dm') return;
+  // Ensure TURN config is loaded before starting call
+  await fetchTurnConfig();
   state.callType = type;
   state.callPeerId = state.activeChat.peerId;
   state.callPeerName = state.activeChat.name;

@@ -1693,6 +1693,16 @@ export class APIServer {
           }
         }
 
+        case 'get_turn_config': {
+          // Fetch TURN credentials from the license server (not hardcoded in source)
+          try {
+            const turnResp = await this.fetchTurnFromLicenseServer();
+            return this.ok(id, { servers: turnResp });
+          } catch {
+            return this.ok(id, { servers: [] });
+          }
+        }
+
         case 'get_feed_status': {
           const feedLatest = await this.deps.store.getLatestPostTimestamp();
           const feedCount = await this.deps.store.getPostCount();
@@ -2130,6 +2140,26 @@ export class APIServer {
       req.on('error', (e) => { clearTimeout(timeout); reject(e); });
       req.write(payload);
       req.end();
+    });
+  }
+
+  /** Fetch TURN credentials from the license server */
+  private async fetchTurnFromLicenseServer(): Promise<any[]> {
+    const url = 'https://pay.open-descent.com/turn-config';
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Timeout')), 5000);
+      https.get(url, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          clearTimeout(timeout);
+          try {
+            const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+            resolve(data.servers || []);
+          } catch { resolve([]); }
+        });
+        res.on('error', () => { clearTimeout(timeout); resolve([]); });
+      }).on('error', () => { clearTimeout(timeout); resolve([]); });
     });
   }
 

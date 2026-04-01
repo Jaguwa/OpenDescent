@@ -261,6 +261,22 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
+  // ─── GET /turn-config — Serve TURN credentials ────────────────
+  if (req.method === 'GET' && url.pathname === '/turn-config') {
+    const turnHost = process.env.TURN_HOST || '188.166.151.203';
+    const turnUser = process.env.TURN_USER || 'opendescent';
+    const turnPass = process.env.TURN_PASS || '';
+    const servers = [];
+    if (turnPass) {
+      servers.push(
+        { urls: `turn:${turnHost}:3478`, username: turnUser, credential: turnPass },
+        { urls: `turn:${turnHost}:3478?transport=tcp`, username: turnUser, credential: turnPass },
+      );
+    }
+    respond(res, 200, { servers });
+    return;
+  }
+
   // ─── GET /founder-status — How many claimed ───────────────────
   if (req.method === 'GET' && url.pathname === '/founder-status') {
     respond(res, 200, { claimed: founderCount, total: MAX_FOUNDERS, remaining: MAX_FOUNDERS - founderCount });
