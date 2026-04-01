@@ -28,11 +28,16 @@ import { createLicense, generateLicenseKeypair } from './license.js';
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || 'price_1TD93I13ZaqW84U7IIWJ4s1S';
+const FOUNDER_PRICE_ID = process.env.FOUNDER_PRICE_ID || 'price_1THUMC238rNCK1Lkm03SMf7A';
 const LICENSE_PRIVATE_KEY = process.env.LICENSE_PRIVATE_KEY || '';
 const PORT = parseInt(process.env.LICENSE_PORT || '9000', 10);
 
 // License duration: 35 days (5 day grace period beyond 30-day billing cycle)
 const LICENSE_DURATION_MS = 35 * 24 * 60 * 60 * 1000;
+// Founder license: expires 2030
+const FOUNDER_DURATION_MS = (new Date('2030-12-31').getTime() - Date.now());
+const MAX_FOUNDERS = 101;
+let founderCount = 0;
 
 // In-memory store of issued licenses (peerId -> licenseKey)
 // In production, persist to a file or database
@@ -219,6 +224,49 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
+  // ─── POST /founder — Founder's Edition checkout ────────────────
+  if (req.method === 'POST' && url.pathname === '/founder') {
+    try {
+      if (founderCount >= MAX_FOUNDERS) {
+        respond(res, 400, { error: 'All Founder editions have been claimed' });
+        return;
+      }
+
+      const body = await readBody(req);
+      const { peerId } = JSON.parse(body);
+      if (!peerId || typeof peerId !== 'string') {
+        respond(res, 400, { error: 'Missing peerId' });
+        return;
+      }
+
+      const session = await stripeRequest('POST', '/checkout/sessions', {
+        'mode': 'payment',
+        'line_items[0][price]': FOUNDER_PRICE_ID,
+        'line_items[0][quantity]': '1',
+        'metadata[peerId]': peerId,
+        'metadata[founder]': 'true',
+        'success_url': `${process.env.LICENSE_URL || 'https://pay.open-descent.com'}/success?session_id={CHECKOUT_SESSION_ID}`,
+        'cancel_url': `${process.env.LICENSE_URL || 'https://pay.open-descent.com'}/cancel`,
+      });
+
+      if (session.error) {
+        respond(res, 500, { error: session.error.message });
+        return;
+      }
+
+      respond(res, 200, { url: session.url, sessionId: session.id });
+    } catch (err: any) {
+      respond(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // ─── GET /founder-status — How many claimed ───────────────────
+  if (req.method === 'GET' && url.pathname === '/founder-status') {
+    respond(res, 200, { claimed: founderCount, total: MAX_FOUNDERS, remaining: MAX_FOUNDERS - founderCount });
+    return;
+  }
+
   // ─── POST /webhook — Stripe webhook ───────────────────────────
   if (req.method === 'POST' && url.pathname === '/webhook') {
     try {
@@ -240,12 +288,21 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         const peerId = session.metadata?.peerId;
+        const isFounder = session.metadata?.founder === 'true';
 
         if (peerId && LICENSE_PRIVATE_KEY) {
-          const licenseKey = createLicense(peerId, 'pro', LICENSE_DURATION_MS, LICENSE_PRIVATE_KEY);
-          issuedLicenses.set(peerId, licenseKey);
-          saveLicenses();
-          console.log(`[License] Issued pro license for ${peerId.slice(0, 12)}...`);
+          if (isFounder) {
+            const licenseKey = createLicense(peerId, 'pro', FOUNDER_DURATION_MS, LICENSE_PRIVATE_KEY, true);
+            issuedLicenses.set(peerId, licenseKey);
+            founderCount++;
+            saveLicenses();
+            console.log(`[License] Issued FOUNDER license #${founderCount}/${MAX_FOUNDERS} for ${peerId.slice(0, 12)}...`);
+          } else {
+            const licenseKey = createLicense(peerId, 'pro', LICENSE_DURATION_MS, LICENSE_PRIVATE_KEY);
+            issuedLicenses.set(peerId, licenseKey);
+            saveLicenses();
+            console.log(`[License] Issued pro license for ${peerId.slice(0, 12)}...`);
+          }
         } else {
           console.warn('[Webhook] Missing peerId or LICENSE_PRIVATE_KEY');
         }
@@ -325,14 +382,24 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       }
     }
 
+    // Check if this is a founder license
+    let isFounderLicense = false;
+    if (licenseKey) {
+      try {
+        const padded = licenseKey.replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'));
+        isFounderLicense = decoded?.payload?.founder === true;
+      } catch {}
+    }
+
     const html = `<!DOCTYPE html>
-<html><head><title>OpenDescent Pro — Activated</title>
+<html><head><title>OpenDescent Pro — ${isFounderLicense ? "Founder's Edition" : 'Activated'}</title>
 <style>
-  body { font-family: -apple-system, sans-serif; background: #0d1117; color: #e6edf3;
+  body { font-family: -apple-system, sans-serif; background: #212121; color: #EEEEEE;
          display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 2rem;
+  .card { background: #262626; border: 1px solid rgba(13,115,119,0.2); border-radius: 6px; padding: 2rem;
           max-width: 600px; width: 90%; text-align: center; }
-  h1 { color: #58a6ff; margin-bottom: 0.5rem; }
+  h1 { color: #32E0C4; margin-bottom: 0.5rem; }
   .key-box { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 1rem;
              margin: 1.5rem 0; word-break: break-all; font-family: monospace; font-size: 0.85rem;
              user-select: all; cursor: pointer; color: #7ee787; }
@@ -342,8 +409,8 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
   .copy-btn:hover { background: #2ea043; }
 </style></head>
 <body><div class="card">
-  <h1>Welcome to Pro!</h1>
-  <p>Your OpenDescent Pro license has been activated.</p>
+  <h1>${isFounderLicense ? "Welcome, Founder." : "Welcome to Pro!"}</h1>
+  <p>${isFounderLicense ? "You're one of the first 101. Lifetime Pro access. Founder badge on your profile. Thank you for believing early." : "Your OpenDescent Pro license has been activated."}</p>
   ${licenseKey ? `
     <p class="hint">Copy this license key and paste it into <strong>Settings → License Key</strong> in your app:</p>
     <div class="key-box" id="key" onclick="copyKey()">${licenseKey}</div>

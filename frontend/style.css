@@ -1415,6 +1415,27 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 
 .identity-info h2 { font-size: 1.3em; margin-bottom: 2px; }
 
+.founder-badge {
+  display: inline-block;
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffd700;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.08));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  padding: 2px 8px;
+  border-radius: 2px;
+  margin-bottom: 4px;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+  animation: founderGlow 3s ease-in-out infinite;
+}
+
+@keyframes founderGlow {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 215, 0, 0.1); }
+  50% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.2); }
+}
+
 /* ─── Vital Signs Card ───────────────────────────────────────────────── */
 
 .card-vitals {
@@ -5828,6 +5849,134 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 
 .vn-scramble-lock {
   font-size: 12px;
+}
+
+/* ─── Shared Post Card (in chat) ──────────────────────────────────────── */
+
+.shared-post-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(13, 115, 119, 0.12);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  position: relative;
+}
+.shared-post-card::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  bottom: 15%;
+  left: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(50, 224, 196, 0.3), transparent);
+  border-radius: 1px;
+}
+
+.shared-post-label {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.shared-post-author {
+  font-family: 'Array', sans-serif;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.shared-post-content {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.shared-post-meta {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  color: var(--text-ghost);
+  letter-spacing: 0.5px;
+}
+
+/* ─── Share Post Picker ──────────────────────────────────────────────── */
+
+.share-post-preview {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(13, 115, 119, 0.1);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.share-preview-author {
+  font-family: 'Array', sans-serif;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.share-preview-text {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.share-contact-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.share-contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.share-contact-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50, 224, 196, 0.06), transparent);
+}
+
+.share-contact-item:hover {
+  background: rgba(50, 224, 196, 0.04);
+}
+
+.share-contact-name {
+  font-family: 'Array', sans-serif;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.share-send-icon {
+  color: var(--accent);
+  font-size: 1.2em;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.share-contact-item:hover .share-send-icon {
+  opacity: 1;
 }
 
 /* ─── Feed Filter Tabs ───────────────────────────────────────────────── */

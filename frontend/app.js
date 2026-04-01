@@ -1004,14 +1004,14 @@ function appendMessage(msg) {
     return;
   }
   const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-  el.innerHTML += `
+  el.insertAdjacentHTML('beforeend', `
       <div class="message ${isMine ? 'sent' : 'received'} message-new" id="${msgId}">
         ${senderHTML}
         <div class="msg-body">${escapeHtml(msg.body)}</div>
         <div class="msg-time">${time}
           <span class="msg-crypto-status crypto-encrypting"><span class="status-dot-sm"></span>${isMine ? 'ENCRYPTING' : 'DECRYPTING'}</span>
         </div>
-      </div>`;
+      </div>`);
   scrollToBottom();
 
   // Trigger encryption visualization
@@ -1456,8 +1456,29 @@ async function activateStep(msgEl, stepName, status, active) {
   }
 }
 
+// Animation tracking
+let pendingAnimations = 0;
+
+function quickCryptoStatus(msgEl, plaintext, isSend) {
+  const bodyEl = msgEl.querySelector('.msg-body');
+  const statusEl = msgEl.querySelector('.msg-crypto-status');
+  if (!bodyEl) return;
+  // Quick flash — show status without full pipeline animation
+  bodyEl.innerHTML = renderContentWithGifs(plaintext);
+  const fp = generateFingerprint(plaintext);
+  if (statusEl) {
+    statusEl.innerHTML = `<span class="status-dot-sm"></span>${isSend ? 'DELIVERED' : 'DECRYPTED'}`;
+    statusEl.className = `msg-crypto-status ${isSend ? 'crypto-delivered' : 'crypto-decrypted'}`;
+  }
+  const fpBadge = document.createElement('div');
+  fpBadge.className = 'msg-fingerprint';
+  fpBadge.innerHTML = `<span class="fp-lock">&#9656;</span> SHA ${fp}`;
+  bodyEl.after(fpBadge);
+}
+
 // Run the send encryption animation on a message element
 async function animateSendEncrypt(msgEl, plaintext) {
+  pendingAnimations++;
   const bodyEl = msgEl.querySelector('.msg-body');
   const statusEl = msgEl.querySelector('.msg-crypto-status');
   if (!bodyEl) return;
@@ -1572,10 +1593,12 @@ async function animateSendEncrypt(msgEl, plaintext) {
   await new Promise(r => setTimeout(r, 500));
   machine.remove();
   routeStrip.remove();
+  pendingAnimations--;
 }
 
 // Run the receive decrypt animation on a message element
 async function animateReceiveDecrypt(msgEl, plaintext) {
+  pendingAnimations++;
   const bodyEl = msgEl.querySelector('.msg-body');
   const statusEl = msgEl.querySelector('.msg-crypto-status');
   if (!bodyEl) return;
@@ -1660,6 +1683,7 @@ async function animateReceiveDecrypt(msgEl, plaintext) {
   machine.classList.remove('active');
   await new Promise(r => setTimeout(r, 400));
   machine.remove();
+  pendingAnimations--;
 }
 
 // Show incoming transmission bar
@@ -2233,10 +2257,13 @@ function renderBentoProfile(data) {
         const avatarHtml = cardData.avatarUrl && isSafeMediaSrc(cardData.avatarUrl)
           ? `<img src="${cardData.avatarUrl}" class="profile-avatar-large" style="width:80px;height:80px;border-radius:50%;object-fit:cover">`
           : `<canvas class="profile-avatar-large" width="80" height="80" data-peerid="${peerId}"></canvas>`;
+        const isFounder = (data.isSelf && state.licenseStatus && state.licenseStatus.founder) || cardData.isFounder;
+        const founderBadge = isFounder ? '<span class="founder-badge" title="Founder — one of the first 101">&#9733; FOUNDER</span>' : '';
         html += `<div class="bento-card card-identity ${sizeClass}">
           ${avatarHtml}
           <div class="identity-info">
             <h2>${escapeHtml(displayName)}</h2>
+            ${founderBadge}
             ${cardData.tagline ? `<div class="tagline">${escapeHtml(cardData.tagline)}</div>` : ''}
             <div class="subtle" style="font-family:monospace;font-size:0.75em;margin-top:4px">${peerId.slice(0, 20)}...</div>
           </div>
@@ -2978,10 +3005,100 @@ function renderPostCard(post) {
       <button class="post-action-btn" onclick="openComments('${safePostId}')">
         &#128172; ${post.commentCount || 0}
       </button>
+      <button class="post-action-btn" onclick="sharePost('${safePostId}')" title="Share to a friend">&#8618; Share</button>
       <button class="post-action-btn post-delete-btn" onclick="deletePost('${safePostId}', ${isMe})" title="${isMe ? 'Delete post' : 'Hide from feed'}">&#128465;</button>
       ${!isMe ? `<button class="post-action-btn" onclick="showReportModal('${safePostId}','post')" title="Report">&#9873;</button>` : ''}
     </div>
   </div>`;
+}
+
+// ─── Share Post to Contact ────────────────────────────────────────────────
+
+async function sharePost(postId) {
+  // Find the post
+  const post = state.feedPosts.find(p => p.postId === postId);
+  if (!post) { showToast('Post not found'); return; }
+
+  // Get contacts to share with
+  let contacts;
+  try {
+    contacts = await send('get_contacts');
+  } catch { showToast('Failed to load contacts'); return; }
+
+  if (!contacts || contacts.length === 0) {
+    showToast('No contacts', 'Connect with peers first');
+    return;
+  }
+
+  // Build picker modal
+  let picker = document.getElementById('share-post-picker');
+  if (!picker) {
+    picker = document.createElement('div');
+    picker.id = 'share-post-picker';
+    picker.className = 'modal';
+    document.body.appendChild(picker);
+  }
+
+  const authorName = post.authorName || post.authorId.slice(0, 12);
+  const preview = post.content ? post.content.slice(0, 80) + (post.content.length > 80 ? '...' : '') : '(media post)';
+
+  picker.innerHTML = `<div class="modal-content" style="max-width:400px">
+    <h3>Share Post</h3>
+    <div class="share-post-preview">
+      <div class="share-preview-author">${escapeHtml(authorName)}</div>
+      <div class="share-preview-text">${escapeHtml(preview)}</div>
+    </div>
+    <div class="share-contact-list">
+      ${contacts.filter(c => c.peerId !== state.myPeerId).map(c => `
+        <div class="share-contact-item" onclick="sendSharedPost('${escapeAttr(c.peerId)}', '${escapeAttr(c.displayName || c.peerId.slice(0, 12))}', '${escapeAttr(postId)}')">
+          <span class="share-contact-name">${c.online ? '<span class="online-dot"></span>' : ''}${escapeHtml(c.displayName || c.peerId.slice(0, 12))}</span>
+          <span class="share-send-icon">&#9656;</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-secondary" onclick="document.getElementById('share-post-picker').classList.add('hidden')">Cancel</button>
+    </div>
+  </div>`;
+  picker.classList.remove('hidden');
+}
+
+async function sendSharedPost(peerId, displayName, postId) {
+  const post = state.feedPosts.find(p => p.postId === postId);
+  if (!post) return;
+
+  const authorName = post.authorName || post.authorId.slice(0, 12);
+  let content = post.content || '';
+
+  // Handle media-only posts
+  if (!content && post.mediaAttachments && post.mediaAttachments.length > 0) {
+    content = post.mediaAttachments.map(a =>
+      a.type === 'voicenote' ? '\ud83c\udfa4 Voice note' :
+      a.type === 'video' ? '\ud83c\udfa5 Video' :
+      a.type === 'image' ? '\ud83d\uddbc Image' :
+      a.type === 'audio' ? '\ud83c\udfb5 Audio' : 'Media'
+    ).join(', ');
+  }
+
+  // Format as JSON so we can render it as a card on the receiving end
+  const shareData = JSON.stringify({
+    type: 'shared_post',
+    authorName,
+    authorId: post.authorId,
+    content,
+    timestamp: post.timestamp,
+    likeCount: post.likeCount || 0,
+    commentCount: post.commentCount || 0,
+  });
+  const shareText = shareData;
+
+  try {
+    await send('send_message', { to: peerId, text: shareText });
+    document.getElementById('share-post-picker').classList.add('hidden');
+    showToast('Shared!', `Post sent to ${displayName}`);
+  } catch (e) {
+    showToast('Share failed', e.message);
+  }
 }
 
 // ─── Feed Filter & Algorithm ──────────────────────────────────────────────
@@ -4672,6 +4789,23 @@ function isGifLine(line) {
 
 function renderContentWithGifs(text) {
   if (!text) return '';
+
+  // Detect shared post card
+  try {
+    if (text.startsWith('{"type":"shared_post"')) {
+      const shared = JSON.parse(text);
+      if (shared.type === 'shared_post') {
+        const time = relativeTime(shared.timestamp);
+        return `<div class="shared-post-card">
+          <div class="shared-post-label">&#8618; SHARED POST</div>
+          <div class="shared-post-author">${escapeHtml(shared.authorName)}</div>
+          <div class="shared-post-content">${linkify(escapeHtml(shared.content))}</div>
+          <div class="shared-post-meta">${time} &middot; &#9825; ${shared.likeCount || 0} &middot; &#128172; ${shared.commentCount || 0}</div>
+        </div>`;
+      }
+    }
+  } catch {}
+
   const lines = text.split('\n');
   return lines.map(line => {
     if (isGifLine(line)) {
@@ -6989,14 +7123,15 @@ async function joinVoiceChannel(hubId, channelId, name) {
   renderHubChannels();
   highlightVoiceHub();
 
-  // Notify hub members we joined
-  const members = state.hubMembers || [];
-  for (const m of members) {
-    if (m.peerId === state.myPeerId) continue;
-    send('call_signal', {
-      peerId: m.peerId,
-      signal: { type: 'voice_join', hubId, channelId, name, fromName: state.myName },
-    }).catch(() => {});
+  // Notify hub members we joined (staggered to avoid concurrent stream issues)
+  const members = (state.hubMembers || []).filter(m => m.peerId !== state.myPeerId);
+  for (let i = 0; i < members.length; i++) {
+    setTimeout(() => {
+      send('call_signal', {
+        peerId: members[i].peerId,
+        signal: { type: 'voice_join', hubId, channelId, name, fromName: state.myName },
+      }).catch(() => {});
+    }, i * 500); // 500ms between each notification
   }
 }
 
@@ -7228,22 +7363,25 @@ function handleVoiceSignal(data) {
     if (state.voicePeers[fromId]) return; // Already connected
     sfx.play('voiceJoin');
 
-    (async () => {
-      const pc = createVoicePeerConnection(fromId, signal.fromName || fromName);
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await send('call_signal', {
-        peerId: fromId,
-        signal: {
-          type: 'voice_offer',
-          sdp: offer.sdp,
-          hubId: state.voiceChannel.hubId,
-          channelId: state.voiceChannel.channelId,
-          fromName: state.myName,
-        },
-      });
-      renderHubChannels();
-    })().catch(e => console.error('[Voice] Failed to create offer:', e));
+    // Delay offer slightly to let the joiner's connection stabilize
+    setTimeout(async () => {
+      try {
+        const pc = createVoicePeerConnection(fromId, signal.fromName || fromName);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await send('call_signal', {
+          peerId: fromId,
+          signal: {
+            type: 'voice_offer',
+            sdp: offer.sdp,
+            hubId: state.voiceChannel.hubId,
+            channelId: state.voiceChannel.channelId,
+            fromName: state.myName,
+          },
+        });
+        renderHubChannels();
+      } catch (e) { console.error('[Voice] Failed to create offer:', e); }
+    }, 1000);
 
   } else if (signal.type === 'voice_offer') {
     // Received an offer — if we're in the same channel, create answer
@@ -7251,35 +7389,48 @@ function handleVoiceSignal(data) {
     if (signal.hubId !== state.voiceChannel.hubId || signal.channelId !== state.voiceChannel.channelId) return;
 
     (async () => {
-      const pc = createVoicePeerConnection(fromId, signal.fromName || fromName);
-      await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      await send('call_signal', {
-        peerId: fromId,
-        signal: {
-          type: 'voice_answer',
-          sdp: answer.sdp,
-          hubId: state.voiceChannel.hubId,
-          channelId: state.voiceChannel.channelId,
-        },
-      });
-      renderHubChannels();
-    })().catch(e => console.error('[Voice] Failed to create answer:', e));
+      try {
+        const pc = createVoicePeerConnection(fromId, signal.fromName || fromName);
+        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await send('call_signal', {
+          peerId: fromId,
+          signal: {
+            type: 'voice_answer',
+            sdp: answer.sdp,
+            hubId: state.voiceChannel.hubId,
+            channelId: state.voiceChannel.channelId,
+          },
+        });
+        renderHubChannels();
+      } catch (e) { console.error('[Voice] Failed to create answer:', e); }
+    })();
 
   } else if (signal.type === 'voice_answer') {
     // Set remote description on existing connection
     if (!state.voicePeers[fromId]) return;
-    const pc = state.voicePeers[fromId].pc;
-    pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }))
+    const peer = state.voicePeers[fromId];
+    peer.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }))
+      .then(() => {
+        // Flush queued ICE candidates
+        if (peer.iceQueue) {
+          for (const c of peer.iceQueue) peer.pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+          peer.iceQueue = [];
+        }
+      })
       .catch(e => console.error('[Voice] Failed to set answer:', e));
 
   } else if (signal.type === 'voice_ice') {
-    // Add ICE candidate
+    // Add ICE candidate (queue if remote description not set yet)
     if (!state.voicePeers[fromId]) return;
-    const pc = state.voicePeers[fromId].pc;
-    if (pc.remoteDescription) {
-      pc.addIceCandidate(new RTCIceCandidate(signal.candidate)).catch(() => {});
+    const peer = state.voicePeers[fromId];
+    if (peer.pc.remoteDescription) {
+      peer.pc.addIceCandidate(new RTCIceCandidate(signal.candidate)).catch(() => {});
+    } else {
+      // Queue for later
+      if (!peer.iceQueue) peer.iceQueue = [];
+      peer.iceQueue.push(signal.candidate);
     }
 
   } else if (signal.type === 'voice_leave') {

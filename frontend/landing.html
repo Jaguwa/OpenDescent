@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenDescent — Decentralized P2P Social Network</title>
 <meta name="description" content="End-to-end encrypted. Peer-to-peer. No central servers. OpenDescent is a decentralized social network where you own your identity and your data.">
+<link rel="icon" type="image/png" href="/favicon.png">
 <style>
 @font-face { font-family: 'Array'; src: url('fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Array'; src: url('fonts/Array-Semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
@@ -673,6 +674,134 @@ nav .nav-inner {
   line-height: 1.7;
 }
 
+/* ─── Founder's Edition ────────────────────────────── */
+.founder-section { background: var(--bg); padding: 80px 0; }
+
+.founder-box {
+  max-width: 500px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #1a1a1a 0%, #1e2218 50%, #1a201a 100%);
+  border: 1px solid rgba(255, 215, 0, 0.12);
+  border-radius: 4px;
+  padding: 40px 32px;
+  text-align: center;
+  position: relative;
+}
+.founder-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+}
+
+.founder-badge-large {
+  display: inline-block;
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  padding: 4px 16px;
+  border-radius: 2px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.founder-headline {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 1.4em;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.founder-desc {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+
+.founder-counter {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.founder-count {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 2.5em;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+.founder-separator {
+  font-family: 'Array', sans-serif;
+  font-size: 1.5em;
+  color: var(--text-dim);
+}
+
+.founder-total {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.founder-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text-ghost);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+
+.founder-price {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: #ffd700;
+  margin-bottom: 20px;
+}
+
+.founder-cta-btn {
+  display: inline-block;
+  padding: 12px 32px;
+  background: transparent;
+  color: #ffd700;
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  border-radius: 4px;
+  font-family: 'Array', sans-serif;
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+.founder-cta-btn:hover {
+  background: rgba(255, 215, 0, 0.06);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+}
+
+.founder-fine-print {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-ghost);
+  letter-spacing: 0.5px;
+}
+
 /* ─── Download Section ─────────────────────────────── */
 .download-section {
   background: var(--bg-deep);
@@ -1059,6 +1188,34 @@ footer::before {
 
 <div class="holo-divider"></div>
 
+<!-- Founder's Edition -->
+<section class="founder-section" id="founder">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">&#9733; Limited Edition</div>
+      <h2 class="section-title">Founder's Edition</h2>
+    </div>
+    <div class="founder-box reveal">
+      <div class="founder-badge-large">&#9733; FOUNDER</div>
+      <div class="founder-headline">The first 101 users get lifetime Pro. Forever.</div>
+      <div class="founder-desc">
+        You believed early. We remember. Founder status includes a permanent badge on your profile, lifetime Pro access, and our eternal gratitude.
+      </div>
+      <div class="founder-counter">
+        <span class="founder-count" id="founder-count">0</span>
+        <span class="founder-separator">/</span>
+        <span class="founder-total">101</span>
+        <span class="founder-label">CLAIMED</span>
+      </div>
+      <div class="founder-price">&pound;1 — one time, forever</div>
+      <a href="#download" class="founder-cta-btn" id="founder-cta">Download the app to claim your Founder spot</a>
+      <div class="founder-fine-print">Download OpenDescent, create your account, then upgrade to Founder's Edition from Settings.</div>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
 <!-- Download -->
 <section class="download-section" id="download">
   <div class="container">
@@ -1318,6 +1475,18 @@ const demoObs = new IntersectionObserver((entries) => {
   }
 }, { threshold: 0.3 });
 demoObs.observe(document.getElementById('encrypt-demo'));
+
+// Fetch founder count
+fetch('https://pay.open-descent.com/founder-status')
+  .then(r => r.json())
+  .then(data => {
+    const el = document.getElementById('founder-count');
+    if (el) el.textContent = data.claimed || 0;
+    if (data.remaining <= 0) {
+      const cta = document.getElementById('founder-cta');
+      if (cta) { cta.textContent = 'ALL SPOTS CLAIMED'; cta.style.opacity = '0.5'; cta.style.pointerEvents = 'none'; }
+    }
+  }).catch(() => {});
 </script>
 
 </body>

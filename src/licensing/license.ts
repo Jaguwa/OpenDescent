@@ -23,6 +23,7 @@ export interface LicensePayload {
   tier: LicenseTier;
   issuedAt: number;    // Unix ms
   expiresAt: number;   // Unix ms
+  founder?: boolean;   // Founder's Edition badge
 }
 
 export interface License {
@@ -35,6 +36,7 @@ export interface LicenseStatus {
   valid: boolean;
   expiresAt?: number;
   error?: string;
+  founder?: boolean;
 }
 
 // ─── Tier Limits ────────────────────────────────────────────────────────────
@@ -106,6 +108,7 @@ export function createLicense(
   tier: LicenseTier,
   durationMs: number,
   privateKeyBase64: string,
+  founder?: boolean,
 ): string {
   const now = Date.now();
   const payload: LicensePayload = {
@@ -113,6 +116,7 @@ export function createLicense(
     tier,
     issuedAt: now,
     expiresAt: now + durationMs,
+    ...(founder ? { founder: true } : {}),
   };
 
   const payloadJson = JSON.stringify(payload);
@@ -184,6 +188,7 @@ export function verifyLicense(licenseKey: string, expectedPeerId: string): Licen
       tier: license.payload.tier,
       valid: true,
       expiresAt: license.payload.expiresAt,
+      founder: license.payload.founder,
     };
   } catch (err: any) {
     return { tier: 'free', valid: false, error: 'Invalid license key format' };

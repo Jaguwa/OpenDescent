@@ -34,7 +34,7 @@
     "asar": false,
     "win": {
       "target": "nsis",
-      "icon": "Descentfinallogo.ico"
+      "icon": "OpenDLogo.png"
     },
     "nsis": {
       "oneClick": false,
