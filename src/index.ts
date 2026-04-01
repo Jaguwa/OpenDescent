@@ -792,19 +792,33 @@ Options:
     node.startDirectoryPublishing();
   }
 
-  // Proactively reconnect to known peers after startup (2s delay for relay to stabilize)
-  setTimeout(async () => {
+  // Proactively reconnect to known peers — retry every 15s for 2 minutes
+  const STARTUP_RECONNECT_INTERVAL = 15000;
+  const STARTUP_RECONNECT_DURATION = 120000;
+  let startupReconnectStart = 0;
+
+  function startupReconnect() {
+    if (!startupReconnectStart) startupReconnectStart = Date.now();
     const myId = node.getPeerId();
     const knownPeers = node.getAllKnownPeers().filter(p => p.peerId !== myId);
-    if (knownPeers.length > 0) {
-      console.log(`[Startup] Reconnecting to ${knownPeers.length} known peer(s)...`);
-      for (const peer of knownPeers) {
-        // Skip if already connected
-        if (node.resolveDecentraId(peer.peerId)) continue;
+    const unconnected = knownPeers.filter(p => !node.resolveDecentraId(p.peerId));
+
+    if (unconnected.length > 0) {
+      console.log(`[Startup] Reconnecting to ${unconnected.length} peer(s)...`);
+      for (const peer of unconnected) {
         node.reconnectPeerPublic(peer.peerId).catch(() => {});
       }
     }
-  }, 2000);
+
+    // Keep retrying if there are still unconnected peers and within time window
+    if (unconnected.length > 0 && (Date.now() - startupReconnectStart) < STARTUP_RECONNECT_DURATION) {
+      setTimeout(startupReconnect, STARTUP_RECONNECT_INTERVAL);
+    } else if (unconnected.length === 0) {
+      console.log(`[Startup] All known peers connected`);
+    }
+  }
+
+  setTimeout(startupReconnect, 2000);
 
   const messaging = new MessagingService(node, store);
   const calls = new CallManager(node);
