@@ -1758,7 +1758,7 @@ export class APIServer {
 
         case 'get_checkout_url': {
           const checkoutPeerId = this.deps.node.getPeerId();
-          const licenseServerUrl = (data && data.licenseServer) || 'http://188.166.151.203:9000';
+          const licenseServerUrl = (data && data.licenseServer) || 'https://pay.open-descent.com';
           try {
             const checkoutResult = await this.postJSON(`${licenseServerUrl}/checkout`, { peerId: checkoutPeerId });
             if (checkoutResult.url) {
@@ -2106,9 +2106,10 @@ export class APIServer {
       const timeout = setTimeout(() => reject(new Error('Request timeout')), 10000);
       const parsed = new URL(url);
       const payload = JSON.stringify(body);
+      const isHttps = parsed.protocol === 'https:';
       const options: http.RequestOptions = {
         hostname: parsed.hostname,
-        port: parsed.port || 80,
+        port: parsed.port || (isHttps ? 443 : 80),
         path: parsed.pathname,
         method: 'POST',
         headers: {
@@ -2116,7 +2117,7 @@ export class APIServer {
           'Content-Length': Buffer.byteLength(payload),
         },
       };
-      const req = http.request(options, (res) => {
+      const req = (isHttps ? https : http).request(options, (res) => {
         const chunks: Buffer[] = [];
         res.on('data', (chunk: Buffer) => chunks.push(chunk));
         res.on('end', () => {

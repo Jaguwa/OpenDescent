@@ -201,8 +201,8 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         'line_items[0][quantity]': '1',
         'metadata[peerId]': peerId,
         'subscription_data[metadata][peerId]': peerId,
-        'success_url': `http://${process.env.LICENSE_HOST || '188.166.151.203'}:${PORT}/success?session_id={CHECKOUT_SESSION_ID}`,
-        'cancel_url': `http://${process.env.LICENSE_HOST || '188.166.151.203'}:${PORT}/cancel`,
+        'success_url': `${process.env.LICENSE_URL || 'https://pay.open-descent.com'}/success?session_id={CHECKOUT_SESSION_ID}`,
+        'cancel_url': `${process.env.LICENSE_URL || 'https://pay.open-descent.com'}/cancel`,
       });
 
       if (session.error) {
