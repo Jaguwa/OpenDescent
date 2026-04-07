@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@font-face { font-family: 'Array'; src: url('fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; }
+@font-face { font-family: 'Array Wide'; src: url('fonts/Array-BoldWide.woff2') format('woff2'); font-weight: 700; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1200px;
+  height: 630px;
+  background: #212121;
+  color: #EEEEEE;
+  font-family: 'Array', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+/* Subtle gradient */
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 50%, rgba(50,224,196,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 30%, rgba(224,64,80,0.03) 0%, transparent 50%);
+}
+.card {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 40px;
+}
+.badge {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 12px;
+  color: #32E0C4;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.title {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  margin-bottom: 24px;
+}
+.subtitle {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 18px;
+  color: #aaaaaa;
+  line-height: 1.6;
+  max-width: 700px;
+  margin: 0 auto 30px;
+}
+.features {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  font-family: 'SF Mono', monospace;
+  font-size: 11px;
+  color: #32E0C4;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.features span {
+  padding: 4px 12px;
+  border: 1px solid rgba(50,224,196,0.2);
+  border-radius: 2px;
+}
+/* Top/bottom border lines */
+.line-top, .line-bottom {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(50,224,196,0.2), transparent);
+}
+.line-top { top: 40px; }
+.line-bottom { bottom: 40px; }
+</style>
+</head>
+<body>
+  <div class="line-top"></div>
+  <div class="card">
+    <div class="badge">&#9656;&#9656; Encrypted Communication Platform</div>
+    <div class="title">Open<br>Descent</div>
+    <div class="subtitle">Group chats. Voice & video calls. Community hubs. Anonymous drops.<br>All encrypted. All peer-to-peer. No servers.</div>
+    <div class="features">
+      <span>E2E Encrypted</span>
+      <span>Voice & Video</span>
+      <span>Open Source</span>
+      <span>Free</span>
+    </div>
+  </div>
+  <div class="line-bottom"></div>
+</body>
+</html>
