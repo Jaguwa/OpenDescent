@@ -41,7 +41,10 @@
     "asar": false,
     "win": {
       "target": "nsis",
-      "icon": "OpenDLogo.png"
+      "icon": "OpenDLogo.png",
+      "certificateSubjectName": "Open Source Developer Alan Ivanovas",
+      "signingHashAlgorithms": ["sha256"],
+      "rfc3161TimeStampServer": "http://time.certum.pl"
     },
     "nsis": {
       "oneClick": false,
