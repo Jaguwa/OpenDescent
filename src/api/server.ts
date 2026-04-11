@@ -104,6 +104,8 @@ export class APIServer {
   private activeUploads: Map<string, { filePath: string; fileName: string; mimeType: string; totalChunks: number; receivedChunks: number; purpose: string; recipientId?: string }> = new Map();
   private audioClients: Map<string, WebSocket> = new Map(); // peerId -> WS client receiving audio
   private callSignalQueues: Map<string, Promise<any>> = new Map(); // peerId -> chain of signal sends
+  private activeStream: { streamId: string; streamerId: string; title: string; hubId?: string; channelId?: string; startedAt: number } | null = null;
+  private knownStreams: Map<string, { streamId: string; streamerId: string; streamerName: string; title: string; hubId?: string; channelId?: string; startedAt: number }> = new Map();
   private static readonly DEFAULT_GIF_API_KEY = process.env.KLIPY_API_KEY || '';
 
   constructor(port: number, deps: APIServerDeps) {
@@ -1780,6 +1782,49 @@ export class APIServer {
           }
         }
 
+        // ─── Live Streaming ────────────────────────────────────────
+
+        case 'go_live': {
+          if (this.licenseStatus?.tier !== 'pro' || !this.licenseStatus.valid) {
+            return this.err(id, 'Pro license required for streaming');
+          }
+          const { streamId, title, hubId, channelId } = data;
+          if (!streamId || !title) return this.err(id, 'Missing streamId or title');
+          this.activeStream = {
+            streamId,
+            streamerId: this.deps.node.getPeerId(),
+            title,
+            hubId,
+            channelId,
+            startedAt: Date.now(),
+          };
+          console.log(`[Stream] Going live: "${title}" (${streamId})`);
+          return this.ok(id, { streamId });
+        }
+
+        case 'end_stream': {
+          const endedStreamId = this.activeStream?.streamId;
+          this.activeStream = null;
+          console.log(`[Stream] Stream ended: ${endedStreamId}`);
+          return this.ok(id, { ended: true });
+        }
+
+        case 'get_active_streams': {
+          const streams: any[] = [];
+          const maxAge = 4 * 60 * 60 * 1000; // 4 hours
+          if (this.activeStream) {
+            streams.push(this.activeStream);
+          }
+          for (const [streamId, s] of this.knownStreams) {
+            if (Date.now() - s.startedAt > maxAge) {
+              this.knownStreams.delete(streamId);
+              continue;
+            }
+            streams.push(s);
+          }
+          return this.ok(id, { streams });
+        }
+
         default:
           return this.err(id, `Unknown action: ${action}`);
       }
@@ -1992,15 +2037,32 @@ export class APIServer {
 
           if (signal.type === 'webrtc_signal') {
             const senderProfile = this.deps.node.getKnownPeer(signal.from);
+            const innerSignal = signal.signal;
             this.broadcast({
               type: 'event',
               event: 'call_signal',
               data: {
                 from: signal.from,
                 fromName: senderProfile?.displayName || signal.from?.slice(0, 12),
-                signal: signal.signal,
+                signal: innerSignal,
               },
             });
+
+            // Track stream announcements/endings
+            if (innerSignal?.type === 'stream_announce' && innerSignal.meta) {
+              const meta = innerSignal.meta;
+              this.knownStreams.set(meta.streamId, {
+                streamId: meta.streamId,
+                streamerId: meta.streamerId || signal.from,
+                streamerName: meta.streamerName || senderProfile?.displayName || signal.from?.slice(0, 12),
+                title: meta.title,
+                hubId: meta.hubId,
+                channelId: meta.channelId,
+                startedAt: meta.startedAt || Date.now(),
+              });
+            } else if (innerSignal?.type === 'stream_end' && innerSignal.streamId) {
+              this.knownStreams.delete(innerSignal.streamId);
+            }
           }
         } catch {}
       }

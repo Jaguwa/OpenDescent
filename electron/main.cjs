@@ -7,7 +7,7 @@
  * dynamic import() to load our ESM backend modules.
  */
 
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, session, desktopCapturer } = require('electron');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
@@ -384,6 +384,16 @@ async function startApp() {
       contextIsolation: true,
     },
     autoHideMenuBar: true,
+  });
+
+  // Enable getDisplayMedia() for screen capture (required for live streaming)
+  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+    desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+      // Use the primary screen by default
+      callback({ video: sources[0], audio: 'loopback' });
+    }).catch(() => {
+      callback({});
+    });
   });
 
   mainWindow.loadURL(`http://localhost:${apiPort}`);

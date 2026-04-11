@@ -178,6 +178,35 @@ export interface CallSignal {
   signature: Uint8Array;
 }
 
+// ─── Live Streaming ─────────────────────────────────────────────────────────
+
+export interface StreamMeta {
+  streamId: string;
+  streamerId: string;
+  streamerName: string;
+  title: string;
+  startedAt: number;
+  codec: string;
+  width: number;
+  height: number;
+}
+
+export interface StreamPeer {
+  peerId: string;
+  name: string;
+  isSeed: boolean;
+}
+
+export enum StreamSignalType {
+  ANNOUNCE = 'stream_announce',
+  JOIN = 'stream_join',
+  LEAVE = 'stream_leave',
+  OFFER = 'stream_offer',
+  ANSWER = 'stream_answer',
+  ICE = 'stream_ice',
+  END = 'stream_end',
+}
+
 // ─── Protocol Messages ───────────────────────────────────────────────────────
 
 export enum ProtocolMessageType {

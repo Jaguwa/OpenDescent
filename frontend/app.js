@@ -231,6 +231,30 @@ const state = {
   voiceOccupancy: {},      // { ['hubId:channelId']: { [peerId]: { name, joinedAt } } }
   voiceMuted: false,
   voiceLocalStream: null,
+  // Live Streaming
+  stream: null,              // { streamId, meta, role: 'streamer'|'viewer' }
+  streamRecorder: null,      // MediaRecorder instance (streamer)
+  streamLocalStream: null,   // MediaStream from getUserMedia/getDisplayMedia
+  streamSeqNum: 0,           // Monotonic chunk counter
+  streamInitSegment: null,   // First MediaRecorder blob (codec config)
+  streamSeedPeers: {},       // { peerId: { pc, dc, name } } — streamer's direct connections
+  streamMeshPeers: {},       // { peerId: { pc, dc, name, bitfield } } — viewer mesh connections
+  streamChunkBuffer: {},     // { seqNum: Uint8Array } — received chunks pending playback
+  streamBitfield: null,      // Uint8Array — our chunk availability (256-bit sliding window)
+  streamBitfieldStart: 0,    // Sequence number of first bit in bitfield
+  streamViewers: [],         // StreamPeer[] — all known viewers (streamer maintains)
+  streamMediaSource: null,   // MediaSource instance (viewer)
+  streamSourceBuffer: null,  // SourceBuffer instance (viewer)
+  streamAppendQueue: [],     // Chunks waiting to append to SourceBuffer
+  streamLastAppended: -1,    // Last seqNum appended to SourceBuffer
+  streamPeerList: [],        // Peer list received from streamer
+  streamBitfieldInterval: null, // 500ms bitfield broadcast interval
+  streamHealthInterval: null,   // 2s health check interval
+  streamGapTimers: {},       // { seqNum: setTimeout } — gap detection timers
+  streamPaused: false,       // Streamer: is paused
+  streamCamStream: null,     // Streamer: camera stream for PiP
+  streamCamActive: false,    // Streamer: camera PiP is on
+  streamChatMessages: [],    // Chat messages for the stream
 };
 
 // ─── Hub Ranking Constants ──────────────────────────────────────────────────
@@ -921,16 +945,18 @@ function renderContactItem(c) {
 function renderGroups() {
   const el = document.getElementById('groups-list');
   if (state.groups.length === 0) {
-    el.innerHTML = '<div class="empty-state-rich"><div class="empty-state-icon">&#128101;</div><div class="empty-state-text"><strong>No groups yet</strong>Create one to start collaborating!</div></div>';
+    el.innerHTML = '<div class="sidebar-hint"><p class="subtle">No groups yet</p></div>';
     return;
   }
-  el.innerHTML = state.groups.map((g) => `
-    <div class="list-item" onclick="openGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')">
-      <div class="item-name">&#128101; ${escapeHtml(g.name)}</div>
+  el.innerHTML = state.groups.map((g) => {
+    const isActive = state.activeChat && state.activeChat.type === 'group' && state.activeChat.groupId === g.groupId;
+    return `
+    <div class="list-item ${isActive ? 'active' : ''}" onclick="openGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')">
+      <div class="item-name"><span class="group-indicator">GROUP</span> ${escapeHtml(g.name)}</div>
       <div class="item-preview">${g.memberCount} members</div>
       <button class="btn-icon btn-leave-group" onclick="event.stopPropagation(); leaveGroup('${escapeAttr(g.groupId)}', '${escapeAttr(g.name)}')" title="Leave group"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg></button>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderMessages(messages) {
@@ -1057,6 +1083,7 @@ function showView(view) {
   document.getElementById('profile-view').classList.toggle('hidden', view !== 'profile');
   document.getElementById('deaddrops-view').classList.toggle('hidden', view !== 'deaddrops');
   document.getElementById('hub-overview').classList.toggle('hidden', view !== 'hub-overview');
+  document.getElementById('live-view').classList.toggle('hidden', view !== 'live');
   // Mobile: toggle sidebar/chat visibility
   document.getElementById('app').classList.toggle('chat-open', view === 'chat');
 }
@@ -4466,6 +4493,11 @@ async function onCallSignal(data) {
     handleVoiceSignal(data);
     return;
   }
+  // Route live stream signals
+  if (signal.type && signal.type.startsWith('stream_')) {
+    handleStreamSignal(data);
+    return;
+  }
   if (signal.type === 'offer') {
     state.callPeerId = data.from; state.callPeerName = data.fromName; state.callType = signal.callType || 'voice'; state.callState = 'incoming'; state.iceCandidateQueue = []; state.pendingOffer = signal;
     sfx.play('callIncoming');
@@ -4702,8 +4734,13 @@ function switchTab(tabName) {
   // Show appropriate main view
   if (tabName === 'feed') { showView('feed'); loadFeed(); }
   else if (tabName === 'deaddrops') { showView('deaddrops'); loadDeadDrops(); }
+  else if (tabName === 'live') { showView('live'); refreshLiveView(); }
   else if (tabName === 'discover') { loadFriendRequests(); searchPeers(); send('discover_network', {}).catch(() => {}); }
-  else if (tabName === 'chats' || tabName === 'contacts' || tabName === 'groups') {
+  else if (tabName === 'chats') {
+    renderGroups(); // Groups are shown inside chats tab
+    if (!state.activeChat) showView('empty');
+  }
+  else if (tabName === 'contacts') {
     if (!state.activeChat) showView('empty');
   }
 }
@@ -5851,7 +5888,8 @@ function renderHubChannels() {
     for (const ch of channels) {
       const active = state.activeChannel && state.activeChannel.channelId === ch.channelId ? ' active' : '';
       const prefix = ch.type === 'text' ? '#' : '&#128266;';
-      html += `<div class="channel-item${active}" onclick="openChannel('${escapeAttr(state.activeHub.hubId)}','${escapeAttr(ch.channelId)}','${escapeAttr(ch.name)}')">${prefix} ${escapeAttr(ch.name)}</div>`;
+      const liveIndicator = (state._knownStreams && Object.values(state._knownStreams).some(s => s.hubId === state.activeHub.hubId && s.channelId === ch.channelId)) ? '<span class="stream-live-dot"></span>' : '';
+      html += `<div class="channel-item${active}" onclick="openChannel('${escapeAttr(state.activeHub.hubId)}','${escapeAttr(ch.channelId)}','${escapeAttr(ch.name)}')">${prefix} ${escapeAttr(ch.name)}${liveIndicator}</div>`;
 
       // Show voice channel occupancy
       if (ch.type === 'voice') {
@@ -5901,7 +5939,7 @@ function renderHubChannels() {
   requestAnimationFrame(() => {
     el.querySelectorAll('canvas.voice-user-avatar').forEach(c => {
       const pid = c.dataset.peerid;
-      if (pid) drawAvatar(c, pid);
+      if (pid) generateAvatar(pid, c, 20);
     });
   });
 }
@@ -7032,7 +7070,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Group creation
-  document.getElementById('btn-create-group').addEventListener('click', showGroupModal);
+  // btn-create-group uses inline onclick="showGroupModal()"
   document.getElementById('btn-cancel-group').addEventListener('click', () => document.getElementById('group-modal').classList.add('hidden'));
   document.getElementById('btn-confirm-group').addEventListener('click', createGroup);
 
@@ -7082,6 +7120,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Discover
   document.getElementById('btn-discover-search').addEventListener('click', searchPeers);
   document.getElementById('discover-search-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchPeers(); });
+
+  // Global keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state.stream) {
+      if (state.stream.role === 'viewer') leaveStream();
+    }
+  });
 
   // Mnemonic setup
   document.getElementById('btn-mnemonic-create').addEventListener('click', mnemonicCreate);
@@ -7463,6 +7508,1779 @@ function handleVoiceSignal(data) {
     removeVoicePeer(fromId);
     renderHubChannels();
   }
+}
+
+// ─── Live Streaming Engine ───────────────────────────────────────────────────
+
+const STREAM_MSG = { CHUNK: 0x01, BITFIELD: 0x02, REQUEST: 0x03, META: 0x04, PEER_LIST: 0x05, INIT_SEG: 0x06, CHAT: 0x07, PAUSE: 0x08 };
+const STREAM_MAX_SEEDS = 6;
+const STREAM_MAX_MESH = 4;
+const STREAM_BITFIELD_SIZE = 256; // bits = ~38s at 150ms
+const STREAM_BITFIELD_INTERVAL = 500;
+const STREAM_HEALTH_INTERVAL = 2000;
+const STREAM_GAP_TIMEOUT = 500;
+const STREAM_BUFFER_CLEANUP_SEC = 15;
+const STREAM_CODEC = 'video/webm; codecs=vp9,opus';
+const STREAM_TIMESLICE = 150;
+
+// ─── Binary helpers ─────────────────────────────────────────────────────────
+
+function writeU32(buf, offset, val) {
+  buf[offset]     = (val >>> 24) & 0xff;
+  buf[offset + 1] = (val >>> 16) & 0xff;
+  buf[offset + 2] = (val >>> 8)  & 0xff;
+  buf[offset + 3] =  val         & 0xff;
+}
+
+function readU32(buf, offset) {
+  return ((buf[offset] << 24) | (buf[offset+1] << 16) | (buf[offset+2] << 8) | buf[offset+3]) >>> 0;
+}
+
+function writeF64(buf, offset, val) {
+  const view = new DataView(buf.buffer, buf.byteOffset + offset, 8);
+  view.setFloat64(0, val);
+}
+
+function readF64(buf, offset) {
+  const view = new DataView(buf.buffer, buf.byteOffset + offset, 8);
+  return view.getFloat64(0);
+}
+
+function setBit(bitfield, index) {
+  bitfield[index >> 3] |= (1 << (7 - (index & 7)));
+}
+
+function getBit(bitfield, index) {
+  return (bitfield[index >> 3] >> (7 - (index & 7))) & 1;
+}
+
+function generateStreamId() {
+  return crypto.randomUUID();
+}
+
+// ─── Go Live Modal ──────────────────────────────────────────────────────────
+
+let streamSourceType = 'screen';
+let streamPreviewStream = null;
+
+function showGoLiveModal() {
+  const isPro = state.licenseStatus && state.licenseStatus.valid && state.licenseStatus.tier === 'pro';
+  if (!isPro) {
+    showToast('Pro Feature', 'Live streaming requires Pro', 'info');
+    return;
+  }
+  document.getElementById('go-live-modal').classList.remove('hidden');
+  document.getElementById('stream-title-input').value = '';
+  document.getElementById('stream-start-btn').disabled = true;
+  streamSourceType = 'screen';
+  selectStreamSource('screen');
+}
+
+function closeGoLiveModal() {
+  document.getElementById('go-live-modal').classList.add('hidden');
+  if (streamPreviewStream) {
+    streamPreviewStream.getTracks().forEach(t => t.stop());
+    streamPreviewStream = null;
+  }
+  document.getElementById('stream-preview').srcObject = null;
+  document.getElementById('stream-preview-placeholder').classList.remove('hidden');
+}
+
+async function selectStreamSource(type) {
+  streamSourceType = type;
+  document.getElementById('stream-source-screen').classList.toggle('active', type === 'screen');
+  document.getElementById('stream-source-camera').classList.toggle('active', type === 'camera');
+
+  // Stop old preview
+  if (streamPreviewStream) {
+    streamPreviewStream.getTracks().forEach(t => t.stop());
+    streamPreviewStream = null;
+  }
+
+  try {
+    if (type === 'screen') {
+      streamPreviewStream = await navigator.mediaDevices.getDisplayMedia({ video: { width: 1280, height: 720 }, audio: true });
+    } else {
+      streamPreviewStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true });
+    }
+    const preview = document.getElementById('stream-preview');
+    preview.srcObject = streamPreviewStream;
+    document.getElementById('stream-preview-placeholder').classList.add('hidden');
+    document.getElementById('stream-start-btn').disabled = false;
+
+    // If user stops screen share via browser UI, close modal
+    streamPreviewStream.getVideoTracks()[0].onended = () => {
+      closeGoLiveModal();
+    };
+  } catch (e) {
+    console.error('[Stream] Preview capture failed:', e.message);
+    showToast('Capture Failed', e.message || 'Could not access screen/camera', 'error');
+    document.getElementById('stream-start-btn').disabled = true;
+  }
+}
+
+// ─── Streamer: Start Streaming ──────────────────────────────────────────────
+
+async function startStreaming() {
+  const title = document.getElementById('stream-title-input').value.trim() || 'Untitled Stream';
+  if (!streamPreviewStream) return;
+
+  // Pre-fetch TURN config for seed connections
+  await fetchTurnConfig();
+
+  const streamId = generateStreamId();
+  const videoTrack = streamPreviewStream.getVideoTracks()[0];
+  const settings = videoTrack.getSettings();
+
+  const meta = {
+    streamId,
+    streamerId: state.myPeerId,
+    streamerName: state.myName,
+    title,
+    startedAt: Date.now(),
+    codec: STREAM_CODEC,
+    width: settings.width || 1280,
+    height: settings.height || 720,
+  };
+
+  state.stream = { streamId, meta, role: 'streamer' };
+  state.streamLocalStream = streamPreviewStream;
+  state.streamSeqNum = 0;
+  state.streamInitSegment = null;
+  state.streamSeedPeers = {};
+  state.streamViewers = [];
+  state.streamBitfield = new Uint8Array(STREAM_BITFIELD_SIZE / 8);
+  state.streamBitfieldStart = 0;
+  state.streamChunkBuffer = {};
+
+  // Close modal (don't stop the preview stream — we're using it)
+  streamPreviewStream = null;
+  document.getElementById('go-live-modal').classList.add('hidden');
+
+  // Check codec support and fallback
+  let codec = STREAM_CODEC;
+  if (!MediaRecorder.isTypeSupported(codec)) {
+    codec = 'video/webm; codecs=vp8,opus';
+    if (!MediaRecorder.isTypeSupported(codec)) {
+      codec = 'video/webm';
+    }
+    state.stream.meta.codec = codec;
+  }
+
+  // Start MediaRecorder
+  const recorder = new MediaRecorder(state.streamLocalStream, {
+    mimeType: codec,
+    videoBitsPerSecond: 1000000, // 1 Mbps
+  });
+  state.streamRecorder = recorder;
+
+  let isFirstChunk = true;
+  recorder.ondataavailable = async (e) => {
+    if (e.data.size === 0) return;
+    const data = new Uint8Array(await e.data.arrayBuffer());
+
+    if (isFirstChunk) {
+      state.streamInitSegment = data;
+      isFirstChunk = false;
+      console.log(`[Stream] Init segment captured: ${data.byteLength} bytes`);
+      return; // Don't distribute init segment as a regular chunk
+    }
+
+    handleStreamChunk(data);
+  };
+
+  recorder.start(STREAM_TIMESLICE);
+  console.log(`[Stream] Going live: "${title}" (${codec})`);
+
+  // Notify server
+  try {
+    await send('go_live', {
+      streamId,
+      title,
+      hubId: state.activeHub?.hubId,
+      channelId: state.activeChannel?.channelId,
+    });
+  } catch (e) { console.error('[Stream] go_live failed:', e); }
+
+  // Announce to connected peers via call_signal
+  announceStream(meta);
+
+  // Start health check interval
+  state.streamHealthInterval = setInterval(streamHealthCheck, STREAM_HEALTH_INTERVAL);
+
+  // Show streamer dashboard
+  showStreamerView(meta);
+  updateStreamUI();
+  showToast('Live', `Streaming: ${title}`, 'success');
+}
+
+function handleStreamChunk(data) {
+  if (!state.stream) return; // Stream already ended
+  const seqNum = state.streamSeqNum++;
+
+  // Update own bitfield
+  updateBitfield(seqNum);
+
+  // Store chunk
+  state.streamChunkBuffer[seqNum] = data;
+
+  // Build binary CHUNK message: [0x01, seqNum(4), timestamp(8), data]
+  const msg = new Uint8Array(1 + 4 + 8 + data.byteLength);
+  msg[0] = STREAM_MSG.CHUNK;
+  writeU32(msg, 1, seqNum);
+  writeF64(msg, 5, Date.now());
+  msg.set(data, 13);
+
+  // Round-robin distribute to seed peers
+  const seeds = Object.keys(state.streamSeedPeers);
+  if (seeds.length > 0) {
+    const targetId = seeds[seqNum % seeds.length];
+    const peer = state.streamSeedPeers[targetId];
+    if (peer.dc && peer.dc.readyState === 'open') {
+      peer.dc.send(msg.buffer);
+    }
+  }
+
+  // Clean old chunks (keep last STREAM_BITFIELD_SIZE)
+  const minSeq = seqNum - STREAM_BITFIELD_SIZE;
+  for (const k of Object.keys(state.streamChunkBuffer)) {
+    if (parseInt(k) < minSeq) delete state.streamChunkBuffer[k];
+  }
+}
+
+function updateBitfield(seqNum) {
+  // Slide the window if needed
+  while (seqNum >= state.streamBitfieldStart + STREAM_BITFIELD_SIZE) {
+    // Shift window forward by 64 bits (9.6s worth)
+    const shift = 8; // bytes to shift
+    state.streamBitfield.copyWithin(0, shift);
+    state.streamBitfield.fill(0, STREAM_BITFIELD_SIZE / 8 - shift);
+    state.streamBitfieldStart += shift * 8;
+  }
+  const index = seqNum - state.streamBitfieldStart;
+  if (index >= 0 && index < STREAM_BITFIELD_SIZE) {
+    setBit(state.streamBitfield, index);
+  }
+}
+
+function announceStream(meta) {
+  // Send stream_announce to all known contacts/hub members
+  const peers = state.contacts || [];
+  for (const contact of peers) {
+    if (contact.peerId && contact.peerId !== state.myPeerId) {
+      send('call_signal', {
+        peerId: contact.peerId,
+        signal: { type: 'stream_announce', meta },
+      }).catch(() => {});
+    }
+  }
+  // Also announce to hub members if in a hub
+  if (state.activeHub && state.hubMembers) {
+    for (const member of state.hubMembers) {
+      if (member.peerId && member.peerId !== state.myPeerId) {
+        send('call_signal', {
+          peerId: member.peerId,
+          signal: { type: 'stream_announce', meta },
+        }).catch(() => {});
+      }
+    }
+  }
+}
+
+// ─── Streamer: Handle viewer join ───────────────────────────────────────────
+
+async function handleViewerJoin(viewerId, viewerName) {
+  if (state.stream?.role !== 'streamer') return;
+  console.log(`[Stream] Viewer joining: ${viewerName} (${viewerId})`);
+
+  // Add to viewer list
+  const isSeed = Object.keys(state.streamSeedPeers).length < STREAM_MAX_SEEDS;
+  state.streamViewers.push({ peerId: viewerId, name: viewerName, isSeed });
+
+  // Create WebRTC connection with DataChannel (STUN+TURN for seed reliability)
+  const pc = new RTCPeerConnection({ iceServers: getIceServers() });
+
+  const dc = pc.createDataChannel('stream', {
+    ordered: false,
+    maxRetransmits: 0, // Unreliable for low latency
+  });
+  dc.binaryType = 'arraybuffer';
+
+  dc.onopen = () => {
+    console.log(`[Stream] DataChannel open to viewer ${viewerName}`);
+    // Send META
+    const metaMsg = buildMetaMessage(state.stream.meta);
+    dc.send(metaMsg);
+    // Send INIT_SEG
+    if (state.streamInitSegment) {
+      const initMsg = buildInitSegMessage(state.streamInitSegment);
+      dc.send(initMsg);
+    }
+    // Send PEER_LIST
+    const peerListMsg = buildPeerListMessage(state.streamViewers);
+    dc.send(peerListMsg);
+  };
+
+  dc.onmessage = (e) => handleStreamMessage(viewerId, e.data);
+  dc.onclose = () => { console.log(`[Stream] DC closed (${viewerName})`); };
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      send('call_signal', {
+        peerId: viewerId,
+        signal: { type: 'stream_ice', candidate: e.candidate.toJSON(), streamId: state.stream.streamId },
+      }).catch(() => {});
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    console.log(`[Stream] PC state (${viewerName}):`, pc.connectionState);
+    if (pc.connectionState === 'failed') {
+      handleStreamPeerDisconnect(viewerId);
+    }
+  };
+
+  // Store as seed or mesh
+  if (isSeed) {
+    state.streamSeedPeers[viewerId] = { pc, dc, name: viewerName };
+  } else {
+    state.streamMeshPeers[viewerId] = { pc, dc, name: viewerName, bitfield: null };
+  }
+
+  // Create and send offer
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await send('call_signal', {
+    peerId: viewerId,
+    signal: { type: 'stream_offer', sdp: offer.sdp, streamId: state.stream.streamId },
+  });
+
+  updateStreamUI();
+}
+
+// ─── Viewer: Join Stream ────────────────────────────────────────────────────
+
+async function joinStream(streamerId, streamId, meta) {
+  if (state.stream) {
+    showToast('Already Streaming', 'Leave current stream first', 'info');
+    return;
+  }
+
+  // Pre-fetch TURN config for seed connection to streamer
+  await fetchTurnConfig();
+
+  console.log(`[Stream] Joining stream ${streamId} from ${streamerId}`);
+  state.stream = { streamId, meta, role: 'viewer' };
+  state.streamChunkBuffer = {};
+  state.streamBitfield = new Uint8Array(STREAM_BITFIELD_SIZE / 8);
+  state.streamBitfieldStart = 0;
+  state.streamMeshPeers = {};
+  state.streamSeedPeers = {};
+  state.streamLastAppended = -1;
+  state.streamAppendQueue = [];
+  state.streamPeerList = [];
+  state.streamGapTimers = {};
+
+  // Show stream viewer UI
+  showStreamViewer(meta);
+
+  // Request to join
+  await send('call_signal', {
+    peerId: streamerId,
+    signal: { type: 'stream_join', streamId, viewerName: state.myName },
+  });
+}
+
+function handleStreamOffer(fromId, fromName, signal) {
+  // Received WebRTC offer from streamer or another peer
+  (async () => {
+    try {
+      // Use STUN+TURN for seed connection (from streamer), STUN-only for mesh
+      const isSeedConnection = state.stream?.meta?.streamerId === fromId;
+      const pc = new RTCPeerConnection({
+        iceServers: isSeedConnection ? getIceServers() : ICE_SERVERS_STUN,
+      });
+
+      pc.ondatachannel = (e) => {
+        const dc = e.channel;
+        dc.binaryType = 'arraybuffer';
+        dc.onmessage = (ev) => handleStreamMessage(fromId, ev.data);
+        dc.onclose = () => { console.log(`[Stream] DC closed (${fromName})`); };
+
+        // Store connection
+        if (state.stream?.meta?.streamerId === fromId) {
+          state.streamSeedPeers[fromId] = { pc, dc, name: fromName };
+        } else {
+          state.streamMeshPeers[fromId] = { pc, dc, name: fromName, bitfield: null };
+        }
+        console.log(`[Stream] DataChannel open from ${fromName}`);
+      };
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          send('call_signal', {
+            peerId: fromId,
+            signal: { type: 'stream_ice', candidate: e.candidate.toJSON(), streamId: state.stream?.streamId },
+          }).catch(() => {});
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        console.log(`[Stream] PC state (viewer ${fromName}):`, pc.connectionState);
+        if (pc.connectionState === 'failed') {
+          handleStreamPeerDisconnect(fromId);
+        }
+      };
+
+      // Store PC temporarily so ICE candidates can be applied
+      if (!state.streamSeedPeers[fromId] && !state.streamMeshPeers[fromId]) {
+        state.streamMeshPeers[fromId] = { pc, dc: null, name: fromName, bitfield: null, iceQueue: [] };
+      }
+
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      await send('call_signal', {
+        peerId: fromId,
+        signal: { type: 'stream_answer', sdp: answer.sdp, streamId: state.stream?.streamId },
+      });
+
+      // Flush queued ICE
+      const entry = state.streamMeshPeers[fromId] || state.streamSeedPeers[fromId];
+      if (entry?.iceQueue) {
+        for (const c of entry.iceQueue) await pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+        entry.iceQueue = [];
+      }
+
+    } catch (e) { console.error('[Stream] Failed to handle offer:', e); }
+  })();
+}
+
+function handleStreamAnswer(fromId, signal) {
+  const peer = state.streamSeedPeers[fromId] || state.streamMeshPeers[fromId];
+  if (!peer) return;
+  peer.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }))
+    .then(() => {
+      if (peer.iceQueue) {
+        for (const c of peer.iceQueue) peer.pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+        peer.iceQueue = [];
+      }
+    })
+    .catch(e => console.error('[Stream] Failed to set answer:', e));
+}
+
+function handleStreamIce(fromId, signal) {
+  const peer = state.streamSeedPeers[fromId] || state.streamMeshPeers[fromId];
+  if (!peer) return;
+  if (peer.pc.remoteDescription) {
+    peer.pc.addIceCandidate(new RTCIceCandidate(signal.candidate)).catch(() => {});
+  } else {
+    if (!peer.iceQueue) peer.iceQueue = [];
+    peer.iceQueue.push(signal.candidate);
+  }
+}
+
+// ─── Signal Router ──────────────────────────────────────────────────────────
+
+function handleStreamSignal(data) {
+  const signal = data.signal;
+  const fromId = data.from;
+  const fromName = data.fromName || fromId?.slice(0, 12);
+
+  console.log(`[Stream] Signal: ${signal.type} from ${fromName} (${fromId})`);
+  switch (signal.type) {
+    case 'stream_announce':
+      onStreamAnnounce(fromId, fromName, signal.meta);
+      break;
+    case 'stream_join':
+      handleViewerJoin(fromId, signal.viewerName || fromName);
+      break;
+    case 'stream_offer':
+      handleStreamOffer(fromId, fromName, signal);
+      break;
+    case 'stream_answer':
+      handleStreamAnswer(fromId, signal);
+      break;
+    case 'stream_ice':
+      handleStreamIce(fromId, signal);
+      break;
+    case 'stream_leave':
+      handleStreamPeerDisconnect(fromId);
+      break;
+    case 'stream_end':
+      onStreamEnd(fromId);
+      break;
+    default:
+      console.log('[Stream] Unknown signal type:', signal.type);
+  }
+}
+
+function onStreamAnnounce(fromId, fromName, meta) {
+  console.log(`[Stream] ${fromName} is live: "${meta.title}"`);
+  showToast('Live Stream', `${fromName} is live: ${meta.title}`, 'info', 8000);
+
+  // Add to known streams for feed display
+  if (!state._knownStreams) state._knownStreams = {};
+  state._knownStreams[meta.streamId] = { ...meta, fromId, fromName };
+
+  // If in broadcast feed, show announcement card
+  renderStreamAnnouncement(meta, fromId, fromName);
+}
+
+function onStreamEnd(fromId) {
+  if (state.stream && state.stream.meta?.streamerId === fromId) {
+    showToast('Stream Ended', 'The stream has ended', 'info');
+    cleanupStream();
+  }
+  // Remove from known streams
+  if (state._knownStreams) {
+    for (const [k, v] of Object.entries(state._knownStreams)) {
+      if (v.fromId === fromId || v.streamerId === fromId) delete state._knownStreams[k];
+    }
+  }
+  renderLiveStreamsList();
+}
+
+// ─── Binary Message Builders ────────────────────────────────────────────────
+
+function buildMetaMessage(meta) {
+  const json = new TextEncoder().encode(JSON.stringify(meta));
+  const msg = new Uint8Array(1 + json.byteLength);
+  msg[0] = STREAM_MSG.META;
+  msg.set(json, 1);
+  return msg.buffer;
+}
+
+function buildInitSegMessage(initSeg) {
+  const msg = new Uint8Array(1 + initSeg.byteLength);
+  msg[0] = STREAM_MSG.INIT_SEG;
+  msg.set(initSeg, 1);
+  return msg.buffer;
+}
+
+function buildPeerListMessage(viewers) {
+  const json = new TextEncoder().encode(JSON.stringify(viewers.map(v => ({ peerId: v.peerId, name: v.name }))));
+  const msg = new Uint8Array(1 + json.byteLength);
+  msg[0] = STREAM_MSG.PEER_LIST;
+  msg.set(json, 1);
+  return msg.buffer;
+}
+
+function buildBitfieldMessage() {
+  const msg = new Uint8Array(1 + 4 + state.streamBitfield.byteLength);
+  msg[0] = STREAM_MSG.BITFIELD;
+  writeU32(msg, 1, state.streamBitfieldStart);
+  msg.set(state.streamBitfield, 5);
+  return msg.buffer;
+}
+
+function buildRequestMessage(seqNum) {
+  const msg = new Uint8Array(1 + 4);
+  msg[0] = STREAM_MSG.REQUEST;
+  writeU32(msg, 1, seqNum);
+  return msg.buffer;
+}
+
+// ─── DataChannel Message Handler ────────────────────────────────────────────
+
+function handleStreamMessage(fromId, arrayBuffer) {
+  const buf = new Uint8Array(arrayBuffer);
+  if (buf.length === 0) return;
+
+  switch (buf[0]) {
+    case STREAM_MSG.CHUNK: {
+      const seqNum = readU32(buf, 1);
+      const timestamp = readF64(buf, 5);
+      const chunkData = buf.slice(13);
+
+      // Skip if already have it
+      if (state.streamChunkBuffer[seqNum]) return;
+
+      // Store
+      state.streamChunkBuffer[seqNum] = chunkData;
+      updateBitfield(seqNum);
+
+      // Clear gap timer if exists
+      if (state.streamGapTimers[seqNum]) {
+        clearTimeout(state.streamGapTimers[seqNum]);
+        delete state.streamGapTimers[seqNum];
+      }
+
+      // Try to append to SourceBuffer
+      if (state.stream?.role === 'viewer') {
+        appendToSourceBuffer();
+      }
+
+      // Push to mesh peers who need it (proactive push)
+      pushChunkToMeshPeers(seqNum, arrayBuffer);
+
+      // Update latency display
+      const latency = Date.now() - timestamp;
+      updateStreamLatency(latency);
+      break;
+    }
+
+    case STREAM_MSG.BITFIELD: {
+      const windowStart = readU32(buf, 1);
+      const remoteBitfield = buf.slice(5);
+
+      // Store peer's bitfield
+      const peer = state.streamMeshPeers[fromId] || state.streamSeedPeers[fromId];
+      if (peer) {
+        peer.bitfield = remoteBitfield;
+        peer.bitfieldStart = windowStart;
+      }
+
+      // Request chunks they have that we don't
+      requestMissingChunks(fromId, windowStart, remoteBitfield);
+      break;
+    }
+
+    case STREAM_MSG.REQUEST: {
+      const requestedSeq = readU32(buf, 1);
+      const chunk = state.streamChunkBuffer[requestedSeq];
+      if (chunk) {
+        // Build and send CHUNK response
+        const msg = new Uint8Array(1 + 4 + 8 + chunk.byteLength);
+        msg[0] = STREAM_MSG.CHUNK;
+        writeU32(msg, 1, requestedSeq);
+        writeF64(msg, 5, Date.now()); // Use current time (not original) — still useful for latency
+        msg.set(chunk, 13);
+
+        const peer = state.streamMeshPeers[fromId] || state.streamSeedPeers[fromId];
+        if (peer?.dc?.readyState === 'open') {
+          peer.dc.send(msg.buffer);
+        }
+      }
+      break;
+    }
+
+    case STREAM_MSG.META: {
+      const json = new TextDecoder().decode(buf.slice(1));
+      const meta = JSON.parse(json);
+      if (state.stream) {
+        state.stream.meta = meta;
+        updateStreamOverlay();
+      }
+      console.log(`[Stream] Received meta: "${meta.title}"`);
+      break;
+    }
+
+    case STREAM_MSG.INIT_SEG: {
+      const initSeg = buf.slice(1);
+      state.streamInitSegment = initSeg;
+      console.log(`[Stream] Received init segment: ${initSeg.byteLength} bytes`);
+      initMediaSource(initSeg);
+      break;
+    }
+
+    case STREAM_MSG.PEER_LIST: {
+      const json = new TextDecoder().decode(buf.slice(1));
+      const peers = JSON.parse(json);
+      state.streamPeerList = peers;
+      console.log(`[Stream] Received peer list: ${peers.length} peers`);
+      // Connect to mesh peers
+      connectToMeshPeers(peers);
+      break;
+    }
+
+    case STREAM_MSG.CHAT: {
+      const json = new TextDecoder().decode(buf.slice(1));
+      const chatMsg = JSON.parse(json);
+      appendStreamChatMessage(chatMsg);
+      // Relay to mesh peers (so chat propagates through the mesh)
+      pushChatToMeshPeers(fromId, arrayBuffer);
+      break;
+    }
+
+    case STREAM_MSG.PAUSE: {
+      const json = new TextDecoder().decode(buf.slice(1));
+      const ctrl = JSON.parse(json);
+      const pausedOverlay = document.getElementById('stream-paused-overlay');
+      if (ctrl.action === 'pause') {
+        if (pausedOverlay) pausedOverlay.classList.remove('hidden');
+      } else if (ctrl.action === 'resume') {
+        if (pausedOverlay) pausedOverlay.classList.add('hidden');
+      }
+      // Relay to mesh peers
+      pushChatToMeshPeers(fromId, arrayBuffer);
+      break;
+    }
+  }
+}
+
+// ─── MediaSource Playback ───────────────────────────────────────────────────
+
+function initMediaSource(initSegment) {
+  if (state.streamMediaSource) return;
+  console.log(`[Stream] Initializing MediaSource with ${initSegment.byteLength} byte init segment`);
+
+  const ms = new MediaSource();
+  state.streamMediaSource = ms;
+  const video = document.getElementById('stream-video');
+  video.src = URL.createObjectURL(ms);
+
+  ms.addEventListener('sourceopen', () => {
+    try {
+      const codec = state.stream?.meta?.codec || STREAM_CODEC;
+      const sb = ms.addSourceBuffer(codec);
+      sb.mode = 'sequence';
+      state.streamSourceBuffer = sb;
+
+      // Append init segment
+      sb.appendBuffer(initSegment);
+      sb.addEventListener('updateend', () => {
+        // Process queue
+        if (state.streamAppendQueue.length > 0 && !sb.updating) {
+          const next = state.streamAppendQueue.shift();
+          try { sb.appendBuffer(next); } catch (e) { console.warn('[Stream] Append error:', e.message); }
+        }
+        // Buffer cleanup
+        try {
+          if (video.currentTime > STREAM_BUFFER_CLEANUP_SEC && sb.buffered.length > 0) {
+            const removeEnd = video.currentTime - STREAM_BUFFER_CLEANUP_SEC;
+            if (sb.buffered.start(0) < removeEnd) {
+              sb.remove(sb.buffered.start(0), removeEnd);
+            }
+          }
+        } catch {}
+      });
+
+      // Start bitfield broadcast
+      state.streamBitfieldInterval = setInterval(broadcastBitfield, STREAM_BITFIELD_INTERVAL);
+
+      // Hide buffering indicator
+      document.getElementById('stream-buffering').classList.add('hidden');
+      video.play().catch(() => {});
+    } catch (e) {
+      console.error('[Stream] Failed to init SourceBuffer:', e);
+    }
+  });
+}
+
+function appendToSourceBuffer() {
+  const sb = state.streamSourceBuffer;
+  if (!sb) return;
+
+  // Try sequential append
+  let nextSeq = state.streamLastAppended + 1;
+  while (state.streamChunkBuffer[nextSeq]) {
+    const chunk = state.streamChunkBuffer[nextSeq];
+    if (sb.updating) {
+      state.streamAppendQueue.push(chunk);
+    } else {
+      try { sb.appendBuffer(chunk); } catch (e) { console.warn('[Stream] Append error:', e.message); break; }
+    }
+    state.streamLastAppended = nextSeq;
+    delete state.streamChunkBuffer[nextSeq];
+    nextSeq++;
+  }
+
+  // Start gap timer for the next expected chunk
+  if (!state.streamChunkBuffer[nextSeq] && !state.streamGapTimers[nextSeq] && state.streamLastAppended >= 0) {
+    state.streamGapTimers[nextSeq] = setTimeout(() => {
+      // Gap timeout — skip this chunk
+      console.log(`[Stream] Gap at seq ${nextSeq}, skipping`);
+      delete state.streamGapTimers[nextSeq];
+      state.streamLastAppended = nextSeq;
+      appendToSourceBuffer(); // Try next
+    }, STREAM_GAP_TIMEOUT);
+  }
+}
+
+// ─── Mesh Distribution ──────────────────────────────────────────────────────
+
+function broadcastBitfield() {
+  if (!state.stream) return;
+  const msg = buildBitfieldMessage();
+  const allPeers = { ...state.streamSeedPeers, ...state.streamMeshPeers };
+  for (const [peerId, peer] of Object.entries(allPeers)) {
+    if (peer.dc?.readyState === 'open') {
+      try { peer.dc.send(msg); } catch {}
+    }
+  }
+}
+
+function requestMissingChunks(fromId, remoteStart, remoteBitfield) {
+  if (!state.streamBitfield) return;
+  const peer = state.streamMeshPeers[fromId] || state.streamSeedPeers[fromId];
+  if (!peer?.dc || peer.dc.readyState !== 'open') return;
+
+  let requested = 0;
+  const maxRequests = 8; // Don't flood
+
+  for (let i = 0; i < remoteBitfield.length * 8 && requested < maxRequests; i++) {
+    const remoteSeq = remoteStart + i;
+    // Check if they have it
+    if (!getBit(remoteBitfield, i)) continue;
+    // Check if we already have it
+    const localIdx = remoteSeq - state.streamBitfieldStart;
+    if (localIdx >= 0 && localIdx < STREAM_BITFIELD_SIZE && getBit(state.streamBitfield, localIdx)) continue;
+    // Also skip if in buffer already
+    if (state.streamChunkBuffer[remoteSeq]) continue;
+
+    // Request it
+    peer.dc.send(buildRequestMessage(remoteSeq));
+    requested++;
+  }
+}
+
+function pushChunkToMeshPeers(seqNum, chunkArrayBuffer) {
+  // Proactively push to mesh peers whose bitfield shows they're missing it
+  const allPeers = { ...state.streamMeshPeers };
+  for (const [peerId, peer] of Object.entries(allPeers)) {
+    if (!peer.dc || peer.dc.readyState !== 'open') continue;
+    if (!peer.bitfield) continue;
+
+    const idx = seqNum - (peer.bitfieldStart || 0);
+    if (idx >= 0 && idx < peer.bitfield.length * 8 && !getBit(peer.bitfield, idx)) {
+      // They don't have it — push
+      try { peer.dc.send(chunkArrayBuffer); } catch {}
+    }
+  }
+}
+
+function pushChatToMeshPeers(fromId, arrayBuffer) {
+  // Relay chat/control messages to peers that didn't send it
+  const allPeers = { ...state.streamSeedPeers, ...state.streamMeshPeers };
+  for (const [peerId, peer] of Object.entries(allPeers)) {
+    if (peerId === fromId) continue; // Don't echo back
+    if (peer.dc?.readyState === 'open') {
+      try { peer.dc.send(arrayBuffer); } catch {}
+    }
+  }
+}
+
+function connectToMeshPeers(peerList) {
+  // Connect to up to STREAM_MAX_MESH random peers from the list
+  const candidates = peerList.filter(p => p.peerId !== state.myPeerId && !state.streamSeedPeers[p.peerId] && !state.streamMeshPeers[p.peerId]);
+
+  // Shuffle and pick
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  const toConnect = candidates.slice(0, STREAM_MAX_MESH);
+  for (const peer of toConnect) {
+    connectToStreamPeer(peer.peerId, peer.name);
+  }
+}
+
+async function connectToStreamPeer(peerId, name) {
+  if (state.streamMeshPeers[peerId] || state.streamSeedPeers[peerId]) return;
+
+  // Mesh connections: STUN only (no VPS bandwidth). If it fails, try another peer.
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS_STUN });
+
+  const dc = pc.createDataChannel('stream');
+  dc.binaryType = 'arraybuffer';
+  dc.onopen = () => {
+    console.log(`[Stream] Mesh connection open to ${name}`);
+  };
+  dc.onmessage = (e) => handleStreamMessage(peerId, e.data);
+  dc.onclose = () => { console.log(`[Stream] DC closed (${name})`); };
+
+  state.streamMeshPeers[peerId] = { pc, dc, name, bitfield: null, iceQueue: [] };
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      send('call_signal', {
+        peerId,
+        signal: { type: 'stream_ice', candidate: e.candidate.toJSON(), streamId: state.stream?.streamId },
+      }).catch(() => {});
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    console.log(`[Stream] PC state (mesh ${name}):`, pc.connectionState);
+    if (pc.connectionState === 'failed') {
+      handleStreamPeerDisconnect(peerId);
+    }
+  };
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await send('call_signal', {
+    peerId,
+    signal: { type: 'stream_offer', sdp: offer.sdp, streamId: state.stream?.streamId },
+  });
+}
+
+// ─── Peer Disconnect / Cleanup ──────────────────────────────────────────────
+
+function handleStreamPeerDisconnect(peerId) {
+  // Clean up seed peer
+  if (state.streamSeedPeers[peerId]) {
+    try { state.streamSeedPeers[peerId].pc.close(); } catch {}
+    delete state.streamSeedPeers[peerId];
+    console.log(`[Stream] Seed peer disconnected: ${peerId}`);
+
+    // Streamer: promote a mesh peer to seed
+    if (state.stream?.role === 'streamer') {
+      const meshIds = Object.keys(state.streamMeshPeers);
+      if (meshIds.length > 0) {
+        const promoteId = meshIds[0];
+        state.streamSeedPeers[promoteId] = state.streamMeshPeers[promoteId];
+        delete state.streamMeshPeers[promoteId];
+        console.log(`[Stream] Promoted ${promoteId} to seed`);
+      }
+    }
+  }
+
+  // Clean up mesh peer
+  if (state.streamMeshPeers[peerId]) {
+    try { state.streamMeshPeers[peerId].pc.close(); } catch {}
+    delete state.streamMeshPeers[peerId];
+    console.log(`[Stream] Mesh peer disconnected: ${peerId}`);
+
+    // Viewer: try to connect to a replacement from peer list
+    if (state.stream?.role === 'viewer' && state.streamPeerList.length > 0) {
+      const candidates = state.streamPeerList.filter(p =>
+        p.peerId !== state.myPeerId &&
+        !state.streamSeedPeers[p.peerId] &&
+        !state.streamMeshPeers[p.peerId]
+      );
+      if (candidates.length > 0) {
+        const replacement = candidates[Math.floor(Math.random() * candidates.length)];
+        connectToStreamPeer(replacement.peerId, replacement.name);
+      }
+    }
+  }
+
+  // Remove from viewer list (streamer)
+  if (state.stream?.role === 'streamer') {
+    state.streamViewers = state.streamViewers.filter(v => v.peerId !== peerId);
+  }
+
+  updateStreamUI();
+}
+
+function endStream() {
+  if (state.stream?.role !== 'streamer') return;
+  console.log('[Stream] Ending stream');
+
+  // Notify all connected stream peers
+  const allPeerIds = [...Object.keys(state.streamSeedPeers), ...Object.keys(state.streamMeshPeers)];
+  for (const peerId of allPeerIds) {
+    send('call_signal', {
+      peerId,
+      signal: { type: 'stream_end', streamId: state.stream.streamId },
+    }).catch(() => {});
+  }
+
+  // Also notify all contacts/hub members who received the announce
+  const notified = new Set(allPeerIds);
+  for (const contact of (state.contacts || [])) {
+    if (contact.peerId && !notified.has(contact.peerId) && contact.peerId !== state.myPeerId) {
+      send('call_signal', { peerId: contact.peerId, signal: { type: 'stream_end', streamId: state.stream.streamId } }).catch(() => {});
+      notified.add(contact.peerId);
+    }
+  }
+  for (const member of (state.hubMembers || [])) {
+    if (member.peerId && !notified.has(member.peerId) && member.peerId !== state.myPeerId) {
+      send('call_signal', { peerId: member.peerId, signal: { type: 'stream_end', streamId: state.stream.streamId } }).catch(() => {});
+    }
+  }
+
+  // Notify server
+  send('end_stream', { streamId: state.stream.streamId }).catch(() => {});
+
+  cleanupStream();
+  showToast('Stream Ended', 'Your stream has ended', 'info');
+}
+
+function leaveStream() {
+  if (state.stream?.role !== 'viewer') return;
+  console.log('[Stream] Leaving stream');
+
+  // Notify streamer
+  if (state.stream.meta?.streamerId) {
+    send('call_signal', {
+      peerId: state.stream.meta.streamerId,
+      signal: { type: 'stream_leave', streamId: state.stream.streamId },
+    }).catch(() => {});
+  }
+
+  cleanupStream();
+}
+
+function cleanupStream() {
+  // Stop recorder
+  if (state.streamRecorder) {
+    try { state.streamRecorder.stop(); } catch {}
+    state.streamRecorder = null;
+  }
+
+  // Stop local media
+  if (state.streamLocalStream) {
+    state.streamLocalStream.getTracks().forEach(t => t.stop());
+    state.streamLocalStream = null;
+  }
+
+  // Close all DataChannels and PeerConnections
+  for (const peer of Object.values(state.streamSeedPeers)) {
+    try { peer.dc?.close(); } catch {}
+    try { peer.pc?.close(); } catch {}
+  }
+  for (const peer of Object.values(state.streamMeshPeers)) {
+    try { peer.dc?.close(); } catch {}
+    try { peer.pc?.close(); } catch {}
+  }
+
+  // Clear intervals
+  if (state.streamBitfieldInterval) { clearInterval(state.streamBitfieldInterval); state.streamBitfieldInterval = null; }
+  if (state.streamHealthInterval) { clearInterval(state.streamHealthInterval); state.streamHealthInterval = null; }
+
+  // Clear gap timers
+  for (const timer of Object.values(state.streamGapTimers)) clearTimeout(timer);
+
+  // Detach MediaSource
+  if (state.streamMediaSource) {
+    try {
+      if (state.streamSourceBuffer && state.streamMediaSource.readyState === 'open') {
+        state.streamMediaSource.removeSourceBuffer(state.streamSourceBuffer);
+      }
+      state.streamMediaSource.endOfStream();
+    } catch {}
+  }
+
+  const video = document.getElementById('stream-video');
+  if (video) { video.src = ''; video.srcObject = null; }
+
+  // Reset state
+  state.stream = null;
+  state.streamRecorder = null;
+  state.streamLocalStream = null;
+  state.streamSeqNum = 0;
+  state.streamInitSegment = null;
+  state.streamSeedPeers = {};
+  state.streamMeshPeers = {};
+  state.streamChunkBuffer = {};
+  state.streamBitfield = null;
+  state.streamBitfieldStart = 0;
+  state.streamViewers = [];
+  state.streamMediaSource = null;
+  state.streamSourceBuffer = null;
+  state.streamAppendQueue = [];
+  state.streamLastAppended = -1;
+  state.streamPeerList = [];
+  state.streamGapTimers = {};
+  state.streamPaused = false;
+  state.streamChatMessages = [];
+
+  // Stop camera PiP
+  if (state.streamCamStream) {
+    state.streamCamStream.getTracks().forEach(t => t.stop());
+    state.streamCamStream = null;
+  }
+  state.streamCamActive = false;
+
+  // Reset live view to empty state
+  const livePlayer = document.getElementById('live-player');
+  const liveStreaming = document.getElementById('live-streaming');
+  const liveEmpty = document.getElementById('live-empty');
+  if (livePlayer) livePlayer.classList.add('hidden');
+  if (liveStreaming) liveStreaming.classList.add('hidden');
+  if (liveEmpty) liveEmpty.classList.remove('hidden');
+
+  const ownPreview = document.getElementById('stream-own-preview');
+  if (ownPreview) ownPreview.srcObject = null;
+  const camPanel = document.getElementById('stream-cam-panel');
+  const camVideo = document.getElementById('stream-cam-video');
+  if (camPanel) camPanel.classList.add('hidden');
+  if (camVideo) camVideo.srcObject = null;
+
+  // Clear chat
+  const chatHost = document.getElementById('stream-chat-messages-host');
+  const chatViewer = document.getElementById('stream-chat-messages');
+  if (chatHost) chatHost.innerHTML = '';
+  if (chatViewer) chatViewer.innerHTML = '';
+
+  updateStreamUI();
+}
+
+// ─── Health & UI ────────────────────────────────────────────────────────────
+
+function streamHealthCheck() {
+  if (!state.stream) return;
+
+  // Streamer: check seed DataChannel health
+  if (state.stream.role === 'streamer') {
+    for (const [peerId, peer] of Object.entries(state.streamSeedPeers)) {
+      if (peer.dc?.readyState !== 'open') {
+        handleStreamPeerDisconnect(peerId);
+      }
+    }
+    // Update viewer count on all seeds
+    for (const peer of Object.values(state.streamSeedPeers)) {
+      if (peer.dc?.readyState === 'open') {
+        const peerListMsg = buildPeerListMessage(state.streamViewers);
+        try { peer.dc.send(peerListMsg); } catch {}
+      }
+    }
+  }
+
+  updateStreamUI();
+}
+
+function showStreamViewer(meta) {
+  // Activate live tab without triggering refreshLiveView recursion
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  const tab = document.querySelector('.tab[data-tab="live"]');
+  if (tab) tab.classList.add('active');
+  const content = document.getElementById('tab-live');
+  if (content) content.classList.add('active');
+  showView('live');
+
+  // Show the player, hide empty state
+  document.getElementById('live-empty').classList.add('hidden');
+  document.getElementById('live-streaming').classList.add('hidden');
+  document.getElementById('live-player').classList.remove('hidden');
+
+  document.getElementById('live-player-title').textContent = meta.title;
+  document.getElementById('live-player-viewers').textContent = '0 watching';
+  document.getElementById('live-streamer-name').textContent = meta.streamerName || 'Unknown';
+  document.getElementById('live-stream-started').textContent = 'Just started';
+  document.getElementById('stream-buffering').classList.remove('hidden');
+
+  // Draw streamer avatar
+  const avatarCanvas = document.getElementById('live-streamer-avatar');
+  if (avatarCanvas && meta.streamerId) generateAvatar(meta.streamerId, avatarCanvas, 32);
+
+  // Unmute on first click (autoplay policy)
+  const video = document.getElementById('stream-video');
+  video.muted = true;
+  const unmute = () => { video.muted = false; video.removeEventListener('click', unmute); };
+  video.addEventListener('click', unmute);
+}
+
+function showStreamerView(meta, skipTabSwitch) {
+  if (!skipTabSwitch) {
+    // Activate the live tab without triggering refreshLiveView recursion
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    const tab = document.querySelector('.tab[data-tab="live"]');
+    if (tab) tab.classList.add('active');
+    const content = document.getElementById('tab-live');
+    if (content) content.classList.add('active');
+    showView('live');
+  }
+
+  // Show streamer panel, hide others
+  document.getElementById('live-empty').classList.add('hidden');
+  document.getElementById('live-player').classList.add('hidden');
+  document.getElementById('live-streaming').classList.remove('hidden');
+
+  document.getElementById('live-own-title').textContent = meta.title;
+
+  // Show own preview
+  const preview = document.getElementById('stream-own-preview');
+  if (state.streamLocalStream) preview.srcObject = state.streamLocalStream;
+}
+
+function updateStreamOverlay() {
+  if (!state.stream) return;
+  const meta = state.stream.meta;
+  if (meta) {
+    const titleEl = document.getElementById('live-player-title');
+    if (titleEl) titleEl.textContent = meta.title;
+  }
+}
+
+function updateStreamLatency(ms) {
+  const el = document.getElementById('live-player-latency');
+  if (el) el.textContent = `${Math.round(ms)}ms`;
+}
+
+function updateStreamUI() {
+  // Update viewer count
+  const viewerCount = state.stream?.role === 'streamer'
+    ? state.streamViewers.length
+    : (state.streamPeerList.length || Object.keys(state.streamSeedPeers).length + Object.keys(state.streamMeshPeers).length);
+
+  const viewerEl = document.getElementById('live-player-viewers');
+  if (viewerEl) viewerEl.textContent = `${viewerCount} watching`;
+
+  // Update streamer dashboard
+  if (state.stream?.role === 'streamer') {
+    const ownViewers = document.getElementById('live-own-viewers');
+    const ownSeeds = document.getElementById('live-own-seeds');
+    const ownChunks = document.getElementById('live-own-chunks');
+    if (ownViewers) ownViewers.textContent = state.streamViewers.length;
+    if (ownSeeds) ownSeeds.textContent = Object.keys(state.streamSeedPeers).length;
+    if (ownChunks) ownChunks.textContent = state.streamSeqNum;
+  }
+
+  // Update Go Live button state
+  const goLiveBtn = document.getElementById('go-live-hub-btn');
+  if (goLiveBtn) {
+    if (state.stream?.role === 'streamer') {
+      goLiveBtn.textContent = 'END STREAM';
+      goLiveBtn.classList.add('is-live');
+      goLiveBtn.onclick = endStream;
+    } else {
+      goLiveBtn.textContent = 'GO LIVE';
+      goLiveBtn.classList.remove('is-live');
+      goLiveBtn.onclick = showGoLiveModal;
+    }
+  }
+
+  // Update sidebar go-live button
+  const sidebarBtn = document.getElementById('sidebar-go-live-btn');
+  if (sidebarBtn) {
+    if (state.stream?.role === 'streamer') {
+      sidebarBtn.textContent = 'END STREAM';
+      sidebarBtn.style.color = '#e53935';
+      sidebarBtn.onclick = endStream;
+    } else {
+      sidebarBtn.textContent = 'GO LIVE';
+      sidebarBtn.style.color = '';
+      sidebarBtn.onclick = showGoLiveModal;
+    }
+  }
+
+  // Update sidebar stream list
+  renderLiveStreamsList();
+}
+
+function refreshLiveView() {
+  // Called when switching to Live tab — update the view state
+  if (state.stream?.role === 'streamer') {
+    showStreamerView(state.stream.meta, true);
+  } else if (state.stream?.role === 'viewer') {
+    // Already watching — just ensure player is visible
+    document.getElementById('live-empty').classList.add('hidden');
+    document.getElementById('live-streaming').classList.add('hidden');
+    document.getElementById('live-player').classList.remove('hidden');
+  } else {
+    // Not in a stream — show empty state or available streams
+    document.getElementById('live-player').classList.add('hidden');
+    document.getElementById('live-streaming').classList.add('hidden');
+    document.getElementById('live-empty').classList.remove('hidden');
+  }
+  renderLiveStreamsList();
+
+  // Fetch active streams from server
+  send('get_active_streams', {}).then(res => {
+    if (res?.streams) {
+      if (!state._knownStreams) state._knownStreams = {};
+      for (const s of res.streams) {
+        state._knownStreams[s.streamId] = { ...s, fromId: s.streamerId, fromName: s.streamerName };
+      }
+      renderLiveStreamsList();
+    }
+  }).catch(() => {});
+}
+
+function renderLiveStreamsList() {
+  const list = document.getElementById('live-streams-list');
+  if (!list) return;
+
+  const streams = state._knownStreams ? Object.values(state._knownStreams) : [];
+
+  if (streams.length === 0 && !state.stream) {
+    list.innerHTML = '<div class="sidebar-hint"><p class="subtle">No one is live right now.</p></div>';
+    return;
+  }
+
+  let html = '';
+  for (const s of streams) {
+    const isWatching = state.stream?.streamId === s.streamId;
+    html += `<div class="list-item${isWatching ? ' active' : ''}" onclick="joinStream('${escapeAttr(s.fromId || s.streamerId)}','${escapeAttr(s.streamId)}',${escapeAttr(JSON.stringify(s))})">
+      <div class="list-item-info">
+        <div class="stream-live-dot" style="display:inline-block;vertical-align:middle;margin-right:6px"></div>
+        <span class="list-item-name">${escapeHtml(s.fromName || s.streamerName || 'Unknown')}</span>
+      </div>
+      <div class="subtle" style="font-size:10px;margin-top:2px">${escapeHtml(s.title || 'Untitled')}</div>
+    </div>`;
+  }
+  list.innerHTML = html;
+}
+
+function renderStreamAnnouncement(meta, fromId, fromName) {
+  // Inject announcement into the broadcast feed area if visible
+  const feedContainer = document.getElementById('feed-posts');
+  if (!feedContainer) return;
+
+  const existing = document.getElementById(`stream-announce-${meta.streamId}`);
+  if (existing) return; // Already shown
+
+  const card = document.createElement('div');
+  card.id = `stream-announce-${meta.streamId}`;
+  card.className = 'stream-announce-card';
+  card.innerHTML = `
+    <div class="stream-live-badge">LIVE</div>
+    <div>
+      <div style="font-family:var(--font-display);font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--text-primary)">${escapeHtml(meta.title)}</div>
+      <div class="micro-text">${escapeHtml(fromName)} is streaming</div>
+    </div>
+    <span class="stream-announce-join">JOIN STREAM</span>
+  `;
+  card.onclick = () => joinStream(fromId, meta.streamId, meta);
+  feedContainer.insertBefore(card, feedContainer.firstChild);
+}
+
+// ─── ASCII Logo Engine ──────────────────────────────────────────────────────
+
+const ASCII_KATAKANA = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+const ASCII_LOGO_COLS = 52;
+const ASCII_LOGO_ROWS = 28; // tuned so circles appear round at font-size
+
+let asciiLogoData = null;
+let asciiLogoAnimId = null;
+let asciiLogoChars = null;
+let asciiLogoEl = null;
+let asciiLogoHover = null;
+let asciiLogoRipples = [];
+
+function generateODLogoGrid(cols, rows) {
+  const grid = [];
+
+  // O ring — left side
+  const oCx = 0.34, oCy = 0.50, oR = 0.26, oHole = 0.12;
+  // D shape — right side (semicircle + flat left edge)
+  const dCx = 0.70, dCy = 0.50, dR = 0.28, dLeft = 0.54;
+  // Arrow / play-button cutout inside D
+  const arrBaseX = 0.62, arrTipX = 0.79, arrHalf = 0.12;
+
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < cols; c++) {
+      const x = c / cols;
+      const y = r / rows;
+
+      // O: ring shape
+      const oD = Math.sqrt((x - oCx) ** 2 + (y - oCy) ** 2);
+      const inO = oD <= oR && oD >= oHole;
+
+      // D: flat left, curved right, with arrow cutout
+      const dD = Math.sqrt((x - dCx) ** 2 + (y - dCy) ** 2);
+      const inDShape = dD <= dR && x >= dLeft;
+      // Arrow cutout: triangle pointing right
+      const at = (x - arrBaseX) / (arrTipX - arrBaseX);
+      const inArrow = at >= 0 && at <= 1 && Math.abs(y - dCy) <= arrHalf * (1 - at);
+      const inD = inDShape && !inArrow;
+
+      // Interlock zone (where O and D overlap)
+      const overL = 0.42, overR = 0.58;
+      let val = 0;
+
+      if (x >= overL && x <= overR && (inO || inD)) {
+        if (y < 0.47) {
+          // Top: D in front of O
+          val = inD ? 0.9 : (inO ? 0.35 : 0);
+        } else if (y > 0.53) {
+          // Bottom: O in front of D
+          val = inO ? 0.9 : (inD ? 0.35 : 0);
+        } else {
+          val = (inO || inD) ? 0.65 : 0;
+        }
+      } else {
+        if (inO) val = 0.85;
+        if (inD) val = Math.max(val, 0.85);
+      }
+
+      // Teal edge glow — just outside the shapes
+      if (val === 0) {
+        const oEdge = Math.abs(oD - oR);
+        const oInnerEdge = Math.abs(oD - oHole);
+        if ((oEdge < 0.03 && oD > oHole) || (oInnerEdge < 0.025 && oD < oR)) val = 0.25;
+        const dEdge = Math.abs(dD - dR);
+        if (dEdge < 0.03 && x >= dLeft - 0.03) val = Math.max(val, 0.25);
+        if (Math.abs(x - dLeft) < 0.02 && dD <= dR + 0.01 && Math.abs(y - dCy) < dR) val = Math.max(val, 0.2);
+      }
+
+      row.push(val);
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
+function initAsciiLogo(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const cols = ASCII_LOGO_COLS;
+  const rows = ASCII_LOGO_ROWS;
+  const grid = generateODLogoGrid(cols, rows);
+
+  asciiLogoData = { grid, rows, cols };
+
+  asciiLogoChars = [];
+  for (let y = 0; y < rows; y++) {
+    const row = [];
+    for (let x = 0; x < cols; x++) {
+      row.push(pickAsciiChar(grid[y][x]));
+    }
+    asciiLogoChars.push(row);
+  }
+
+  const pre = document.createElement('pre');
+  pre.className = 'ascii-logo-pre';
+  container.innerHTML = '';
+  container.appendChild(pre);
+  asciiLogoEl = pre;
+
+  // Mouse interaction
+  container.addEventListener('mousemove', (e) => {
+    const rect = pre.getBoundingClientRect();
+    const charW = rect.width / cols;
+    const charH = rect.height / rows;
+    asciiLogoHover = {
+      x: Math.max(0, Math.min(cols - 1, Math.floor((e.clientX - rect.left) / charW))),
+      y: Math.max(0, Math.min(rows - 1, Math.floor((e.clientY - rect.top) / charH))),
+    };
+  });
+  container.addEventListener('mouseleave', () => { asciiLogoHover = null; });
+  container.addEventListener('click', (e) => {
+    const rect = pre.getBoundingClientRect();
+    asciiLogoRipples.push({
+      cx: (e.clientX - rect.left) / (rect.width / cols),
+      cy: (e.clientY - rect.top) / (rect.height / rows),
+      startTime: performance.now(),
+    });
+  });
+
+  renderAsciiLogo();
+  startAsciiAnimation();
+}
+
+function pickAsciiChar(brightness) {
+  if (brightness < 0.06) return ' ';
+  if (brightness < 0.12) return Math.random() < 0.25 ? '·' : ' ';
+  if (brightness > 0.55) {
+    return ASCII_KATAKANA[Math.floor(Math.random() * ASCII_KATAKANA.length)];
+  }
+  if (brightness > 0.3) {
+    const chars = '#%*+=';
+    return chars[Math.floor(Math.random() * chars.length)];
+  }
+  const dim = '.:;·';
+  return dim[Math.floor(Math.random() * dim.length)];
+}
+
+function renderAsciiLogo() {
+  if (!asciiLogoEl || !asciiLogoData || !asciiLogoChars) return;
+  const { grid, rows, cols } = asciiLogoData;
+  const now = performance.now();
+
+  // Clean up old ripples (>1.2s)
+  asciiLogoRipples = asciiLogoRipples.filter(r => now - r.startTime < 1200);
+
+  let html = '';
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      let brightness = grid[y][x];
+      const ch = asciiLogoChars[y][x];
+
+      if (ch === ' ') { html += ' '; continue; }
+
+      // Hover glow: boost brightness near mouse
+      let hoverBoost = 0;
+      if (asciiLogoHover) {
+        const dx = x - asciiLogoHover.x;
+        const dy = (y - asciiLogoHover.y) * 2; // correct for char aspect
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 8) {
+          hoverBoost = Math.max(0, 1 - dist / 8) * 0.6;
+        }
+      }
+
+      // Ripple effects
+      let rippleBoost = 0;
+      for (const rip of asciiLogoRipples) {
+        const age = (now - rip.startTime) / 1000;
+        const ripRadius = age * 30; // expands outward
+        const dx = x - rip.cx;
+        const dy = (y - rip.cy) * 2;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const ringDist = Math.abs(dist - ripRadius);
+        if (ringDist < 3) {
+          const intensity = (1 - ringDist / 3) * Math.max(0, 1 - age * 1.2);
+          rippleBoost = Math.max(rippleBoost, intensity * 0.8);
+        }
+      }
+
+      const totalBright = Math.min(1, brightness + hoverBoost + rippleBoost);
+      const alpha = Math.min(1, totalBright * 1.6);
+      const glow = hoverBoost + rippleBoost;
+
+      // Base teal, boosted toward white on hover/ripple
+      const cr = Math.floor(30 + totalBright * 20 + glow * 200);
+      const cg = Math.floor(180 + totalBright * 44 + glow * 60);
+      const cb = Math.floor(150 + totalBright * 46 + glow * 80);
+
+      if (glow > 0.2) {
+        html += `<span style="color:rgba(${Math.min(255,cr)},${Math.min(255,cg)},${Math.min(255,cb)},${alpha.toFixed(2)});text-shadow:0 0 4px rgba(50,224,196,${(glow*0.8).toFixed(2)})">${ch}</span>`;
+      } else {
+        html += `<span style="color:rgba(${cr},${cg},${cb},${alpha.toFixed(2)})">${ch}</span>`;
+      }
+    }
+    html += '\n';
+  }
+  asciiLogoEl.innerHTML = html;
+}
+
+function startAsciiAnimation() {
+  if (asciiLogoAnimId) return;
+  let lastMutate = 0;
+  const mutateInterval = 150;
+
+  function animate(time) {
+    asciiLogoAnimId = requestAnimationFrame(animate);
+
+    // Mutate characters at a slower rate
+    if (time - lastMutate > mutateInterval) {
+      lastMutate = time;
+      if (asciiLogoData && asciiLogoChars) {
+        const { grid, rows, cols } = asciiLogoData;
+        const mutations = Math.floor(rows * cols * 0.05);
+        for (let i = 0; i < mutations; i++) {
+          const y = Math.floor(Math.random() * rows);
+          const x = Math.floor(Math.random() * cols);
+          if (grid[y][x] > 0.06) {
+            asciiLogoChars[y][x] = pickAsciiChar(grid[y][x]);
+          }
+        }
+      }
+    }
+
+    // Render every frame if hovering or ripples active, else at mutate rate
+    if (asciiLogoHover || asciiLogoRipples.length > 0 || time - lastMutate < 20) {
+      renderAsciiLogo();
+    }
+  }
+
+  asciiLogoAnimId = requestAnimationFrame(animate);
+}
+
+function stopAsciiAnimation() {
+  if (asciiLogoAnimId) {
+    cancelAnimationFrame(asciiLogoAnimId);
+    asciiLogoAnimId = null;
+  }
+}
+
+// ─── Stream Controls ────────────────────────────────────────────────────────
+
+// Pause / Resume
+function toggleStreamPause() {
+  if (!state.streamRecorder || state.stream?.role !== 'streamer') return;
+  if (state.streamPaused) {
+    state.streamRecorder.resume();
+    state.streamPaused = false;
+    document.getElementById('stream-pause-btn').textContent = '\u23CF PAUSE';
+    document.getElementById('stream-pause-btn').classList.remove('active');
+    document.getElementById('live-own-badge').textContent = 'YOU ARE LIVE';
+    document.getElementById('live-own-badge').classList.remove('stream-paused-badge');
+  } else {
+    state.streamRecorder.pause();
+    state.streamPaused = true;
+    document.getElementById('stream-pause-btn').textContent = '\u25B6 RESUME';
+    document.getElementById('stream-pause-btn').classList.add('active');
+    document.getElementById('live-own-badge').textContent = 'PAUSED';
+    document.getElementById('live-own-badge').classList.add('stream-paused-badge');
+  }
+  // Notify viewers
+  broadcastStreamControl(state.streamPaused ? 'pause' : 'resume');
+}
+
+function broadcastStreamControl(action) {
+  const json = new TextEncoder().encode(JSON.stringify({ action }));
+  const msg = new Uint8Array(1 + json.byteLength);
+  msg[0] = STREAM_MSG.PAUSE;
+  msg.set(json, 1);
+  const allPeers = { ...state.streamSeedPeers, ...state.streamMeshPeers };
+  for (const peer of Object.values(allPeers)) {
+    if (peer.dc?.readyState === 'open') {
+      try { peer.dc.send(msg.buffer); } catch {}
+    }
+  }
+}
+
+// Volume (viewer)
+function setStreamVolume(val) {
+  const video = document.getElementById('stream-video');
+  if (video) video.volume = val / 100;
+}
+
+// Camera PiP toggle (streamer)
+async function toggleStreamCamera() {
+  if (!state.stream || state.stream.role !== 'streamer') return;
+  const btn = document.getElementById('stream-cam-btn');
+  const camPanel = document.getElementById('stream-cam-panel');
+  const camVideo = document.getElementById('stream-cam-video');
+
+  if (state.streamCamActive) {
+    // Turn off camera
+    if (state.streamCamStream) {
+      state.streamCamStream.getTracks().forEach(t => t.stop());
+      state.streamCamStream = null;
+    }
+    camVideo.srcObject = null;
+    camPanel.classList.add('hidden');
+    btn.classList.remove('active');
+    state.streamCamActive = false;
+  } else {
+    // Turn on camera
+    try {
+      state.streamCamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
+      camVideo.srcObject = state.streamCamStream;
+      camVideo.onloadedmetadata = () => camPanel.classList.remove('hidden');
+      btn.classList.add('active');
+      state.streamCamActive = true;
+    } catch (e) {
+      camPanel.classList.add('hidden');
+      camVideo.srcObject = null;
+      showToast('Camera Error', e.message || 'Could not access camera', 'error');
+    }
+  }
+}
+
+// Quality presets (streamer)
+const STREAM_QUALITY = {
+  high:   { width: 1280, height: 720, bitrate: 1000000 },
+  medium: { width: 854,  height: 480, bitrate: 500000 },
+  low:    { width: 640,  height: 360, bitrate: 250000 },
+};
+
+async function changeStreamQuality(preset) {
+  if (!state.stream || state.stream.role !== 'streamer') return;
+  const q = STREAM_QUALITY[preset];
+  if (!q) return;
+
+  // Apply resolution constraint to the video track
+  const videoTrack = state.streamLocalStream?.getVideoTracks()[0];
+  if (videoTrack) {
+    try {
+      await videoTrack.applyConstraints({ width: q.width, height: q.height });
+    } catch (e) {
+      console.warn('[Stream] Could not apply resolution constraint:', e.message);
+    }
+  }
+
+  // Restart MediaRecorder with new bitrate
+  if (state.streamRecorder && state.streamRecorder.state !== 'inactive') {
+    state.streamRecorder.stop();
+  }
+
+  let codec = state.stream.meta.codec;
+  const recorder = new MediaRecorder(state.streamLocalStream, {
+    mimeType: codec,
+    videoBitsPerSecond: q.bitrate,
+  });
+
+  let isFirst = true;
+  recorder.ondataavailable = async (e) => {
+    if (e.data.size === 0) return;
+    const data = new Uint8Array(await e.data.arrayBuffer());
+    if (isFirst) {
+      state.streamInitSegment = data;
+      isFirst = false;
+      // Send new init segment to all viewers
+      const initMsg = buildInitSegMessage(data);
+      const allPeers = { ...state.streamSeedPeers, ...state.streamMeshPeers };
+      for (const peer of Object.values(allPeers)) {
+        if (peer.dc?.readyState === 'open') {
+          try { peer.dc.send(initMsg); } catch {}
+        }
+      }
+      return; // Don't distribute init segment as regular chunk
+    }
+    handleStreamChunk(data);
+  };
+
+  recorder.start(STREAM_TIMESLICE);
+  state.streamRecorder = recorder;
+  state.stream.meta.width = q.width;
+  state.stream.meta.height = q.height;
+
+  showToast('Quality Changed', `${q.width}x${q.height} @ ${q.bitrate / 1000}Kbps`, 'info');
+}
+
+// ─── Stream Chat ────────────────────────────────────────────────────────────
+
+function sendStreamChat() {
+  const inputEl = state.stream?.role === 'streamer'
+    ? document.getElementById('stream-chat-input-host')
+    : document.getElementById('stream-chat-input');
+  if (!inputEl) return;
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value = '';
+
+  const chatMsg = { from: state.myName || 'You', text, ts: Date.now() };
+
+  // Show locally
+  appendStreamChatMessage(chatMsg);
+
+  // Build and send CHAT binary message
+  const json = new TextEncoder().encode(JSON.stringify(chatMsg));
+  const msg = new Uint8Array(1 + json.byteLength);
+  msg[0] = STREAM_MSG.CHAT;
+  msg.set(json, 1);
+
+  const allPeers = { ...state.streamSeedPeers, ...state.streamMeshPeers };
+  for (const peer of Object.values(allPeers)) {
+    if (peer.dc?.readyState === 'open') {
+      try { peer.dc.send(msg.buffer); } catch {}
+    }
+  }
+}
+
+function appendStreamChatMessage(chatMsg) {
+  state.streamChatMessages.push(chatMsg);
+  if (state.streamChatMessages.length > 200) state.streamChatMessages.shift();
+
+  const container = state.stream?.role === 'streamer'
+    ? document.getElementById('stream-chat-messages-host')
+    : document.getElementById('stream-chat-messages');
+  if (!container) return;
+
+  const div = document.createElement('div');
+  div.className = 'stream-chat-msg';
+
+  const nameSpan = `<span class="stream-chat-msg-name">${escapeHtml(chatMsg.from)}</span>`;
+  const textSpan = document.createElement('span');
+  textSpan.className = 'stream-chat-msg-text';
+  div.innerHTML = nameSpan;
+  div.appendChild(textSpan);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+
+  // Fast encryption animation
+  animateStreamChatEncrypt(textSpan, chatMsg.text);
+}
+
+async function animateStreamChatEncrypt(el, plaintext) {
+  const len = plaintext.length;
+  const steps = Math.min(6, Math.ceil(len / 3));
+  const stepTime = 35;
+
+  // Phase 1: scrambled ciphertext appears
+  for (let i = 0; i <= steps; i++) {
+    const frac = i / steps;
+    let out = '';
+    for (let j = 0; j < len; j++) {
+      if (j / len < frac) {
+        out += plaintext[j];
+      } else {
+        out += HEX_CHARS[Math.floor(Math.random() * 16)];
+      }
+    }
+    el.textContent = out;
+    el.classList.add('stream-chat-decrypting');
+    await new Promise(r => setTimeout(r, stepTime));
+  }
+
+  el.textContent = plaintext;
+  el.classList.remove('stream-chat-decrypting');
+  el.classList.add('stream-chat-decrypted');
+  setTimeout(() => el.classList.remove('stream-chat-decrypted'), 400);
 }
 
 // ─── Onboarding Walkthrough ──────────────────────────────────────────────────

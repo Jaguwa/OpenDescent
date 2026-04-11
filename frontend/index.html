@@ -70,9 +70,9 @@
         <button class="tab active" data-tab="feed">Broadcast</button>
         <button class="tab" data-tab="chats">Chats</button>
         <button class="tab" data-tab="contacts">Contacts</button>
-        <button class="tab" data-tab="groups">Groups</button>
         <button class="tab" data-tab="discover">Discover</button>
         <button class="tab" data-tab="deaddrops">Drops</button>
+        <button class="tab" data-tab="live">Live</button>
         <button id="btn-connect-peer" class="tab connect-tab" title="Connect Peer">+</button>
       </div>
 
@@ -83,20 +83,21 @@
         </div>
       </div>
 
-      <!-- Chats list -->
+      <!-- Chats list (DMs + Groups merged) -->
       <div id="tab-chats" class="tab-content">
         <div id="conversations-list" class="list"></div>
+        <div id="groups-section">
+          <div class="chat-section-divider">
+            <span class="chat-section-label">GROUPS</span>
+            <button id="btn-create-group" class="chat-section-action" onclick="showGroupModal()">+ NEW</button>
+          </div>
+          <div id="groups-list" class="list"></div>
+        </div>
       </div>
 
       <!-- Contacts list -->
       <div id="tab-contacts" class="tab-content">
         <div id="contacts-list" class="list"></div>
-      </div>
-
-      <!-- Groups list -->
-      <div id="tab-groups" class="tab-content">
-        <button id="btn-create-group" class="action-btn">+ New Group</button>
-        <div id="groups-list" class="list"></div>
       </div>
 
       <!-- Discover tab -->
@@ -119,6 +120,16 @@
         </div>
       </div>
 
+      <!-- Live Streams tab -->
+      <div id="tab-live" class="tab-content">
+        <button id="sidebar-go-live-btn" class="action-btn" onclick="showGoLiveModal()">GO LIVE</button>
+        <div id="live-streams-list" class="list">
+          <div class="sidebar-hint">
+            <p class="subtle">No one is live right now.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Hub Channel Sidebar (replaces tabs when hub selected) -->
       <div id="hub-sidebar" class="hidden">
         <div id="hub-sidebar-header">
@@ -136,6 +147,9 @@
             <button id="voice-mute-btn" class="voice-bar-btn" onclick="toggleVoiceMute()" title="Mute">&#127908;</button>
             <button class="voice-bar-btn voice-bar-leave" onclick="leaveVoiceChannel()" title="Leave Voice">&#128277;</button>
           </div>
+        </div>
+        <div style="padding:4px 12px">
+          <button id="go-live-hub-btn" class="go-live-btn" onclick="showGoLiveModal()">GO LIVE</button>
         </div>
       </div>
 
@@ -259,6 +273,121 @@
           </div>
         </div>
         <div id="deaddrop-feed"></div>
+      </div>
+
+      <!-- Live Stream View -->
+      <div id="live-view" class="hidden">
+        <!-- No stream state -->
+        <div id="live-empty" class="live-empty-state">
+          <div class="live-empty-icon">&#128225;</div>
+          <h3 class="live-empty-title">NO ONE IS LIVE</h3>
+          <p class="subtle">When someone goes live, their stream will appear here.</p>
+          <button class="btn-primary" onclick="showGoLiveModal()" style="margin-top:16px">GO LIVE</button>
+        </div>
+
+        <!-- Viewer: watching a stream -->
+        <div id="live-player" class="live-player hidden">
+          <div class="live-player-main">
+            <div class="live-player-video-container">
+              <video id="stream-video" autoplay playsinline></video>
+              <div id="stream-paused-overlay" class="stream-paused-overlay hidden">
+                <span class="micro-text">STREAM PAUSED</span>
+              </div>
+              <div class="live-player-overlay">
+                <div class="live-player-top">
+                  <div class="stream-live-badge">LIVE</div>
+                  <span id="live-player-title" class="live-player-title"></span>
+                  <span id="live-player-viewers" class="live-player-viewers">0 watching</span>
+                </div>
+                <div class="live-player-bottom">
+                  <span id="live-player-latency" class="live-player-latency"></span>
+                  <div class="live-player-volume">
+                    <span class="micro-text" style="color:rgba(255,255,255,0.5)">&#128266;</span>
+                    <input type="range" id="stream-volume" class="stream-volume-slider" min="0" max="100" value="80" oninput="setStreamVolume(this.value)">
+                  </div>
+                  <button class="btn-secondary" onclick="leaveStream()" style="font-size:10px;letter-spacing:2px">LEAVE</button>
+                </div>
+              </div>
+              <div id="stream-buffering" class="stream-buffering hidden">
+                <span class="micro-text">BUFFERING...</span>
+              </div>
+            </div>
+            <div class="live-player-info">
+              <div class="live-player-streamer">
+                <canvas id="live-streamer-avatar" class="live-streamer-avatar" width="32" height="32"></canvas>
+                <div>
+                  <div id="live-streamer-name" class="live-streamer-name"></div>
+                  <div id="live-stream-started" class="micro-text"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Stream chat panel (viewer) -->
+          <div class="stream-chat-panel">
+            <div class="stream-chat-header"><span class="micro-text">STREAM CHAT</span></div>
+            <div id="stream-chat-messages" class="stream-chat-messages"></div>
+            <div class="stream-chat-input">
+              <input type="text" id="stream-chat-input" placeholder="Say something..." autocomplete="off" onkeydown="if(event.key==='Enter')sendStreamChat()">
+              <button class="btn-primary" onclick="sendStreamChat()" style="padding:6px 12px;font-size:10px">SEND</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Streamer: your own stream dashboard -->
+        <div id="live-streaming" class="live-streaming hidden">
+          <div class="live-streaming-main">
+            <div class="live-streaming-header">
+              <div class="stream-live-badge" id="live-own-badge">YOU ARE LIVE</div>
+              <span id="live-own-title" class="live-player-title"></span>
+            </div>
+            <div class="live-streaming-preview-row">
+              <div class="live-streaming-preview">
+                <video id="stream-own-preview" autoplay muted playsinline></video>
+              </div>
+              <div id="stream-cam-panel" class="stream-cam-panel hidden">
+                <video id="stream-cam-video" autoplay muted playsinline></video>
+                <div class="stream-cam-label"><span class="micro-text">CAMERA</span></div>
+              </div>
+            </div>
+            <!-- Streamer controls -->
+            <div class="stream-controls">
+              <button id="stream-pause-btn" class="stream-ctrl-btn" onclick="toggleStreamPause()" title="Pause/Resume">&#9208; PAUSE</button>
+              <button id="stream-cam-btn" class="stream-ctrl-btn" onclick="toggleStreamCamera()" title="Toggle Camera PiP">&#127909; CAMERA</button>
+              <div class="stream-quality-select">
+                <span class="micro-text" style="margin-right:6px">QUALITY</span>
+                <select id="stream-quality" onchange="changeStreamQuality(this.value)">
+                  <option value="high">720p / 1Mbps</option>
+                  <option value="medium">480p / 500Kbps</option>
+                  <option value="low">360p / 250Kbps</option>
+                </select>
+              </div>
+            </div>
+            <div class="live-streaming-stats">
+              <div class="live-stat">
+                <span class="micro-text">VIEWERS</span>
+                <span id="live-own-viewers" class="live-stat-value">0</span>
+              </div>
+              <div class="live-stat">
+                <span class="micro-text">SEEDS</span>
+                <span id="live-own-seeds" class="live-stat-value">0</span>
+              </div>
+              <div class="live-stat">
+                <span class="micro-text">CHUNKS</span>
+                <span id="live-own-chunks" class="live-stat-value">0</span>
+              </div>
+            </div>
+            <button class="btn-secondary" onclick="endStream()" style="margin-top:16px;color:#e53935;border-color:rgba(229,57,53,0.3)">END STREAM</button>
+          </div>
+          <!-- Stream chat panel (streamer) -->
+          <div class="stream-chat-panel">
+            <div class="stream-chat-header"><span class="micro-text">STREAM CHAT</span></div>
+            <div id="stream-chat-messages-host" class="stream-chat-messages"></div>
+            <div class="stream-chat-input">
+              <input type="text" id="stream-chat-input-host" placeholder="Say something..." autocomplete="off" onkeydown="if(event.key==='Enter')sendStreamChat()">
+              <button class="btn-primary" onclick="sendStreamChat()" style="padding:6px 12px;font-size:10px">SEND</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Active chat -->
@@ -1172,6 +1301,32 @@
         </div>
       </div>
     </div>
+
+    <!-- ─── Go Live Modal ──────────────────────────────────── -->
+    <div id="go-live-modal" class="modal hidden">
+      <div class="modal-content" style="max-width:480px">
+        <h3 class="modal-title">GO LIVE</h3>
+        <div class="go-live-form">
+          <input type="text" id="stream-title-input" class="input-field" placeholder="Stream title..." maxlength="100">
+          <div class="stream-source-toggle">
+            <button id="stream-source-screen" class="btn-secondary stream-source-btn active" onclick="selectStreamSource('screen')">SCREEN</button>
+            <button id="stream-source-camera" class="btn-secondary stream-source-btn" onclick="selectStreamSource('camera')">CAMERA</button>
+          </div>
+          <div class="stream-preview-container">
+            <video id="stream-preview" autoplay muted playsinline></video>
+            <div id="stream-preview-placeholder" class="stream-preview-placeholder">
+              <span class="micro-text">SELECT SOURCE TO PREVIEW</span>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button id="stream-start-btn" class="btn-primary" onclick="startStreaming()" disabled>START STREAMING</button>
+            <button class="btn-secondary" onclick="closeGoLiveModal()">CANCEL</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stream viewer is now inline in live-view -->
 
     <!-- ─── File Received Toast ─────────────────────────────── -->
     <div id="toast-container"></div>
