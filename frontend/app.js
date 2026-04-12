@@ -255,6 +255,9 @@ const state = {
   streamCamStream: null,     // Streamer: camera stream for PiP
   streamCamActive: false,    // Streamer: camera PiP is on
   streamChatMessages: [],    // Chat messages for the stream
+  // Streamer: rolling buffer since last keyframe, for catching up new viewers
+  streamLastKeyframeChunk: null,    // { seqNum, data, timestamp } — last keyframe
+  streamSinceKeyframe: [],          // chunks after last keyframe, in order
 };
 
 // ─── Hub Ranking Constants ──────────────────────────────────────────────────
@@ -3027,14 +3030,14 @@ function renderPostCard(post) {
     ${mediaHTML}
     <div class="post-actions">
       <button class="post-action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike('${safePostId}', ${!!post.liked})">
-        ${post.liked ? '&#10084;' : '&#9825;'} ${post.likeCount || 0}
+        <svg class="icon"><use href="${post.liked ? '#i-heart' : '#i-heart-outline'}"/></svg> ${post.likeCount || 0}
       </button>
       <button class="post-action-btn" onclick="openComments('${safePostId}')">
-        &#128172; ${post.commentCount || 0}
+        <svg class="icon"><use href="#i-comment"/></svg> ${post.commentCount || 0}
       </button>
-      <button class="post-action-btn" onclick="sharePost('${safePostId}')" title="Share to a friend">&#8618; Share</button>
-      <button class="post-action-btn post-delete-btn" onclick="deletePost('${safePostId}', ${isMe})" title="${isMe ? 'Delete post' : 'Hide from feed'}">&#128465;</button>
-      ${!isMe ? `<button class="post-action-btn" onclick="showReportModal('${safePostId}','post')" title="Report">&#9873;</button>` : ''}
+      <button class="post-action-btn" onclick="sharePost('${safePostId}')" title="Share to a friend"><svg class="icon"><use href="#i-share"/></svg> Share</button>
+      <button class="post-action-btn post-delete-btn" onclick="deletePost('${safePostId}', ${isMe})" title="${isMe ? 'Delete post' : 'Hide from feed'}"><svg class="icon"><use href="#i-trash"/></svg></button>
+      ${!isMe ? `<button class="post-action-btn" onclick="showReportModal('${safePostId}','post')" title="Report"><svg class="icon"><use href="#i-warn"/></svg></button>` : ''}
     </div>
   </div>`;
 }
@@ -5264,10 +5267,10 @@ function renderDeadDropCard(drop, isReply) {
     </div>
     <div class="deaddrop-content">${renderContentWithGifs(content)}</div>
     <div class="deaddrop-actions">
-      <button class="deaddrop-vote-btn ${voted === 'up' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'up')">&#9650;</button>
+      <button class="deaddrop-vote-btn ${voted === 'up' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'up')"><svg class="icon-sm"><use href="#i-arrow-up"/></svg></button>
       <span class="deaddrop-score">${drop.votes || 0}</span>
-      <button class="deaddrop-vote-btn ${voted === 'down' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'down')">&#9660;</button>
-      ${!isReply ? `<button class="deaddrop-reply-btn" onclick="replyToDrop('${escapeAttr(drop.dropId)}')" title="Reply anonymously">&#8617; Reply</button>` : ''}
+      <button class="deaddrop-vote-btn ${voted === 'down' ? 'voted' : ''}" onclick="voteDeadDrop('${escapeAttr(drop.dropId)}', 'down')"><svg class="icon-sm"><use href="#i-arrow-down"/></svg></button>
+      ${!isReply ? `<button class="deaddrop-reply-btn" onclick="replyToDrop('${escapeAttr(drop.dropId)}')" title="Reply anonymously"><svg class="icon-sm"><use href="#i-reply"/></svg> Reply</button>` : ''}
       <span class="deaddrop-expiry">${expiryText}</span>
     </div>
   `;
@@ -7558,6 +7561,82 @@ function generateStreamId() {
   return crypto.randomUUID();
 }
 
+// Proper EBML/WebM parser to find the first Cluster element at Segment level
+function readEbmlVInt(data, offset) {
+  if (offset >= data.length) return null;
+  const first = data[offset];
+  if (first === 0) return null;
+  let size = 1;
+  let mask = 0x80;
+  while ((first & mask) === 0 && size < 8) {
+    size++;
+    mask >>= 1;
+  }
+  if (size > 8) return null;
+  let value = first & (mask - 1);
+  for (let i = 1; i < size; i++) {
+    if (offset + i >= data.length) return null;
+    value = (value * 256) + data[offset + i];
+  }
+  return { value, size, raw: size };
+}
+
+function readEbmlId(data, offset) {
+  if (offset >= data.length) return null;
+  const first = data[offset];
+  if (first === 0) return null;
+  let size = 1;
+  let mask = 0x80;
+  while ((first & mask) === 0 && size < 4) {
+    size++;
+    mask >>= 1;
+  }
+  if (size > 4) return null;
+  let id = 0;
+  for (let i = 0; i < size; i++) {
+    if (offset + i >= data.length) return null;
+    id = (id * 256) + data[offset + i];
+  }
+  return { id, size };
+}
+
+// Returns the byte offset of the first Cluster (0x1F43B675) inside the Segment.
+// Returns -1 if not found or parse error.
+function findWebMClusterStart(data) {
+  let pos = 0;
+  // Parse EBML header
+  const ebmlId = readEbmlId(data, pos);
+  if (!ebmlId || ebmlId.id !== 0x1A45DFA3) return -1;
+  pos += ebmlId.size;
+  const ebmlSize = readEbmlVInt(data, pos);
+  if (!ebmlSize) return -1;
+  pos += ebmlSize.size + ebmlSize.value;
+
+  // Parse Segment header
+  const segId = readEbmlId(data, pos);
+  if (!segId || segId.id !== 0x18538067) return -1;
+  pos += segId.size;
+  const segSize = readEbmlVInt(data, pos);
+  if (!segSize) return -1;
+  pos += segSize.size;
+  // Note: we stay inside the Segment — don't skip its content
+
+  // Iterate direct children of Segment
+  while (pos < data.length - 4) {
+    const childId = readEbmlId(data, pos);
+    if (!childId) return -1;
+    if (childId.id === 0x1F43B675) {
+      // Found Cluster at Segment level
+      return pos;
+    }
+    pos += childId.size;
+    const childSize = readEbmlVInt(data, pos);
+    if (!childSize) return -1;
+    pos += childSize.size + childSize.value;
+  }
+  return -1;
+}
+
 // ─── Go Live Modal ──────────────────────────────────────────────────────────
 
 let streamSourceType = 'screen';
@@ -7667,10 +7746,11 @@ async function startStreaming() {
     state.stream.meta.codec = codec;
   }
 
-  // Start MediaRecorder
+  // Start MediaRecorder — 500 Kbps gives smaller chunks that don't choke DataChannels
   const recorder = new MediaRecorder(state.streamLocalStream, {
     mimeType: codec,
-    videoBitsPerSecond: 1000000, // 1 Mbps
+    videoBitsPerSecond: 500000, // 500 Kbps
+    audioBitsPerSecond: 64000,
   });
   state.streamRecorder = recorder;
 
@@ -7680,10 +7760,12 @@ async function startStreaming() {
     const data = new Uint8Array(await e.data.arrayBuffer());
 
     if (isFirstChunk) {
+      // Whole first chunk IS the init segment (contains codec config + first cluster).
+      // Do NOT also distribute as chunk 0 — the cluster data is already in the init.
       state.streamInitSegment = data;
       isFirstChunk = false;
       console.log(`[Stream] Init segment captured: ${data.byteLength} bytes`);
-      return; // Don't distribute init segment as a regular chunk
+      return;
     }
 
     handleStreamChunk(data);
@@ -7717,12 +7799,24 @@ async function startStreaming() {
 function handleStreamChunk(data) {
   if (!state.stream) return; // Stream already ended
   const seqNum = state.streamSeqNum++;
+  const now = Date.now();
 
   // Update own bitfield
   updateBitfield(seqNum);
 
   // Store chunk
   state.streamChunkBuffer[seqNum] = data;
+
+  // Track keyframes for new-viewer catch-up (heuristic: chunks > 50KB are keyframes)
+  const KEYFRAME_SIZE = 50000;
+  if (data.byteLength >= KEYFRAME_SIZE) {
+    state.streamLastKeyframeChunk = { seqNum, data, timestamp: now };
+    state.streamSinceKeyframe = [];
+  } else if (state.streamLastKeyframeChunk) {
+    state.streamSinceKeyframe.push({ seqNum, data, timestamp: now });
+    // Cap memory — don't let this grow unbounded if keyframes are slow
+    if (state.streamSinceKeyframe.length > 40) state.streamSinceKeyframe.shift();
+  }
 
   // Build binary CHUNK message: [0x01, seqNum(4), timestamp(8), data]
   const msg = new Uint8Array(1 + 4 + 8 + data.byteLength);
@@ -7731,13 +7825,19 @@ function handleStreamChunk(data) {
   writeF64(msg, 5, Date.now());
   msg.set(data, 13);
 
-  // Round-robin distribute to seed peers
+  // Round-robin distribute to seed peers with backpressure check
   const seeds = Object.keys(state.streamSeedPeers);
   if (seeds.length > 0) {
     const targetId = seeds[seqNum % seeds.length];
     const peer = state.streamSeedPeers[targetId];
     if (peer.dc && peer.dc.readyState === 'open') {
-      peer.dc.send(msg.buffer);
+      // Skip if DC buffer is full (4MB threshold) — prevents SCTP overflow
+      if (peer.dc.bufferedAmount < 4 * 1024 * 1024) {
+        try { peer.dc.send(msg.buffer); }
+        catch (e) { console.warn('[Stream] DC send failed:', e.message); }
+      } else {
+        console.warn(`[Stream] Dropping chunk ${seqNum} — DC buffer full (${(peer.dc.bufferedAmount/1024/1024).toFixed(1)}MB)`);
+      }
     }
   }
 
@@ -7793,6 +7893,19 @@ async function handleViewerJoin(viewerId, viewerName) {
   if (state.stream?.role !== 'streamer') return;
   console.log(`[Stream] Viewer joining: ${viewerName} (${viewerId})`);
 
+  // Clean up any stale entry for this viewer (e.g., from a previous join that
+  // didn't fully tear down). Without this, the health check / state handlers
+  // from the old session can kill the new connection.
+  if (state.streamSeedPeers[viewerId]) {
+    try { state.streamSeedPeers[viewerId].pc?.close(); } catch {}
+    delete state.streamSeedPeers[viewerId];
+  }
+  if (state.streamMeshPeers[viewerId]) {
+    try { state.streamMeshPeers[viewerId].pc?.close(); } catch {}
+    delete state.streamMeshPeers[viewerId];
+  }
+  state.streamViewers = state.streamViewers.filter(v => v.peerId !== viewerId);
+
   // Add to viewer list
   const isSeed = Object.keys(state.streamSeedPeers).length < STREAM_MAX_SEEDS;
   state.streamViewers.push({ peerId: viewerId, name: viewerName, isSeed });
@@ -7800,10 +7913,8 @@ async function handleViewerJoin(viewerId, viewerName) {
   // Create WebRTC connection with DataChannel (STUN+TURN for seed reliability)
   const pc = new RTCPeerConnection({ iceServers: getIceServers() });
 
-  const dc = pc.createDataChannel('stream', {
-    ordered: false,
-    maxRetransmits: 0, // Unreliable for low latency
-  });
+  const dc = pc.createDataChannel('stream');
+  dc.bufferedAmountLowThreshold = 1024 * 1024; // 1MB
   dc.binaryType = 'arraybuffer';
 
   dc.onopen = () => {
@@ -7819,6 +7930,31 @@ async function handleViewerJoin(viewerId, viewerName) {
     // Send PEER_LIST
     const peerListMsg = buildPeerListMessage(state.streamViewers);
     dc.send(peerListMsg);
+
+    // Catch-up: send most recent keyframe + subsequent chunks. Delay slightly
+    // so the DC is warmed up — sending a 200KB+ keyframe immediately on open
+    // can congest the SCTP buffer on fresh connections.
+    setTimeout(() => {
+      if (dc.readyState !== 'open') return;
+      if (!state.streamLastKeyframeChunk) return;
+      const kf = state.streamLastKeyframeChunk;
+      const kfMsg = new Uint8Array(1 + 4 + 8 + kf.data.byteLength);
+      kfMsg[0] = STREAM_MSG.CHUNK;
+      writeU32(kfMsg, 1, kf.seqNum);
+      writeF64(kfMsg, 5, kf.timestamp);
+      kfMsg.set(kf.data, 13);
+      try { dc.send(kfMsg.buffer); } catch (e) { console.warn('[Stream] Catch-up keyframe send failed:', e.message); return; }
+      console.log(`[Stream] Catch-up: sent keyframe ${kf.seqNum} (${kf.data.byteLength}B) + ${state.streamSinceKeyframe.length} deltas to ${viewerName}`);
+      for (const c of state.streamSinceKeyframe) {
+        if (dc.readyState !== 'open') break;
+        const cMsg = new Uint8Array(1 + 4 + 8 + c.data.byteLength);
+        cMsg[0] = STREAM_MSG.CHUNK;
+        writeU32(cMsg, 1, c.seqNum);
+        writeF64(cMsg, 5, c.timestamp);
+        cMsg.set(c.data, 13);
+        try { dc.send(cMsg.buffer); } catch {}
+      }
+    }, 200);
   };
 
   dc.onmessage = (e) => handleStreamMessage(viewerId, e.data);
@@ -7907,11 +8043,17 @@ function handleStreamOffer(fromId, fromName, signal) {
         dc.onmessage = (ev) => handleStreamMessage(fromId, ev.data);
         dc.onclose = () => { console.log(`[Stream] DC closed (${fromName})`); };
 
-        // Store connection
+        // Preserve ICE queue from any existing placeholder entry
+        const existing = state.streamMeshPeers[fromId] || state.streamSeedPeers[fromId];
+        const entry = { pc, dc, name: fromName, bitfield: null, iceQueue: existing?.iceQueue || [] };
+
+        // Store in the correct bucket and remove any duplicate entry
         if (state.stream?.meta?.streamerId === fromId) {
-          state.streamSeedPeers[fromId] = { pc, dc, name: fromName };
+          state.streamSeedPeers[fromId] = entry;
+          delete state.streamMeshPeers[fromId];
         } else {
-          state.streamMeshPeers[fromId] = { pc, dc, name: fromName, bitfield: null };
+          state.streamMeshPeers[fromId] = entry;
+          delete state.streamSeedPeers[fromId];
         }
         console.log(`[Stream] DataChannel open from ${fromName}`);
       };
@@ -8097,6 +8239,20 @@ function handleStreamMessage(fromId, arrayBuffer) {
       // Skip if already have it
       if (state.streamChunkBuffer[seqNum]) return;
 
+      // Joining mid-stream: jump streamLastAppended to just before this seqNum
+      // so we don't waste time waiting for chunks that happened before we joined.
+      if (state.stream?.role === 'viewer' && seqNum > state.streamLastAppended + 5) {
+        console.log(`[Stream] Sync to live: jumping streamLastAppended ${state.streamLastAppended} -> ${seqNum - 1}`);
+        // Clear pending gap timers
+        for (const t of Object.values(state.streamGapTimers)) clearTimeout(t);
+        state.streamGapTimers = {};
+        // Drop stale buffered chunks
+        for (const k of Object.keys(state.streamChunkBuffer)) {
+          if (parseInt(k) < seqNum) delete state.streamChunkBuffer[k];
+        }
+        state.streamLastAppended = seqNum - 1;
+      }
+
       // Store
       state.streamChunkBuffer[seqNum] = chunkData;
       updateBitfield(seqNum);
@@ -8188,6 +8344,7 @@ function handleStreamMessage(fromId, arrayBuffer) {
     case STREAM_MSG.CHAT: {
       const json = new TextDecoder().decode(buf.slice(1));
       const chatMsg = JSON.parse(json);
+      console.log(`[Stream] CHAT received from ${fromId.slice(0,12)}: ${chatMsg.from}: "${chatMsg.text}"`);
       appendStreamChatMessage(chatMsg);
       // Relay to mesh peers (so chat propagates through the mesh)
       pushChatToMeshPeers(fromId, arrayBuffer);
@@ -8215,6 +8372,10 @@ function handleStreamMessage(fromId, arrayBuffer) {
 function initMediaSource(initSegment) {
   if (state.streamMediaSource) return;
   console.log(`[Stream] Initializing MediaSource with ${initSegment.byteLength} byte init segment`);
+  // The whole first MediaRecorder chunk is the init (contains first cluster at t=0).
+  // Streamer doesn't distribute that first chunk as a CHUNK message, so the next
+  // expected chunk is seqNum 1 (or sync-to-live jumps forward for late joiners).
+  state.streamLastAppended = 0;
 
   const ms = new MediaSource();
   state.streamMediaSource = ms;
@@ -8224,18 +8385,19 @@ function initMediaSource(initSegment) {
   ms.addEventListener('sourceopen', () => {
     try {
       const codec = state.stream?.meta?.codec || STREAM_CODEC;
+      console.log(`[Stream] SourceBuffer codec: ${codec}`);
       const sb = ms.addSourceBuffer(codec);
-      sb.mode = 'sequence';
+      sb.mode = 'segments'; // preserve WebM timecodes — MSE handles gaps
       state.streamSourceBuffer = sb;
 
-      // Append init segment
-      sb.appendBuffer(initSegment);
+      sb.addEventListener('error', (e) => console.error('[Stream] SourceBuffer error:', e));
+      ms.addEventListener('sourceended', () => console.log('[Stream] MediaSource ended'));
+      ms.addEventListener('sourceclose', () => console.log('[Stream] MediaSource closed'));
+
+      // CRITICAL: attach updateend BEFORE the first appendBuffer, or we can miss
+      // the first updateend and the queue never drains.
       sb.addEventListener('updateend', () => {
-        // Process queue
-        if (state.streamAppendQueue.length > 0 && !sb.updating) {
-          const next = state.streamAppendQueue.shift();
-          try { sb.appendBuffer(next); } catch (e) { console.warn('[Stream] Append error:', e.message); }
-        }
+        drainStreamAppendQueue();
         // Buffer cleanup
         try {
           if (video.currentTime > STREAM_BUFFER_CLEANUP_SEC && sb.buffered.length > 0) {
@@ -8247,35 +8409,88 @@ function initMediaSource(initSegment) {
         } catch {}
       });
 
+      // Now append init segment
+      console.log(`[Stream] Appending init segment (${initSegment.byteLength} bytes)`);
+      sb.appendBuffer(initSegment);
+
       // Start bitfield broadcast
       state.streamBitfieldInterval = setInterval(broadcastBitfield, STREAM_BITFIELD_INTERVAL);
 
       // Hide buffering indicator
       document.getElementById('stream-buffering').classList.add('hidden');
-      video.play().catch(() => {});
+      video.play().catch((e) => console.warn('[Stream] video.play() rejected:', e.message));
+
+      // ═══ VIDEO DIAGNOSTICS ═══
+      const events = ['play','pause','waiting','stalled','ended','error','loadedmetadata','canplay','canplaythrough','playing','seeking','seeked'];
+      events.forEach(ev => {
+        video.addEventListener(ev, () => console.log(`[Video] ${ev}: currentTime=${video.currentTime.toFixed(2)} paused=${video.paused} readyState=${video.readyState}`));
+      });
+      video.addEventListener('error', () => {
+        const err = video.error;
+        console.error('[Video] error event:', err ? `code=${err.code} msg=${err.message}` : 'unknown');
+      });
+
+      // Periodic state dump + auto-recovery: if stuck, seek forward
+      let lastCurrentTime = 0;
+      let stuckTicks = 0;
+      state.streamVideoMonitor = setInterval(() => {
+        const bufStart = video.buffered.length > 0 ? video.buffered.start(0).toFixed(2) : 'n/a';
+        const bufEnd = video.buffered.length > 0 ? video.buffered.end(video.buffered.length - 1).toFixed(2) : 'n/a';
+        const sbBufStart = sb.buffered.length > 0 ? sb.buffered.start(0).toFixed(2) : 'n/a';
+        const sbBufEnd = sb.buffered.length > 0 ? sb.buffered.end(sb.buffered.length - 1).toFixed(2) : 'n/a';
+        console.log(`[Video] t=${video.currentTime.toFixed(2)} paused=${video.paused} rs=${video.readyState} videoBuf=[${bufStart},${bufEnd}] sbBuf=[${sbBufStart},${sbBufEnd}]`);
+
+        // Detect stuck: currentTime not advancing and not paused
+        if (!video.paused && Math.abs(video.currentTime - lastCurrentTime) < 0.01 && video.buffered.length > 0) {
+          stuckTicks++;
+          if (stuckTicks >= 3) {
+            const seekTarget = video.buffered.end(video.buffered.length - 1) - 0.3;
+            if (seekTarget > video.currentTime + 0.5) {
+              console.log(`[Video] Stuck at ${video.currentTime.toFixed(2)}, seeking to ${seekTarget.toFixed(2)}`);
+              video.currentTime = seekTarget;
+              stuckTicks = 0;
+            }
+          }
+        } else {
+          stuckTicks = 0;
+        }
+        lastCurrentTime = video.currentTime;
+      }, 1000);
     } catch (e) {
       console.error('[Stream] Failed to init SourceBuffer:', e);
     }
   });
 }
 
+function drainStreamAppendQueue() {
+  const sb = state.streamSourceBuffer;
+  if (!sb || sb.updating) return;
+  if (state.streamAppendQueue.length === 0) return;
+  const next = state.streamAppendQueue.shift();
+  try {
+    sb.appendBuffer(next);
+    console.log(`[Stream] Appended (${next.byteLength}B, ${state.streamAppendQueue.length} left in queue)`);
+  } catch (e) {
+    console.error('[Stream] Append error:', e.message);
+  }
+}
+
 function appendToSourceBuffer() {
   const sb = state.streamSourceBuffer;
   if (!sb) return;
 
-  // Try sequential append
+  // Move any ready sequential chunks from buffer into the queue (in order)
   let nextSeq = state.streamLastAppended + 1;
   while (state.streamChunkBuffer[nextSeq]) {
     const chunk = state.streamChunkBuffer[nextSeq];
-    if (sb.updating) {
-      state.streamAppendQueue.push(chunk);
-    } else {
-      try { sb.appendBuffer(chunk); } catch (e) { console.warn('[Stream] Append error:', e.message); break; }
-    }
+    state.streamAppendQueue.push(chunk);
     state.streamLastAppended = nextSeq;
     delete state.streamChunkBuffer[nextSeq];
     nextSeq++;
   }
+
+  // Start draining the queue (only if SB is free — otherwise updateend will do it)
+  drainStreamAppendQueue();
 
   // Start gap timer for the next expected chunk
   if (!state.streamChunkBuffer[nextSeq] && !state.streamGapTimers[nextSeq] && state.streamLastAppended >= 0) {
@@ -8532,6 +8747,7 @@ function cleanupStream() {
   // Clear intervals
   if (state.streamBitfieldInterval) { clearInterval(state.streamBitfieldInterval); state.streamBitfieldInterval = null; }
   if (state.streamHealthInterval) { clearInterval(state.streamHealthInterval); state.streamHealthInterval = null; }
+  if (state.streamVideoMonitor) { clearInterval(state.streamVideoMonitor); state.streamVideoMonitor = null; }
 
   // Clear gap timers
   for (const timer of Object.values(state.streamGapTimers)) clearTimeout(timer);
@@ -8609,7 +8825,9 @@ function streamHealthCheck() {
   // Streamer: check seed DataChannel health
   if (state.stream.role === 'streamer') {
     for (const [peerId, peer] of Object.entries(state.streamSeedPeers)) {
-      if (peer.dc?.readyState !== 'open') {
+      // Only disconnect if DC is truly dead. 'connecting' is normal during rejoin.
+      const dcState = peer.dc?.readyState;
+      if (dcState === 'closed' || dcState === 'closing') {
         handleStreamPeerDisconnect(peerId);
       }
     }
@@ -9225,11 +9443,18 @@ function sendStreamChat() {
   msg.set(json, 1);
 
   const allPeers = { ...state.streamSeedPeers, ...state.streamMeshPeers };
-  for (const peer of Object.values(allPeers)) {
+  let sentCount = 0;
+  for (const [peerId, peer] of Object.entries(allPeers)) {
     if (peer.dc?.readyState === 'open') {
-      try { peer.dc.send(msg.buffer); } catch {}
+      try {
+        peer.dc.send(msg.buffer);
+        sentCount++;
+      } catch (e) { console.warn('[Stream] Chat send failed to', peerId.slice(0,12), e.message); }
+    } else {
+      console.log(`[Stream] Chat skip ${peerId.slice(0,12)}: dc state=${peer.dc?.readyState || 'null'}`);
     }
   }
+  console.log(`[Stream] CHAT sent "${text}" to ${sentCount}/${Object.keys(allPeers).length} peers`);
 }
 
 function appendStreamChatMessage(chatMsg) {

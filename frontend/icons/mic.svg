@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- Mic capsule: rectangular, with seam line and single grille band -->
+  <rect x="9" y="3" width="6" height="11"/>
+  <!-- Horizontal grille band (single, bold) -->
+  <line x1="9.5" y1="7" x2="14.5" y2="7" stroke-width="1"/>
+  <!-- Vertical centre seam -->
+  <line x1="12" y1="3" x2="12" y2="7" stroke-width="1" opacity="0.5"/>
+  <line x1="12" y1="7" x2="12" y2="14" stroke-width="1" opacity="0.5"/>
+  <!-- Stand arc -->
+  <path d="M5 11v1a7 7 0 0 0 14 0v-1"/>
+  <!-- Stand post -->
+  <line x1="12" y1="19" x2="12" y2="22"/>
+  <!-- Base bar -->
+  <line x1="8" y1="22" x2="16" y2="22"/>
+</svg>

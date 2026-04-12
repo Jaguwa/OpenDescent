@@ -4162,6 +4162,42 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
   background: linear-gradient(90deg, transparent, rgba(50, 224, 196, 0.06), transparent);
 }
 
+/* ═══════════════════ CUSTOM ICON SYSTEM ═══════════════════ */
+.icon { width: 16px; height: 16px; display: inline-block; vertical-align: middle; flex-shrink: 0; color: currentColor; }
+.icon-sm { width: 12px; height: 12px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+.icon-md { width: 20px; height: 20px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+.icon-lg { width: 28px; height: 28px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+.icon-xl { width: 40px; height: 40px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+
+/* Icon animation transform origins */
+.anim-trash-lid { transform-origin: 90% 50%; transform-box: fill-box; }
+.anim-slider-1, .anim-slider-2, .anim-slider-3 { transform-origin: center; transform-box: fill-box; }
+
+/* Icon animation keyframes */
+@keyframes icon-pulse-opacity { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes icon-sequential-1 { 0%, 70%, 100% { opacity: 0.3; } 10%, 20% { opacity: 1; } }
+@keyframes icon-sequential-2 { 0%, 70%, 100% { opacity: 0.3; } 30%, 40% { opacity: 1; } }
+@keyframes icon-sequential-3 { 0%, 70%, 100% { opacity: 0.3; } 50%, 60% { opacity: 1; } }
+@keyframes icon-lid-lift { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-2px) rotate(-8deg); } }
+@keyframes icon-slider-shift { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-4px); } }
+@keyframes icon-slider-shift-alt { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+@keyframes icon-rock { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+@keyframes icon-scan-circle { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(1.5px, -1.5px); } 50% { transform: translate(3px, 0); } 75% { transform: translate(1.5px, 1.5px); } }
+
+/* Hover-triggered animations on interactive icon-containing buttons */
+button:hover .anim-trash-lid,
+.icon-btn:hover .anim-trash-lid,
+a:hover .anim-trash-lid { animation: icon-lid-lift 0.5s ease-in-out; }
+button:hover .anim-slider-1,
+.icon-btn:hover .anim-slider-1 { animation: icon-slider-shift 0.6s ease-in-out; }
+button:hover .anim-slider-2,
+.icon-btn:hover .anim-slider-2 { animation: icon-slider-shift-alt 0.6s ease-in-out 0.1s; }
+button:hover .anim-slider-3,
+.icon-btn:hover .anim-slider-3 { animation: icon-slider-shift 0.6s ease-in-out 0.2s; }
+button:hover .anim-comment-dot-1 { animation: icon-sequential-1 0.8s ease-in-out; }
+button:hover .anim-comment-dot-2 { animation: icon-sequential-2 0.8s ease-in-out; }
+button:hover .anim-comment-dot-3 { animation: icon-sequential-3 0.8s ease-in-out; }
+
 /* Chat section divider (Groups heading inside Chats tab) */
 .chat-section-divider {
   display: flex; align-items: center; justify-content: space-between;

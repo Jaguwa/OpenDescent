@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- Shackle: angular, slightly flat top -->
+  <path d="M7 10V8a5 5 0 0 1 10 0v2"/>
+  <!-- Lock body -->
+  <rect x="4" y="10" width="16" height="11"/>
+  <!-- Horizontal seam line across middle (manufactured detail) -->
+  <line x1="4" y1="15.5" x2="20" y2="15.5" stroke-width="0.8" opacity="0.4"/>
+  <!-- Corner bolts (small dots) -->
+  <circle cx="5.5" cy="11.5" r="0.5" fill="currentColor" stroke="none"/>
+  <circle cx="18.5" cy="11.5" r="0.5" fill="currentColor" stroke="none"/>
+  <circle cx="5.5" cy="19.5" r="0.5" fill="currentColor" stroke="none"/>
+  <circle cx="18.5" cy="19.5" r="0.5" fill="currentColor" stroke="none"/>
+  <!-- Keyhole: square + slot -->
+  <rect x="11" y="13" width="2" height="2" fill="currentColor" stroke="none"/>
+  <line x1="12" y1="15" x2="12" y2="18" stroke-width="1.5"/>
+</svg>

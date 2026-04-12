@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- Outer frame: cassette-deck button -->
+  <rect x="3" y="3" width="18" height="18"/>
+  <!-- Play triangle: fills more of the frame -->
+  <polygon points="9,6.5 18,12 9,17.5" fill="currentColor" stroke="none"/>
+</svg>

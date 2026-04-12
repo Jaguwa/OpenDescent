@@ -14,6 +14,204 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- ═══════════════════ CUSTOM ICON LIBRARY ═══════════════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mic" viewBox="0 0 24 24">
+    <rect x="9" y="3" width="6" height="11" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line class="anim-mic-grille" x1="9.5" y1="7" x2="14.5" y2="7" stroke="currentColor" stroke-width="1"/>
+    <line class="anim-mic-seam" x1="12" y1="3" x2="12" y2="14" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+    <path d="M5 11v1a7 7 0 0 0 14 0v-1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="8" y1="22" x2="16" y2="22" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-mic-off" viewBox="0 0 24 24">
+    <rect x="9" y="3" width="6" height="11" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="9.5" y1="7" x2="14.5" y2="7" stroke="currentColor" stroke-width="1"/>
+    <path d="M5 11v1a7 7 0 0 0 14 0v-1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="8" y1="22" x2="16" y2="22" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="3" y1="3" x2="21" y2="21" stroke="#212121" stroke-width="3.5"/>
+    <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24">
+    <path d="M11 6 L6 10 H3 V14 H6 L11 18 Z" fill="currentColor"/>
+    <path d="M15 9 Q18 12 15 15" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M18 6 Q22 12 18 18" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  </symbol>
+  <symbol id="i-speaker-off" viewBox="0 0 24 24">
+    <path d="M11 6 L6 10 H3 V14 H6 L11 18 Z" fill="currentColor"/>
+    <line x1="15" y1="9" x2="21" y2="15" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="21" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24">
+    <path d="M5 3h4l2 5-2.5 1.5a12 12 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+  </symbol>
+  <symbol id="i-video" viewBox="0 0 24 24">
+    <rect x="2" y="6" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <polygon points="17,10 22,6 22,18 17,14" fill="currentColor"/>
+    <circle cx="5" cy="9" r="0.8" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24">
+    <path d="M7 10V8a5 5 0 0 1 10 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="4" y="10" width="16" height="11" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="4" y1="15.5" x2="20" y2="15.5" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+    <circle cx="5.5" cy="11.5" r="0.5" fill="currentColor"/><circle cx="18.5" cy="11.5" r="0.5" fill="currentColor"/>
+    <circle cx="5.5" cy="19.5" r="0.5" fill="currentColor"/><circle cx="18.5" cy="19.5" r="0.5" fill="currentColor"/>
+    <rect x="11" y="13" width="2" height="2" fill="currentColor"/>
+    <line x1="12" y1="15" x2="12" y2="18" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24">
+    <path d="M7 10 V6 A4 4 0 0 1 15 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+    <rect x="4" y="10" width="16" height="11" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="4" y1="15.5" x2="20" y2="15.5" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+    <circle cx="5.5" cy="11.5" r="0.5" fill="currentColor"/><circle cx="18.5" cy="11.5" r="0.5" fill="currentColor"/>
+    <circle cx="5.5" cy="19.5" r="0.5" fill="currentColor"/><circle cx="18.5" cy="19.5" r="0.5" fill="currentColor"/>
+    <rect x="11" y="13" width="2" height="2" fill="currentColor"/>
+    <line x1="12" y1="15" x2="12" y2="18" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-lock-key" viewBox="0 0 24 24">
+    <path d="M7 10V8a5 5 0 0 1 10 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="4" y="10" width="16" height="11" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="9" cy="16" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="11" y1="16" x2="17" y2="16" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="15" y1="16" x2="15" y2="18" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="17" y1="16" x2="17" y2="19" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-play" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <polygon points="9,6.5 18,12 9,17.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="8" y="7" width="3" height="10" fill="currentColor"/>
+    <rect x="13" y="7" width="3" height="10" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="7" y="7" width="10" height="10" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24">
+    <g class="anim-trash-lid">
+      <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M10 3h4v3h-4z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </g>
+    <path d="M5 6v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="10" y1="10" x2="10" y2="18" stroke="currentColor" stroke-width="1"/>
+    <line x1="14" y1="10" x2="14" y2="18" stroke="currentColor" stroke-width="1"/>
+  </symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24">
+    <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+    <rect class="anim-slider-1" x="6" y="4" width="4" height="4" fill="currentColor"/>
+    <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+    <rect class="anim-slider-2" x="14" y="10" width="4" height="4" fill="currentColor"/>
+    <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+    <rect class="anim-slider-3" x="9" y="16" width="4" height="4" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-close" viewBox="0 0 24 24">
+    <line x1="5" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="19" y1="5" x2="5" y2="19" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-back" viewBox="0 0 24 24">
+    <line x1="20" y1="12" x2="4" y2="12" stroke="currentColor" stroke-width="1.5"/>
+    <polyline points="10,6 4,12 10,18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24">
+    <polyline points="4,12 10,18 20,6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter" stroke-linecap="square"/>
+  </symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24">
+    <polygon points="12,3 22,21 2,21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <line x1="12" y1="10" x2="12" y2="15" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="11.3" y="17" width="1.4" height="1.4" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24">
+    <path d="M12 21 L3 12 Q3 6 8 6 Q11 6 12 9 Q13 6 16 6 Q21 6 21 12 Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-heart-outline" viewBox="0 0 24 24">
+    <path d="M12 21 L3 12 Q3 6 8 6 Q11 6 12 9 Q13 6 16 6 Q21 6 21 12 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+  </symbol>
+  <symbol id="i-comment" viewBox="0 0 24 24">
+    <path d="M3 5 h18 v12 h-10 l-5 4 v-4 h-3 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <circle class="anim-comment-dot-1" cx="8" cy="11" r="0.9" fill="currentColor"/>
+    <circle class="anim-comment-dot-2" cx="12" cy="11" r="0.9" fill="currentColor"/>
+    <circle class="anim-comment-dot-3" cx="16" cy="11" r="0.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-share" viewBox="0 0 24 24">
+    <polyline points="12,3 18,9 12,15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <path d="M18 9 H10 a6 6 0 0 0 -6 6 v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+  </symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24">
+    <polyline points="8,3 2,9 8,15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <path d="M2 9 H14 a6 6 0 0 1 6 6 v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+  </symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24">
+    <polyline points="6,11 12,5 18,11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <line x1="12" y1="5" x2="12" y2="20" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24">
+    <polyline points="6,13 12,19 18,13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <line x1="12" y1="4" x2="12" y2="19" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-star" viewBox="0 0 24 24">
+    <polygon points="12,3 14.5,9.5 21,10 16,14.5 17.5,21 12,17.5 6.5,21 8,14.5 3,10 9.5,9.5" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="miter"/>
+  </symbol>
+  <symbol id="i-image" viewBox="0 0 24 24">
+    <rect x="3" y="4" width="18" height="16" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="8" cy="9" r="1.5" fill="currentColor"/>
+    <polyline points="3,17 9,12 14,16 18,13 21,15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+  </symbol>
+  <symbol id="i-video-file" viewBox="0 0 24 24">
+    <rect x="3" y="6" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="3" y="6" width="3" height="2" fill="currentColor"/><rect x="3" y="10" width="3" height="2" fill="currentColor"/>
+    <rect x="3" y="14" width="3" height="2" fill="currentColor"/><rect x="18" y="6" width="3" height="2" fill="currentColor"/>
+    <rect x="18" y="10" width="3" height="2" fill="currentColor"/><rect x="18" y="14" width="3" height="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-audio-file" viewBox="0 0 24 24">
+    <path d="M9 17 V6 L19 4 V15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <circle cx="6" cy="17" r="3" fill="currentColor"/>
+    <circle cx="16" cy="15" r="3" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-file" viewBox="0 0 24 24">
+    <path d="M6 3 H15 L19 7 V21 H5 V3 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <polyline points="15,3 15,7 19,7" fill="none" stroke="currentColor" stroke-width="1"/>
+    <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+    <line x1="8" y1="15" x2="16" y2="15" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+    <line x1="8" y1="18" x2="13" y2="18" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  </symbol>
+  <symbol id="i-poll" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="6" y="13" width="3" height="5" fill="currentColor"/>
+    <rect x="10.5" y="9" width="3" height="9" fill="currentColor"/>
+    <rect x="15" y="6" width="3" height="12" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24">
+    <path d="M6 10 a6 6 0 0 1 12 0 v5 l2 3 H4 l2 -3 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+    <path d="M10 20 a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="12" cy="4" r="1" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24">
+    <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24">
+    <path d="M12 3 C13 8 18 9 18 14 A6 6 0 0 1 6 14 C6 11 9 10 9 8 C9 6 10 5 12 3 Z" fill="currentColor"/>
+    <path d="M12 11 C12.5 13 14 14 14 16 A2 2 0 0 1 10 16 C10 14.5 11 14 12 11 Z" fill="#212121"/>
+  </symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1"/>
+    <path d="M12 3 Q7 12 12 21" fill="none" stroke="currentColor" stroke-width="1"/>
+    <path d="M12 3 Q17 12 12 21" fill="none" stroke="currentColor" stroke-width="1"/>
+    <ellipse cx="12" cy="12" rx="9" ry="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+  </symbol>
+  <symbol id="i-people" viewBox="0 0 24 24">
+    <circle cx="8" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M2 20 a6 6 0 0 1 12 0" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="16" cy="9" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M14 20 a5 5 0 0 1 9 -3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+</svg>
+
   <div id="app">
     <!-- Signal interference removed — will revisit later -->
 
@@ -26,9 +224,9 @@
       <div class="hub-separator"></div>
       <div id="hub-icons-list"></div>
       <button id="hub-add-btn" class="hub-icon hub-add-icon" onclick="showCreateHubModal()" title="Create Hub">+</button>
-      <button id="hub-browse-btn" class="hub-icon hub-browse-icon" onclick="showBrowseHubsModal()" title="Browse Hubs">&#9788;</button>
+      <button id="hub-browse-btn" class="hub-icon hub-browse-icon" onclick="showBrowseHubsModal()" title="Browse Hubs"><svg class="icon"><use href="#i-search"/></svg></button>
       <button id="hub-notif-btn" class="hub-icon hub-notif-icon hidden" onclick="showHubNotifications()" title="Notifications">
-        &#128276;<span id="hub-notif-badge" class="hub-notif-badge hidden">0</span>
+        <svg class="icon"><use href="#i-bell"/></svg><span id="hub-notif-badge" class="hub-notif-badge hidden">0</span>
       </button>
       <div style="flex:1"></div>
       <button id="theme-wheel-hub" class="theme-wheel-hub hidden" onclick="startThemeSpin()" title="Spin for a random theme!">
@@ -60,7 +258,7 @@
             </div>
           </div>
           <div id="identity-right">
-            <button id="btn-settings" class="icon-btn-sm" title="Settings" onclick="showSettingsModal()">&#9881;</button>
+            <button id="btn-settings" class="icon-btn-sm" title="Settings" onclick="showSettingsModal()"><svg class="icon"><use href="#i-settings"/></svg></button>
             <div id="connection-status" class="status-dot offline"></div>
           </div>
         </div>
@@ -134,18 +332,18 @@
       <div id="hub-sidebar" class="hidden">
         <div id="hub-sidebar-header">
           <span id="hub-sidebar-name">Hub Name</span>
-          <button id="hub-settings-btn" class="icon-btn-sm" onclick="showHubSettingsModal()" title="Hub Settings">&#9881;</button>
+          <button id="hub-settings-btn" class="icon-btn-sm" onclick="showHubSettingsModal()" title="Hub Settings"><svg class="icon"><use href="#i-settings"/></svg></button>
         </div>
         <div id="hub-channels-list"></div>
         <div id="voice-status-bar" class="hidden">
           <div class="voice-bar-info">
-            <span class="voice-bar-icon">&#128266;</span>
+            <span class="voice-bar-icon"><svg class="icon"><use href="#i-speaker"/></svg></span>
             <span id="voice-bar-channel-name">Voice</span>
             <span class="voice-bar-connected">Connected</span>
           </div>
           <div class="voice-bar-controls">
-            <button id="voice-mute-btn" class="voice-bar-btn" onclick="toggleVoiceMute()" title="Mute">&#127908;</button>
-            <button class="voice-bar-btn voice-bar-leave" onclick="leaveVoiceChannel()" title="Leave Voice">&#128277;</button>
+            <button id="voice-mute-btn" class="voice-bar-btn" onclick="toggleVoiceMute()" title="Mute"><svg class="icon"><use href="#i-mic"/></svg></button>
+            <button class="voice-bar-btn voice-bar-leave" onclick="leaveVoiceChannel()" title="Leave Voice"><svg class="icon"><use href="#i-unlock"/></svg></button>
           </div>
         </div>
         <div style="padding:4px 12px">
@@ -156,7 +354,7 @@
       <!-- Voice Channel Indicator (persistent across navigation) -->
       <div id="voice-indicator" class="voice-indicator hidden">
         <div class="voice-indicator-info">
-          <span class="voice-indicator-icon">&#128266;</span>
+          <span class="voice-indicator-icon"><svg class="icon"><use href="#i-speaker"/></svg></span>
           <div>
             <div id="voice-indicator-channel" class="voice-indicator-channel"></div>
             <div id="voice-indicator-hub" class="voice-indicator-hub"></div>
@@ -164,8 +362,8 @@
         </div>
         <div id="voice-indicator-users" class="voice-indicator-users"></div>
         <div class="voice-indicator-actions">
-          <button id="voice-indicator-mute" class="voice-indicator-btn" onclick="toggleVoiceMute()" title="Mute">&#127908;</button>
-          <button class="voice-indicator-btn voice-leave-btn" onclick="leaveVoiceChannel()" title="Leave">&#9724;</button>
+          <button id="voice-indicator-mute" class="voice-indicator-btn" onclick="toggleVoiceMute()" title="Mute"><svg class="icon"><use href="#i-mic"/></svg></button>
+          <button class="voice-indicator-btn voice-leave-btn" onclick="leaveVoiceChannel()" title="Leave"><svg class="icon"><use href="#i-close"/></svg></button>
         </div>
       </div>
 
@@ -210,11 +408,11 @@
           </div>
           <div id="composer-bottom">
             <div id="composer-actions">
-              <button class="composer-btn" onclick="triggerPostImage()" title="Image">&#128247;</button>
-              <button class="composer-btn" onclick="triggerPostVideo()" title="Video">&#127909;</button>
-              <button class="composer-btn" onclick="toggleVoicenoteRecorder()" title="Voicenote">&#127908;</button>
-              <button class="composer-btn" onclick="triggerPostAudio()" title="Audio">&#127925;</button>
-              <button class="composer-btn" onclick="showCreatePollModal()" title="Create Poll">&#128202;</button>
+              <button class="composer-btn" onclick="triggerPostImage()" title="Image"><svg class="icon"><use href="#i-image"/></svg></button>
+              <button class="composer-btn" onclick="triggerPostVideo()" title="Video"><svg class="icon"><use href="#i-video-file"/></svg></button>
+              <button class="composer-btn" onclick="toggleVoicenoteRecorder()" title="Voicenote"><svg class="icon"><use href="#i-mic"/></svg></button>
+              <button class="composer-btn" onclick="triggerPostAudio()" title="Audio"><svg class="icon"><use href="#i-audio-file"/></svg></button>
+              <button class="composer-btn" onclick="showCreatePollModal()" title="Create Poll"><svg class="icon"><use href="#i-poll"/></svg></button>
               <button class="gif-btn" onclick="showGifPicker('post', this)" title="GIF">GIF</button>
             </div>
             <div id="composer-meta">
@@ -262,7 +460,7 @@
               <option value="local"># local</option>
             </select>
             <label class="deaddrop-flare-label" title="Signal Flare — broadcasts to ALL peers (higher proof-of-work)">
-              <input type="checkbox" id="deaddrop-flare"> &#128293; Flare
+              <input type="checkbox" id="deaddrop-flare"> <svg class="icon"><use href="#i-flame"/></svg> Flare
             </label>
           </div>
           <textarea id="deaddrop-input" placeholder="Drop something into the void..." rows="3" maxlength="1000"></textarea>
@@ -302,7 +500,7 @@
                 <div class="live-player-bottom">
                   <span id="live-player-latency" class="live-player-latency"></span>
                   <div class="live-player-volume">
-                    <span class="micro-text" style="color:rgba(255,255,255,0.5)">&#128266;</span>
+                    <svg class="icon-sm" style="color:rgba(255,255,255,0.5)"><use href="#i-speaker"/></svg>
                     <input type="range" id="stream-volume" class="stream-volume-slider" min="0" max="100" value="80" oninput="setStreamVolume(this.value)">
                   </div>
                   <button class="btn-secondary" onclick="leaveStream()" style="font-size:10px;letter-spacing:2px">LEAVE</button>
@@ -351,8 +549,8 @@
             </div>
             <!-- Streamer controls -->
             <div class="stream-controls">
-              <button id="stream-pause-btn" class="stream-ctrl-btn" onclick="toggleStreamPause()" title="Pause/Resume">&#9208; PAUSE</button>
-              <button id="stream-cam-btn" class="stream-ctrl-btn" onclick="toggleStreamCamera()" title="Toggle Camera PiP">&#127909; CAMERA</button>
+              <button id="stream-pause-btn" class="stream-ctrl-btn" onclick="toggleStreamPause()" title="Pause/Resume"><svg class="icon-sm"><use href="#i-pause"/></svg> PAUSE</button>
+              <button id="stream-cam-btn" class="stream-ctrl-btn" onclick="toggleStreamCamera()" title="Toggle Camera PiP"><svg class="icon-sm"><use href="#i-video"/></svg> CAMERA</button>
               <div class="stream-quality-select">
                 <span class="micro-text" style="margin-right:6px">QUALITY</span>
                 <select id="stream-quality" onchange="changeStreamQuality(this.value)">
@@ -399,10 +597,10 @@
             <span id="chat-peer-status" class="subtle"></span>
           </div>
           <div id="chat-actions">
-            <button id="btn-voice-call" class="icon-btn" title="Voice Call">&#128222;</button>
-            <button id="btn-video-call" class="icon-btn" title="Video Call">&#128249;</button>
-            <button id="btn-share-file" class="icon-btn" title="Share File">&#128206;</button>
-            <button id="btn-privacy-shield" class="icon-btn" title="Privacy Shield — scramble all messages" onclick="togglePrivacyShield()">&#128274;</button>
+            <button id="btn-voice-call" class="icon-btn" title="Voice Call"><svg class="icon"><use href="#i-phone"/></svg></button>
+            <button id="btn-video-call" class="icon-btn" title="Video Call"><svg class="icon"><use href="#i-video"/></svg></button>
+            <button id="btn-share-file" class="icon-btn" title="Share File"><svg class="icon"><use href="#i-file"/></svg></button>
+            <button id="btn-privacy-shield" class="icon-btn" title="Privacy Shield — scramble all messages" onclick="togglePrivacyShield()"><svg class="icon"><use href="#i-lock"/></svg></button>
           </div>
         </div>
 
@@ -420,7 +618,7 @@
           </div>
         </div>
         <div id="input-area">
-          <button id="btn-chat-mic" class="composer-btn" onclick="toggleChatVnRecorder()" title="Voicenote">&#127908;</button>
+          <button id="btn-chat-mic" class="composer-btn" onclick="toggleChatVnRecorder()" title="Voicenote"><svg class="icon"><use href="#i-mic"/></svg></button>
           <button class="gif-btn" onclick="showGifPicker(state.activeHub ? 'hub' : 'chat', this)" title="GIF">GIF</button>
           <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
           <button id="btn-send">Send</button>
@@ -495,12 +693,12 @@
       </div>
       <div id="call-audio-controls" class="call-audio-controls">
         <div class="audio-slider-row">
-          <span class="audio-slider-icon" title="Microphone">&#127908;</span>
+          <span class="audio-slider-icon" title="Microphone"><svg class="icon"><use href="#i-mic"/></svg></span>
           <input type="range" id="call-mic-vol" min="0" max="150" value="100" class="audio-slider" oninput="setMicVolume(this.value)">
           <span class="audio-slider-val" id="mic-vol-val">100%</span>
         </div>
         <div class="audio-slider-row">
-          <span class="audio-slider-icon" title="Speaker">&#128266;</span>
+          <span class="audio-slider-icon" title="Speaker"><svg class="icon"><use href="#i-speaker"/></svg></span>
           <input type="range" id="call-speaker-vol" min="0" max="150" value="100" class="audio-slider" oninput="setSpeakerVolume(this.value)">
           <span class="audio-slider-val" id="speaker-vol-val">100%</span>
         </div>
