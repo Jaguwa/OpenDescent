@@ -1277,10 +1277,8 @@ footer::before {
         You believed early. We remember. Founder status includes a permanent badge on your profile, lifetime Pro access, and our eternal gratitude.
       </div>
       <div class="founder-counter">
-        <span class="founder-count" id="founder-count">0</span>
-        <span class="founder-separator">/</span>
-        <span class="founder-total">101</span>
-        <span class="founder-label">CLAIMED</span>
+        <span class="founder-count" id="founder-count">101</span>
+        <span class="founder-label">SLOTS AVAILABLE</span>
       </div>
       <div class="founder-price">&pound;1 — one time, forever</div>
       <a href="#download" class="founder-cta-btn" id="founder-cta">Download the app to claim your Founder spot</a>
@@ -1552,15 +1550,20 @@ const demoObs = new IntersectionObserver((entries) => {
 }, { threshold: 0.3 });
 demoObs.observe(document.getElementById('encrypt-demo'));
 
-// Fetch founder count
+// Fetch founder count — show remaining slots (positive framing)
 fetch('https://pay.open-descent.com/founder-status')
   .then(r => r.json())
   .then(data => {
     const el = document.getElementById('founder-count');
-    if (el) el.textContent = data.claimed || 0;
-    if (data.remaining <= 0) {
+    const remaining = typeof data.remaining === 'number'
+      ? data.remaining
+      : Math.max(0, 101 - (data.claimed || 0));
+    if (el) el.textContent = remaining;
+    if (remaining <= 0) {
       const cta = document.getElementById('founder-cta');
       if (cta) { cta.textContent = 'ALL SPOTS CLAIMED'; cta.style.opacity = '0.5'; cta.style.pointerEvents = 'none'; }
+      const label = document.querySelector('.founder-label');
+      if (label) label.textContent = 'CLAIMED';
     }
   }).catch(() => {});
 </script>
