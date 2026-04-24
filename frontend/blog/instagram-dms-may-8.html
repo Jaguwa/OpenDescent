@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>May 8: The Day Meta Admitted It Wants to Read Your DMs | OpenDescent Blog</title>
+<meta name="description" content="Meta is ending Instagram's end-to-end encryption on May 8, 2026. An editorial on what Meta actually said, what it really means, and why privacy as a policy is not the same as privacy as architecture.">
+<meta name="keywords" content="instagram encryption removal, meta privacy, may 8 instagram, privacy editorial, instagram dm encryption ending, meta reads messages, instagram alternative editorial">
+<meta name="author" content="OpenDescent">
+<meta name="theme-color" content="#0f1012">
+<link rel="canonical" href="https://open-descent.com/blog/instagram-dms-may-8.html">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<script async src="https://plausible.io/js/pa-zQ01yi4zP0T_1Tx0kPikj.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://open-descent.com/blog/instagram-dms-may-8.html">
+<meta property="og:title" content="May 8: The Day Meta Admitted It Wants to Read Your DMs">
+<meta property="og:description" content="An editorial on what Meta actually said about ending Instagram encryption, and why privacy as a policy is not the same as privacy as architecture.">
+<meta property="og:image" content="https://open-descent.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="OpenDescent">
+<meta property="article:published_time" content="2026-04-24T00:00:00Z">
+<meta property="article:modified_time" content="2026-04-24T00:00:00Z">
+<meta property="article:author" content="OpenDescent">
+<meta property="article:section" content="Editorial">
+<meta property="article:tag" content="Instagram">
+<meta property="article:tag" content="Meta">
+<meta property="article:tag" content="Privacy">
+<meta property="article:tag" content="Encryption">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="May 8: The Day Meta Admitted It Wants to Read Your DMs">
+<meta name="twitter:description" content="An editorial on what Meta actually said about ending Instagram encryption.">
+<meta name="twitter:image" content="https://open-descent.com/og-image.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "May 8: The Day Meta Admitted It Wants to Read Your DMs",
+  "description": "An editorial on what Meta actually said about ending Instagram encryption, and why privacy as a policy is not the same as privacy as architecture.",
+  "datePublished": "2026-04-24",
+  "dateModified": "2026-04-24",
+  "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" },
+  "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } },
+  "image": "https://open-descent.com/og-image.png",
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/instagram-dms-may-8.html" },
+  "wordCount": 1650,
+  "keywords": "instagram encryption, meta, may 8 2026, privacy editorial, end-to-end encryption",
+  "articleSection": "Editorial"
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://open-descent.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://open-descent.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "May 8: The Day Meta Admitted It Wants to Read Your DMs", "item": "https://open-descent.com/blog/instagram-dms-may-8.html" }
+  ]
+}
+</script>
+
+<style>
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-Wide.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-BoldWide.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+:root {
+  --bg: #0f1012; --bg-deep: #0a0a0c; --bg-surface: #16181c; --bg-card: #1a1d22; --bg-card-hi: #20242a;
+  --teal: #32E0C4; --teal-dim: #0D7377; --teal-glow: #5FFFD6;
+  --red: #e04050; --red-dim: #8a1e2a; --amber: #FFD166;
+  --text: #EEEEEE; --text-strong: #FFFFFF; --text-mid: #aaaaaa; --text-dim: #666666; --text-ghost: #3a3d42;
+  --border: rgba(255,255,255,0.06); --border-bright: rgba(50,224,196,0.2); --border-red: rgba(224,64,80,0.25);
+  --mono: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --display: 'Array Wide', 'Array', -apple-system, sans-serif;
+  --body: 'Array', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--body); background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 200px; }
+body::after { content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none; background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.45) 100%); }
+
+@keyframes chroma-section { 0%,100% { text-shadow: -1.5px 0 rgba(224,64,80,0.3), 1.5px 0 rgba(50,224,196,0.35); } 50% { text-shadow: -2px 0.5px rgba(224,64,80,0.25), 2px -0.5px rgba(50,224,196,0.4); } }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; position: relative; }
+.container-narrow { max-width: 740px; margin: 0 auto; padding: 0 28px; position: relative; }
+section { padding: 72px 0; position: relative; }
+
+/* Breaking */
+.breaking { background: linear-gradient(90deg, rgba(224,64,80,0.15), rgba(224,64,80,0.06) 40%, rgba(224,64,80,0.06) 60%, rgba(224,64,80,0.15)); border-bottom: 1px solid var(--border-red); overflow: hidden; position: relative; z-index: 101; }
+.breaking-viewport { display: flex; align-items: center; height: 32px; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.breaking-label { display: inline-flex; align-items: center; gap: 8px; color: #ffeaee; background: var(--red); padding: 7px 14px; height: 100%; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.breaking-label::before { content: ''; width: 6px; height: 6px; background: #ffeaee; border-radius: 50%; animation: pulse-dot 1.2s infinite; }
+.breaking-track { flex: 1; overflow: hidden; position: relative; white-space: nowrap; mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); }
+.breaking-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 60s linear infinite; color: var(--text-mid); }
+.breaking-content a { color: var(--text); text-decoration: none; margin: 0 14px; }
+.breaking-content a:hover { color: var(--teal); }
+.breaking-content .sep { color: var(--red); margin: 0 14px; }
+
+/* Nav */
+nav.top { position: sticky; top: 0; z-index: 100; background: rgba(15,16,18,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 1400px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.nav-brand { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--text); text-decoration: none; animation: chroma-section 5s ease-in-out infinite; display: inline-flex; align-items: center; gap: 10px; }
+.nav-brand .dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.nav-links { display: flex; gap: 28px; list-style: none; align-items: center; }
+.nav-links a { font-family: var(--mono); font-size: 10.5px; color: var(--text-mid); text-decoration: none; text-transform: uppercase; letter-spacing: 1.5px; transition: color 0.2s; }
+.nav-links a:hover { color: var(--teal); }
+.nav-links a.alert { color: #ffb8bf; }
+.nav-links a.alert::before { content: ''; display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-right: 6px; vertical-align: middle; animation: pulse-dot 1.4s infinite; box-shadow: 0 0 8px var(--red); }
+.nav-links a.alert:hover { color: var(--red); }
+.nav-cta { padding: 8px 18px !important; background: transparent; border: 1px solid var(--teal); border-radius: 3px; color: var(--teal) !important; letter-spacing: 2px !important; }
+.nav-cta:hover { background: rgba(50,224,196,0.08); box-shadow: 0 0 14px rgba(50,224,196,0.18); }
+
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 4px; font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; text-decoration: none; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-primary { background: var(--teal); color: #07140f; }
+.btn-primary:hover { background: var(--teal-glow); box-shadow: 0 0 24px rgba(50,224,196,0.35); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border-color: var(--border-bright); }
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); box-shadow: 0 0 16px rgba(50,224,196,0.12); }
+.btn-arrow::after { content: '\2192'; font-size: 14px; }
+
+/* Breadcrumb */
+.breadcrumb { padding: 22px 0 0; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-ghost); }
+.breadcrumb a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: var(--teal); }
+.breadcrumb .sep { color: var(--text-ghost); margin: 0 10px; }
+.breadcrumb .current { color: var(--text); }
+
+/* Post hero */
+.post-hero {
+  padding: 56px 0 40px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  background: radial-gradient(ellipse at 80% 20%, rgba(224,64,80,0.04) 0%, transparent 55%);
+}
+.post-kicker-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 22px; }
+.post-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; }
+.post-tag.editorial { color: #ffbfc4; border: 1px solid var(--border-red); background: rgba(224,64,80,0.05); }
+.post-date { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+.post-read { font-family: var(--mono); font-size: 10px; color: var(--teal-dim); letter-spacing: 2px; text-transform: uppercase; }
+
+.post-hero h1 {
+  font-family: var(--display);
+  font-size: clamp(2rem, 4.6vw, 3.4rem); font-weight: 700;
+  line-height: 1.06; letter-spacing: -0.5px;
+  color: var(--text-strong);
+  margin-bottom: 24px;
+  max-width: 900px;
+}
+.post-hero h1 em { font-style: normal; color: var(--teal); animation: chroma-section 6s ease-in-out infinite; }
+.post-standfirst {
+  font-family: var(--body);
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--text-mid);
+  max-width: 720px;
+  margin-bottom: 28px;
+}
+.post-standfirst strong { color: var(--text); }
+
+.post-byline { display: flex; gap: 24px; align-items: center; padding-top: 18px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.byline-author { font-family: var(--mono); font-size: 11px; color: var(--text); letter-spacing: 1.5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.byline-author .dot { width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.byline-share { display: flex; gap: 8px; flex-wrap: wrap; }
+.share-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-family: var(--mono); font-size: 10px;
+  color: var(--text-mid); text-decoration: none;
+  border: 1px solid var(--border); border-radius: 2px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  transition: all 0.2s;
+}
+.share-btn:hover { color: var(--teal); border-color: var(--border-bright); background: rgba(50,224,196,0.04); }
+
+/* Article body */
+.article-body { padding: 56px 0 72px; }
+.prose p { font-family: var(--body); font-size: 17.5px; line-height: 1.75; color: var(--text); margin-bottom: 22px; }
+.prose p strong { color: var(--text-strong); font-weight: 600; }
+.prose p em { font-style: italic; color: var(--text); }
+.prose h2 {
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem); font-weight: 700;
+  line-height: 1.2; letter-spacing: -0.3px;
+  color: var(--text-strong);
+  margin: 48px 0 18px;
+}
+.prose h2 em { font-style: normal; color: var(--teal); }
+.prose h2 .num { color: var(--teal-dim); margin-right: 10px; font-size: 0.8em; }
+.prose a { color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim); transition: border-bottom-style 0.2s; }
+.prose a:hover { border-bottom-style: solid; }
+.prose ul, .prose ol { margin: 14px 0 28px; padding-left: 28px; }
+.prose ul li, .prose ol li { font-family: var(--body); font-size: 17px; line-height: 1.75; color: var(--text); padding: 5px 0; }
+.prose ul li::marker { color: var(--teal); }
+.prose ol li::marker { color: var(--teal); font-weight: 700; }
+
+/* Pull quote */
+.pullquote {
+  margin: 40px 0;
+  padding: 24px 0 24px 32px;
+  border-left: 3px solid var(--teal);
+  font-family: var(--display);
+  font-size: clamp(1.2rem, 2.2vw, 1.5rem); font-weight: 400;
+  line-height: 1.4; letter-spacing: -0.2px;
+  color: var(--text-strong);
+}
+.pullquote em { font-style: normal; color: var(--teal); }
+
+/* Block quote (source) */
+.blockquote {
+  margin: 32px 0;
+  padding: 20px 24px;
+  background: var(--bg-card);
+  border-left: 2px solid var(--teal);
+  border-radius: 0 4px 4px 0;
+}
+.blockquote p {
+  font-family: var(--body); font-size: 16px; font-style: italic;
+  line-height: 1.7; color: var(--text); margin-bottom: 0;
+}
+.blockquote .cite {
+  display: block; margin-top: 12px; padding-top: 10px;
+  font-family: var(--mono); font-size: 10px; font-style: normal;
+  color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase;
+  border-top: 1px dashed var(--border);
+}
+.blockquote .cite a { color: var(--text-mid); border-bottom: none; }
+.blockquote .cite a:hover { color: var(--teal); }
+
+/* Key-point callout */
+.keypoint {
+  margin: 32px 0;
+  padding: 22px 26px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  position: relative;
+}
+.keypoint::before { content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.keypoint-label { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.keypoint-label::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.keypoint p { font-family: var(--body); font-size: 15.5px; line-height: 1.7; color: var(--text); margin: 0; }
+.keypoint p strong { color: var(--text-strong); }
+
+/* Sources */
+.sources {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 4px; padding: 18px 22px; margin: 32px 0;
+}
+.sources-label { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+.sources a { display: block; font-family: var(--mono); font-size: 12px; color: var(--text-mid); text-decoration: none; padding: 4px 0; border-bottom: none; }
+.sources a:hover { color: var(--teal); }
+
+/* CTA inline */
+.inline-cta {
+  margin: 40px 0;
+  padding: 28px 30px;
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(50,224,196,0.04) 140%);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  position: relative;
+}
+.inline-cta::before { content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.inline-cta p { font-family: var(--body); font-size: 15.5px; line-height: 1.7; color: var(--text); margin-bottom: 16px; }
+.inline-cta p strong { color: var(--text-strong); }
+.inline-cta .btns { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* Related */
+.related-section { background: var(--bg-deep); padding: 56px 0; border-top: 1px solid var(--border); }
+.related-title { font-family: var(--mono); font-size: 11px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px; }
+.related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.related-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 24px 26px; text-decoration: none; color: inherit;
+  transition: all 0.25s; position: relative;
+}
+.related-card::before { content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, rgba(50,224,196,0.2), transparent); }
+.related-card:hover { background: var(--bg-card-hi); border-color: var(--border-bright); transform: translateX(3px); }
+.related-card h3 { font-family: var(--display); font-size: 1.05rem; font-weight: 700; color: var(--text-strong); line-height: 1.25; margin-bottom: 10px; letter-spacing: -0.2px; }
+.related-card h3 em { font-style: normal; color: var(--teal); }
+.related-card p { font-family: var(--body); font-size: 13.5px; color: var(--text-mid); line-height: 1.6; }
+.related-card .meta { margin-top: 10px; font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+
+.back-to-blog {
+  font-family: var(--mono); font-size: 10px; color: var(--text-mid);
+  text-decoration: none; letter-spacing: 2px; text-transform: uppercase;
+  display: inline-block;
+}
+.back-to-blog::before { content: '\2190'; margin-right: 8px; }
+.back-to-blog:hover { color: var(--teal); }
+
+/* Footer */
+footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(--border); position: relative; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+.footer-brand { font-family: var(--display); font-size: 1rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.footer-brand-dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.footer-tagline { font-family: var(--body); font-size: 13px; color: var(--text-mid); line-height: 1.7; max-width: 360px; margin-bottom: 20px; }
+.footer-micro { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; line-height: 2; }
+.footer-col-title { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.footer-col a { display: block; font-family: var(--body); font-size: 13.5px; color: var(--text-mid); text-decoration: none; padding: 4px 0; transition: color 0.2s; }
+.footer-col a:hover { color: var(--teal); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 16px; }
+.footer-copy { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal { display: flex; gap: 18px; }
+.footer-legal a { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); text-decoration: none; letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal a:hover { color: var(--teal); }
+.footer-barcode { font-size: 9px; letter-spacing: 2px; color: var(--text-ghost); }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .related-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .nav-links { gap: 14px; }
+  .nav-links li:not(.nav-li-cta):not(.nav-li-alert) { display: none; }
+  .footer-grid { grid-template-columns: 1fr; }
+  section { padding: 56px 0; }
+  .byline-share { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- Breaking ticker -->
+<div class="breaking">
+  <div class="breaking-viewport">
+    <div class="breaking-label">▶ Breaking</div>
+    <div class="breaking-track">
+      <div class="breaking-content">
+        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        <a href="/leaving-instagram.html">Here's what to use instead →</a>
+        <span class="sep">//</span>
+        Discord leaked 70,000 government IDs.
+        <a href="/vs/discord.html">Why we built this →</a>
+        <span class="sep">//</span>
+        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        <a href="/#download">Download →</a>
+        <span class="sep">//</span>
+        Normal life deserves privacy.
+        <span class="sep">//</span>
+        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        <a href="/leaving-instagram.html">Here's what to use instead →</a>
+        <span class="sep">//</span>
+        Discord leaked 70,000 government IDs.
+        <a href="/vs/discord.html">Why we built this →</a>
+        <span class="sep">//</span>
+        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        <a href="/#download">Download →</a>
+        <span class="sep">//</span>
+        Normal life deserves privacy.
+        <span class="sep">//</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="top">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a>
+    <ul class="nav-links">
+      <li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li>
+      <li><a href="/features.html">Features</a></li>
+      <li><a href="/security.html">Security</a></li>
+      <li><a href="/blog/">Blog</a></li>
+      <li><a href="/faq.html">FAQ</a></li>
+      <li class="nav-li-cta"><a href="/download.html" class="nav-cta">Download</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="container">
+  <div class="breadcrumb">
+    <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">May 8: The Day Meta Admitted It Wants to Read Your DMs</span>
+  </div>
+</div>
+
+<!-- Post hero -->
+<section class="post-hero">
+  <div class="container-narrow">
+    <div class="post-kicker-row">
+      <span class="post-tag editorial">▶ Editorial</span>
+      <span class="post-date">2026-04-24</span>
+      <span class="post-read">▸ 9 min read</span>
+    </div>
+    <h1>May 8: the day Meta <em>admitted it wants to read your DMs</em>.</h1>
+    <p class="post-standfirst">
+      Meta said it's removing Instagram's end-to-end encryption because <strong>"very few people were opting in."</strong> That's true in exactly the sense that "very few people use the emergency exit on a train" is true. A closer look at what Meta actually said, why the real story isn't about Instagram, and why <em>privacy as a policy</em> is not the same thing as <em>privacy as architecture</em>.
+    </p>
+    <div class="post-byline">
+      <div class="byline-author"><span class="dot"></span>OpenDescent Team</div>
+      <div class="byline-share">
+        <a href="https://twitter.com/intent/tweet?text=May%208%3A%20the%20day%20Meta%20admitted%20it%20wants%20to%20read%20your%20DMs&url=https%3A%2F%2Fopen-descent.com%2Fblog%2Finstagram-dms-may-8.html" target="_blank" rel="noopener" class="share-btn">▸ Share on X</a>
+        <a href="https://www.reddit.com/submit?url=https%3A%2F%2Fopen-descent.com%2Fblog%2Finstagram-dms-may-8.html&title=May%208%3A%20the%20day%20Meta%20admitted%20it%20wants%20to%20read%20your%20DMs" target="_blank" rel="noopener" class="share-btn">▸ Post on Reddit</a>
+        <a href="https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fopen-descent.com%2Fblog%2Finstagram-dms-may-8.html&t=May%208%3A%20the%20day%20Meta%20admitted%20it%20wants%20to%20read%20your%20DMs" target="_blank" rel="noopener" class="share-btn">▸ Hacker News</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Article body -->
+<article class="article-body">
+  <div class="container-narrow prose">
+
+    <p>
+      On <strong>May 8, 2026</strong>, Meta will complete a quiet admission. From that day forward, every Instagram direct message sent anywhere in the world can be read by Meta itself — scanned for advertising signals, fed into moderation and AI-training pipelines, produced on request to law enforcement. The mechanism is not a hack, a bug, or a leak. It is a <em>policy update</em>. Instagram had a setting for end-to-end encrypted messages since 2023. Meta is turning it off.
+    </p>
+
+    <p>
+      That word matters. A setting. Not an architecture, not a property of how the system was built, not a guarantee. A toggle, on Meta's side of the equation, that Meta can flip — and now has.
+    </p>
+
+    <h2><span class="num">§ 01</span>What Meta actually said</h2>
+
+    <p>
+      The stated reason, given to <em>The Guardian</em> and quoted widely, is consumer indifference. Here is the sentence, verbatim:
+    </p>
+
+    <div class="blockquote">
+      <p>"Very few people were opting in to end-to-end encrypted messaging in DMs, so we're removing this option from Instagram in the coming months."</p>
+      <span class="cite">— Meta spokesperson, quoted in <a href="https://fortune.com/2026/03/17/tiktok-meta-no-privacy-controls-why-explainer/" target="_blank" rel="noopener">Fortune</a></span>
+    </div>
+
+    <p>
+      It is a sentence that sounds reasonable if you read it quickly. Product teams remove features users don't use all the time. The feature didn't catch on, so it's going away. Fair enough, the logic goes. And yet the sentence is doing a lot of quiet work.
+    </p>
+
+    <p>
+      The word <strong>"opting in"</strong> carries the weight. For a feature that very few people used, end-to-end encryption was remarkably well-hidden. Never the default. Buried several menus deep. Unavailable in a handful of regions. Not promoted in onboarding. Not flagged when users send sensitive content. The user base that <em>did</em> find it, enable it, and use it was a self-selected population of people who specifically cared about encryption and knew to go looking.
+    </p>
+
+    <p>
+      A useful way to read "very few people were opting in" is this: <em>"given a maze of menus with no signage, very few people found the exit."</em> That's a true statement. But it's not a statement about user preference. It's a statement about the maze.
+    </p>
+
+    <div class="pullquote">
+      "Very few people were opting in" is a true statement about the maze, <em>not</em> about what the people inside it actually wanted.
+    </div>
+
+    <h2><span class="num">§ 02</span>Why it's actually being removed</h2>
+
+    <p>
+      The honest explanation is boring and commercial, and you can see it in what Meta removes access to when the feature goes: the ability to read message content.
+    </p>
+
+    <p>
+      End-to-end encryption, by definition, locks Meta out of message content. Everything Meta does with the rest of its platform — the ad-targeting models, the content-moderation systems, the recommendation engines, the AI-training pipelines — treats <em>content</em> as input. DMs were the one place on Instagram where the platform couldn't reach. When Meta's December 2025 privacy policy update <a href="https://www.webpronews.com/metas-2026-ai-policy-sparks-privacy-fury-over-chat-data-use/" target="_blank" rel="noopener">opened chat-bot conversations to AI training and ad personalisation</a>, the logic of treating DMs as a separate, protected space started to look incoherent from the platform's perspective.
+    </p>
+
+    <p>
+      <em>Platformer</em>'s <a href="https://www.platformer.news/instagram-encryption-meta-whatsapp/" target="_blank" rel="noopener">framing</a> captures the broader pattern: Meta is retreating from encryption, because encryption is inconvenient for the commercial surface. It has been inconvenient for a while; the question was only whether user-facing commitments would hold. The May 8 rollback is the answer.
+    </p>
+
+    <div class="keypoint">
+      <div class="keypoint-label">The structural point</div>
+      <p>If a privacy guarantee can be rolled back with a privacy-policy email, it's not a <strong>guarantee</strong>. It's a <strong>courtesy</strong>. And courtesies, by definition, get withdrawn when they become inconvenient.</p>
+    </div>
+
+    <h2><span class="num">§ 03</span>"I have nothing to hide" is the wrong frame</h2>
+
+    <p>
+      The most common response to stories like this — and in fairness, a reasonable first instinct — is some version of <em>"I don't send anything interesting on Instagram anyway, so who cares if Meta reads it?"</em> It's an argument that's easy to have sympathy for. If you're a normal person with a normal life, why <em>would</em> any of this matter?
+    </p>
+
+    <p>
+      Here's the reframe that we think actually matters:
+    </p>
+
+    <p>
+      Your DMs aren't hiding anything. They're just <strong>yours</strong>. Your birthday plans with your mum. Your best friend's worst week. The photo you sent your partner because it made you laugh. The voice note after you landed. The "I love you" before bed. None of that is content — in the sense of content to be scanned, ranked, or routed to the advertising graph. It's your normal life.
+    </p>
+
+    <p>
+      Privacy, in this frame, is not a tool for hiding. It is a condition of dignity. It is the reason you don't have your conversations at the kitchen table broadcast to the neighbourhood. Not because the conversations are interesting or suspicious, but because they are <em>yours</em>. The answer to "I have nothing to hide" is "you have something to own."
+    </p>
+
+    <div class="pullquote">
+      Your DMs aren't hiding anything. They're just <em>yours</em>. Privacy isn't for people with something to hide. It's for normal people, because normal life is worth keeping private.
+    </div>
+
+    <h2><span class="num">§ 04</span>Why this matters even if you don't use Instagram</h2>
+
+    <p>
+      The Instagram rollback is not mostly a story about Instagram. It is a demonstration of a more general rule, and the rule applies to every messenger you use that runs on someone else's servers.
+    </p>
+
+    <p>
+      There are, roughly, two ways to build a private messenger:
+    </p>
+
+    <ol>
+      <li><strong>Privacy as a policy.</strong> The company's servers could technically read your messages, but they've decided not to, and they've encrypted things such that they'd have to change their mind deliberately to reach the content. The guarantees are real, until they aren't. This is Instagram DMs (until May 7, 2026). It is also WhatsApp, Signal, iMessage, Messenger, and every E2E messenger that runs on a central service.</li>
+      <li><strong>Privacy as architecture.</strong> The company doesn't <em>have</em> a path to your messages, because there is no company-operated place where your messages live or travel. The messages go peer-to-peer. There is no server to roll back, no policy to update, no privacy toggle for anyone but you. This is OpenDescent. It is also Briar, SimpleX, Cwtch, and true P2P messengers.</li>
+    </ol>
+
+    <p>
+      Privacy as a policy works beautifully — right up until the policy changes. The history of the internet is a history of policies changing, usually quietly, usually toward less privacy. Privacy as architecture is harder to build, less polished, newer, smaller. But the guarantees don't depend on anyone's current intentions.
+    </p>
+
+    <h2><span class="num">§ 05</span>The nuance on WhatsApp</h2>
+
+    <p>
+      The most common question we get about the Instagram rollback is some version of: <em>"What about WhatsApp, isn't that still safe?"</em>
+    </p>
+
+    <p>
+      Today: yes, in the specific sense that WhatsApp still uses end-to-end encryption by default, based on the Signal Protocol. The cryptography itself is genuinely good. <em>This year</em> it also has a <a href="https://allaboutlawyer.com/whatsapp-class-action-lawsuit-encryption-privacy-claims-filed-january-2026-no-settlement-yet-but-heres-what-users-need-to-know/" target="_blank" rel="noopener">class-action lawsuit</a> accusing Meta of misleading 3 billion users about engineer access — a claim Meta denies, which is <a href="https://www.computing.co.uk/news/2025/legislation-regulation/us-probes-claims-meta-can-access-encrypted-whatsapp-messages-report" target="_blank" rel="noopener">now under US investigation</a>.
+    </p>
+
+    <p>
+      Matthew Green, who writes about cryptography with more authority than almost anyone, <a href="https://blog.cryptographyengineering.com/2026/02/02/whatsapp-encryption-a-lawsuit-and-a-lot-of-noise/" target="_blank" rel="noopener">analysed</a> the specific technical claims and was broadly sceptical of them. That's worth noting. But even if the lawsuit's technical allegations don't hold, the structural observation does: WhatsApp is owned by the same company, with the same privacy-policy surface, that is removing end-to-end encryption from Instagram. "Today" is the operative word in "WhatsApp is still encrypted today."
+    </p>
+
+    <h2><span class="num">§ 06</span>What we think you should actually do</h2>
+
+    <p>
+      For most people, the right move isn't to delete Instagram tomorrow. It's smaller and more durable: <strong>move the conversations you actually care about to something that can't be rolled back</strong>.
+    </p>
+
+    <p>
+      That might be OpenDescent. It might be Signal. It might be Briar, or SimpleX, or any of the smaller peer-to-peer or federated options. The specific app matters less than the category. Pick the three-to-five people you talk to most privately — your partner, your closest friends, your mum — and move those conversations somewhere whose guarantees aren't a policy toggle. You don't have to delete Instagram. You just have to stop relying on it for the parts of your life that matter most.
+    </p>
+
+    <div class="inline-cta">
+      <p><strong>If you want to try OpenDescent</strong>, the Windows build is free, open source, requires no phone number or account, and installs in about three minutes. It's end-to-end encrypted, peer-to-peer, and the architecture doesn't depend on anyone's intentions — including ours.</p>
+      <div class="btns">
+        <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
+        <a href="/leaving-instagram.html" class="btn btn-ghost btn-arrow">Full Instagram guide</a>
+      </div>
+    </div>
+
+    <h2><span class="num">§ 07</span>The bigger pattern</h2>
+
+    <p>
+      Meta's framing on May 8 will be that this is a routine product update. That very few people used the feature, that the rest of the platform is more important, that everything is fine. Most of the coverage will echo it, because the alternative framing requires explaining the difference between privacy as a policy and privacy as architecture, and that difference doesn't fit in a headline.
+    </p>
+
+    <p>
+      But the difference is real, and it's the whole point. The Instagram rollback is not a failure of encryption — the encryption worked fine. It is a failure of the <em>model</em> in which a company controls the encryption on your behalf. Meta has, by removing the feature, told us what that model is worth when it becomes commercially inconvenient. The answer, if you were listening, is <em>not very much</em>.
+    </p>
+
+    <p>
+      The correct response to this is not panic. It is a gradual, deliberate move to an architecture where the guarantees don't depend on the company's current mood. That is available now, with real products, run by real people who care about it. If you take anything from May 8, let it be this: <strong>pick your privacy guarantees based on what cannot be changed, not on what is currently promised</strong>.
+    </p>
+
+    <div class="pullquote">
+      Pick your privacy guarantees based on <em>what cannot be changed</em>, not on what is <em>currently promised</em>.
+    </div>
+
+    <p>
+      We know which category we want to be in. We hope, after May 8, that more people want to be there too.
+    </p>
+
+    <div class="sources">
+      <div class="sources-label">Sources cited</div>
+      <a href="https://fortune.com/2026/03/17/tiktok-meta-no-privacy-controls-why-explainer/" target="_blank" rel="noopener">Fortune — Meta reversing course on privacy (March 2026) ↗</a>
+      <a href="https://stateofsurveillance.org/news/meta-instagram-end-to-end-encryption-removal-may-2026/" target="_blank" rel="noopener">State of Surveillance — Meta Kills Instagram DM Encryption ↗</a>
+      <a href="https://www.platformer.news/instagram-encryption-meta-whatsapp/" target="_blank" rel="noopener">Platformer — Why Meta is retreating from encryption ↗</a>
+      <a href="https://www.webpronews.com/metas-2026-ai-policy-sparks-privacy-fury-over-chat-data-use/" target="_blank" rel="noopener">WebProNews — Meta's 2026 AI policy sparks privacy fury ↗</a>
+      <a href="https://allaboutlawyer.com/whatsapp-class-action-lawsuit-encryption-privacy-claims-filed-january-2026-no-settlement-yet-but-heres-what-users-need-to-know/" target="_blank" rel="noopener">All About Lawyer — WhatsApp class action (January 2026) ↗</a>
+      <a href="https://blog.cryptographyengineering.com/2026/02/02/whatsapp-encryption-a-lawsuit-and-a-lot-of-noise/" target="_blank" rel="noopener">Matthew Green — WhatsApp encryption, a lawsuit and a lot of noise ↗</a>
+      <a href="https://proton.me/blog/instagram-end-to-end-encryption" target="_blank" rel="noopener">Proton — Instagram drops end-to-end encrypted chats ↗</a>
+    </div>
+
+    <p style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
+      <a href="/blog/" class="back-to-blog">Back to all posts</a>
+    </p>
+  </div>
+</article>
+
+<!-- Related posts -->
+<section class="related-section">
+  <div class="container-narrow">
+    <div class="related-title">▸ Related posts</div>
+    <div class="related-grid">
+      <a href="/blog/group-chat-is-not-content.html" class="related-card">
+        <h3>Your group chat is <em>not content</em>.</h3>
+        <p>A manifesto-style reflection on the normalcy framing — why "I have nothing to hide" is the wrong answer.</p>
+        <div class="meta">▸ 7 min read · Manifesto</div>
+      </a>
+      <a href="/blog/no-phone-number.html" class="related-card">
+        <h3>We'll never ask for your phone number. <em>Here's why.</em></h3>
+        <p>Why phone numbers are the single most durable identifier you hand over to a messenger — and how we solve the problem they normally solve.</p>
+        <div class="meta">▸ 8 min read · Product</div>
+      </a>
+      <a href="/blog/what-peer-to-peer-means.html" class="related-card">
+        <h3>What "peer-to-peer" <em>actually means</em>.</h3>
+        <p>An explainer with diagrams: what P2P is, what federation is, what "E2E on a central server" is, and where each fails.</p>
+        <div class="meta">▸ 11 min read · Explainer</div>
+      </a>
+      <a href="/blog/age-verification-privacy-disaster.html" class="related-card">
+        <h3>Mandatory age verification is a <em>privacy disaster by design</em>.</h3>
+        <p>Discord leaked 70,000 government IDs in 2025. Why that wasn't a bug — it was the feature working as specified.</p>
+        <div class="meta">▸ 10 min read · Policy</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <div class="footer-micro">
+          Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>
+          オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth
+        </div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Product</div>
+        <a href="/features.html">Features</a>
+        <a href="/security.html">Security</a>
+        <a href="/download.html">Download</a>
+        <a href="/faq.html">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Compare</div>
+        <a href="/leaving-instagram.html">Leaving Instagram</a>
+        <a href="/vs/signal.html">vs Signal</a>
+        <a href="/vs/discord.html">vs Discord</a>
+        <a href="/vs/whatsapp.html">vs WhatsApp</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Project</div>
+        <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a>
+        <a href="/blog/">Blog</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 OpenDescent &nbsp;·&nbsp; MIT Licensed</div>
+      <div class="footer-barcode">▌▌▏▌▏▏▌▌▏▌▏▌▌▏▏▌▏▌▌▏▌▏▏▌</div>
+      <div class="footer-legal">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">Source</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const revObs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      revObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(el => revObs.observe(el));
+</script>
+</body>
+</html>

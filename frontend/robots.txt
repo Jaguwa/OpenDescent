@@ -1,7 +1,40 @@
+# OpenDescent · robots.txt
+# Private messaging for normal people. Because normal life is worth keeping private.
+
 User-agent: *
 Allow: /
+
+# Sitemap
 Sitemap: https://open-descent.com/sitemap.xml
 
-# App assets — don't index
+# App assets and build artifacts — don't index
 Disallow: /fonts/
 Disallow: /favicon.svg
+Disallow: /icons/
+Disallow: /audio-capture-worklet.js
+Disallow: /audio-playback-worklet.js
+Disallow: /app.js
+Disallow: /style.css
+Disallow: /og-image.html
+
+# No AI crawlers pretending to be search engines
+# (We're not anti-AI; we just want attribution / to be cited, not scraped
+#  as unattributed training data. If you're an AI search engine that
+#  cites sources, you're welcome here — this is for the others.)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /

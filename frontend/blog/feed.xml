@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>OpenDescent Blog</title>
+    <link>https://open-descent.com/blog/</link>
+    <atom:link href="https://open-descent.com/blog/feed.xml" rel="self" type="application/rss+xml" />
+    <description>Essays, explainers, and editorial notes from OpenDescent on encryption, peer-to-peer architecture, and the privacy news cycle. Because normal life is worth keeping private.</description>
+    <language>en-gb</language>
+    <copyright>© 2026 OpenDescent · MIT licensed</copyright>
+    <lastBuildDate>Fri, 24 Apr 2026 00:00:00 +0000</lastBuildDate>
+    <pubDate>Fri, 24 Apr 2026 00:00:00 +0000</pubDate>
+    <ttl>1440</ttl>
+    <generator>OpenDescent</generator>
+    <image>
+      <url>https://open-descent.com/favicon.png</url>
+      <title>OpenDescent Blog</title>
+      <link>https://open-descent.com/blog/</link>
+      <width>256</width>
+      <height>256</height>
+    </image>
+
+    <item>
+      <title>May 8: The Day Meta Admitted It Wants to Read Your DMs</title>
+      <link>https://open-descent.com/blog/instagram-dms-may-8.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/instagram-dms-may-8.html</guid>
+      <pubDate>Fri, 24 Apr 2026 10:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Editorial</category>
+      <category>Privacy</category>
+      <category>Meta</category>
+      <description><![CDATA[
+        Meta is removing Instagram's end-to-end encryption on May 8, 2026, because "very few people were opting in" — a statement that is true in exactly the sense that "very few people use the emergency exit on a train" is true. An editorial on what Meta actually said, why the real story isn't about Instagram, and why privacy as a policy is not the same thing as privacy as architecture.
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Your Group Chat Is Not Content</title>
+      <link>https://open-descent.com/blog/group-chat-is-not-content.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/group-chat-is-not-content.html</guid>
+      <pubDate>Fri, 24 Apr 2026 09:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Manifesto</category>
+      <category>Privacy</category>
+      <description><![CDATA[
+        A manifesto, more or less, for why the standard "I have nothing to hide" reply to privacy stories misses the point. Your family birthday plans, your best friend's worst week, your "I love you" before bed — these aren't content. They're yours. Privacy isn't the absence of observation — it's the presence of dignity.
+      ]]></description>
+    </item>
+
+    <item>
+      <title>We'll Never Ask for Your Phone Number — Here's Why</title>
+      <link>https://open-descent.com/blog/no-phone-number.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/no-phone-number.html</guid>
+      <pubDate>Fri, 24 Apr 2026 08:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Product</category>
+      <category>Identity</category>
+      <description><![CDATA[
+        Signal's own team calls the phone number requirement their critics' most persistent complaint. A post on what a phone number actually is (a government-issued identifier tied to your legal identity), why it doesn't belong in a messenger, and how OpenDescent solves the spam problem it normally solves — without one.
+      ]]></description>
+    </item>
+
+    <item>
+      <title>What "Peer-to-Peer" Actually Means (And Why Most "Private" Messengers Aren't)</title>
+      <link>https://open-descent.com/blog/what-peer-to-peer-means.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/what-peer-to-peer-means.html</guid>
+      <pubDate>Fri, 24 Apr 2026 07:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Explainer</category>
+      <category>Architecture</category>
+      <description><![CDATA[
+        "Peer-to-peer" is a phrase you'll see on almost every privacy product's marketing page. Most of them use it incorrectly. An explainer, with diagrams, of the three architectural patterns messengers actually use — centralised, federated, and peer-to-peer — where each one fails, and why the distinction is load-bearing for privacy.
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Mandatory Age Verification Is a Privacy Disaster by Design</title>
+      <link>https://open-descent.com/blog/age-verification-privacy-disaster.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/age-verification-privacy-disaster.html</guid>
+      <pubDate>Fri, 24 Apr 2026 06:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Policy</category>
+      <category>Regulation</category>
+      <description><![CDATA[
+        Discord leaked 70,000 government-ID photos in October 2025. Its verification partner Persona exposed another 2,500 files in February 2026. These weren't implementation bugs — this is the system working as specified. You cannot have both mandatory identity collection at scale AND a world where identity doesn't leak.
+      ]]></description>
+    </item>
+
+  </channel>
+</rss>

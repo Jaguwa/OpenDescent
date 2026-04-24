@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mandatory Age Verification Is a Privacy Disaster by Design | OpenDescent Blog</title>
+<meta name="description" content="Discord leaked 70,000 government IDs in 2025. Its verification partner Persona exposed another 2,500 files in 2026. These weren't implementation bugs. This is the system working as specified.">
+<meta name="keywords" content="age verification privacy, discord id leak, mandatory age verification problems, online safety act privacy, eu chat control, age verification breach, id verification centralization problem">
+<meta name="author" content="OpenDescent">
+<meta name="theme-color" content="#0f1012">
+<link rel="canonical" href="https://open-descent.com/blog/age-verification-privacy-disaster.html">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<script async src="https://plausible.io/js/pa-zQ01yi4zP0T_1Tx0kPikj.js"></script>
+<script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()</script>
+
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://open-descent.com/blog/age-verification-privacy-disaster.html">
+<meta property="og:title" content="Mandatory Age Verification Is a Privacy Disaster by Design">
+<meta property="og:description" content="The Discord ID leak wasn't an implementation bug. It was the system working as specified.">
+<meta property="og:image" content="https://open-descent.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="OpenDescent">
+<meta property="article:published_time" content="2026-04-24T00:00:00Z">
+<meta property="article:section" content="Policy">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mandatory Age Verification Is a Privacy Disaster by Design">
+<meta name="twitter:description" content="Why the Discord ID leak wasn't an implementation bug.">
+<meta name="twitter:image" content="https://open-descent.com/og-image.png">
+
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "BlogPosting", "headline": "Mandatory Age Verification Is a Privacy Disaster by Design", "description": "An argument that mandatory online age verification is structurally broken — not because of implementation mistakes, but because collecting 100M+ government IDs in a central database is, itself, the problem.", "datePublished": "2026-04-24", "dateModified": "2026-04-24", "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" }, "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } }, "image": "https://open-descent.com/og-image.png", "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/age-verification-privacy-disaster.html" }, "wordCount": 1780, "articleSection": "Policy" }
+</script>
+
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [ { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://open-descent.com/" }, { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://open-descent.com/blog/" }, { "@type": "ListItem", "position": 3, "name": "Mandatory Age Verification Is a Privacy Disaster by Design", "item": "https://open-descent.com/blog/age-verification-privacy-disaster.html" } ] }
+</script>
+
+<style>
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-Wide.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-BoldWide.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+:root { --bg: #0f1012; --bg-deep: #0a0a0c; --bg-card: #1a1d22; --bg-card-hi: #20242a; --teal: #32E0C4; --teal-dim: #0D7377; --teal-glow: #5FFFD6; --red: #e04050; --amber: #FFD166; --text: #EEEEEE; --text-strong: #FFFFFF; --text-mid: #aaaaaa; --text-dim: #666666; --text-ghost: #3a3d42; --border: rgba(255,255,255,0.06); --border-bright: rgba(50,224,196,0.2); --border-red: rgba(224,64,80,0.25); --mono: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace; --display: 'Array Wide', 'Array', -apple-system, sans-serif; --body: 'Array', -apple-system, sans-serif; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--body); background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 200px; }
+body::after { content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none; background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.45) 100%); }
+@keyframes chroma-section { 0%,100% { text-shadow: -1.5px 0 rgba(224,64,80,0.3), 1.5px 0 rgba(50,224,196,0.35); } 50% { text-shadow: -2px 0.5px rgba(224,64,80,0.25), 2px -0.5px rgba(50,224,196,0.4); } }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; position: relative; }
+.container-narrow { max-width: 740px; margin: 0 auto; padding: 0 28px; position: relative; }
+.breaking { background: linear-gradient(90deg, rgba(224,64,80,0.15), rgba(224,64,80,0.06) 40%, rgba(224,64,80,0.06) 60%, rgba(224,64,80,0.15)); border-bottom: 1px solid var(--border-red); overflow: hidden; position: relative; z-index: 101; }
+.breaking-viewport { display: flex; align-items: center; height: 32px; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.breaking-label { display: inline-flex; align-items: center; gap: 8px; color: #ffeaee; background: var(--red); padding: 7px 14px; height: 100%; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.breaking-label::before { content: ''; width: 6px; height: 6px; background: #ffeaee; border-radius: 50%; animation: pulse-dot 1.2s infinite; }
+.breaking-track { flex: 1; overflow: hidden; position: relative; white-space: nowrap; mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); }
+.breaking-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 60s linear infinite; color: var(--text-mid); }
+.breaking-content a { color: var(--text); text-decoration: none; margin: 0 14px; }
+.breaking-content a:hover { color: var(--teal); }
+.breaking-content .sep { color: var(--red); margin: 0 14px; }
+nav.top { position: sticky; top: 0; z-index: 100; background: rgba(15,16,18,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 1400px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.nav-brand { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--text); text-decoration: none; animation: chroma-section 5s ease-in-out infinite; display: inline-flex; align-items: center; gap: 10px; }
+.nav-brand .dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.nav-links { display: flex; gap: 28px; list-style: none; align-items: center; }
+.nav-links a { font-family: var(--mono); font-size: 10.5px; color: var(--text-mid); text-decoration: none; text-transform: uppercase; letter-spacing: 1.5px; transition: color 0.2s; }
+.nav-links a:hover { color: var(--teal); }
+.nav-links a.alert { color: #ffb8bf; }
+.nav-links a.alert::before { content: ''; display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-right: 6px; vertical-align: middle; animation: pulse-dot 1.4s infinite; box-shadow: 0 0 8px var(--red); }
+.nav-links a.alert:hover { color: var(--red); }
+.nav-cta { padding: 8px 18px !important; background: transparent; border: 1px solid var(--teal); border-radius: 3px; color: var(--teal) !important; letter-spacing: 2px !important; }
+.nav-cta:hover { background: rgba(50,224,196,0.08); box-shadow: 0 0 14px rgba(50,224,196,0.18); }
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 4px; font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; text-decoration: none; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-primary { background: var(--teal); color: #07140f; }
+.btn-primary:hover { background: var(--teal-glow); box-shadow: 0 0 24px rgba(50,224,196,0.35); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border-color: var(--border-bright); }
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); box-shadow: 0 0 16px rgba(50,224,196,0.12); }
+.btn-arrow::after { content: '\2192'; font-size: 14px; }
+.breadcrumb { padding: 22px 0 0; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-ghost); }
+.breadcrumb a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: var(--teal); }
+.breadcrumb .sep { color: var(--text-ghost); margin: 0 10px; }
+.breadcrumb .current { color: var(--text); }
+.post-hero { padding: 56px 0 40px; border-bottom: 1px solid var(--border); position: relative; background: radial-gradient(ellipse at 80% 20%, rgba(224,64,80,0.04) 0%, transparent 55%); }
+.post-kicker-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 22px; }
+.post-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; color: #ffbfc4; border: 1px solid var(--border-red); background: rgba(224,64,80,0.05); }
+.post-date { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+.post-read { font-family: var(--mono); font-size: 10px; color: var(--teal-dim); letter-spacing: 2px; text-transform: uppercase; }
+.post-hero h1 { font-family: var(--display); font-size: clamp(1.9rem, 4.4vw, 3.2rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.5px; color: var(--text-strong); margin-bottom: 24px; max-width: 900px; }
+.post-hero h1 em { font-style: normal; color: var(--teal); animation: chroma-section 6s ease-in-out infinite; }
+.post-standfirst { font-family: var(--body); font-size: 19px; line-height: 1.55; color: var(--text-mid); max-width: 720px; margin-bottom: 28px; }
+.post-standfirst strong { color: var(--text); }
+.post-byline { display: flex; gap: 24px; align-items: center; padding-top: 18px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.byline-author { font-family: var(--mono); font-size: 11px; color: var(--text); letter-spacing: 1.5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.byline-author .dot { width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.byline-share { display: flex; gap: 8px; flex-wrap: wrap; }
+.share-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-family: var(--mono); font-size: 10px; color: var(--text-mid); text-decoration: none; border: 1px solid var(--border); border-radius: 2px; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.2s; }
+.share-btn:hover { color: var(--teal); border-color: var(--border-bright); background: rgba(50,224,196,0.04); }
+.article-body { padding: 56px 0 72px; }
+.prose p { font-family: var(--body); font-size: 17.5px; line-height: 1.75; color: var(--text); margin-bottom: 22px; }
+.prose p strong { color: var(--text-strong); font-weight: 600; }
+.prose p em { font-style: italic; color: var(--text); }
+.prose h2 { font-family: var(--display); font-size: clamp(1.4rem, 2.4vw, 1.8rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.3px; color: var(--text-strong); margin: 48px 0 18px; }
+.prose h2 em { font-style: normal; color: var(--teal); }
+.prose h2 .num { color: var(--teal-dim); margin-right: 10px; font-size: 0.8em; }
+.prose a { color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim); }
+.prose a:hover { border-bottom-style: solid; }
+.prose ul, .prose ol { margin: 14px 0 28px; padding-left: 28px; }
+.prose ul li, .prose ol li { font-family: var(--body); font-size: 17px; line-height: 1.75; color: var(--text); padding: 5px 0; }
+.prose ul li::marker { color: var(--teal); }
+.prose ol li::marker { color: var(--teal); font-weight: 700; }
+.prose code { font-family: var(--mono); font-size: 15px; color: var(--teal); background: rgba(50,224,196,0.06); padding: 2px 6px; border-radius: 2px; }
+.pullquote { margin: 40px 0; padding: 24px 0 24px 32px; border-left: 3px solid var(--teal); font-family: var(--display); font-size: clamp(1.2rem, 2.2vw, 1.5rem); font-weight: 400; line-height: 1.4; letter-spacing: -0.2px; color: var(--text-strong); }
+.pullquote em { font-style: normal; color: var(--teal); }
+.blockquote { margin: 32px 0; padding: 20px 24px; background: var(--bg-card); border-left: 2px solid var(--teal); border-radius: 0 4px 4px 0; }
+.blockquote p { font-family: var(--body); font-size: 16px; font-style: italic; line-height: 1.7; color: var(--text); margin-bottom: 0; }
+.blockquote .cite { display: block; margin-top: 12px; padding-top: 10px; font-family: var(--mono); font-size: 10px; font-style: normal; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; border-top: 1px dashed var(--border); }
+.blockquote .cite a { color: var(--text-mid); border-bottom: none; }
+.blockquote .cite a:hover { color: var(--teal); }
+.fact { margin: 32px 0; padding: 20px 24px; background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: 0 4px 4px 0; }
+.fact-label { font-family: var(--mono); font-size: 10px; color: #ffbfc4; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+.fact-body { font-family: var(--body); font-size: 15.5px; color: var(--text); line-height: 1.7; }
+.fact-body strong { color: var(--text-strong); }
+
+/* Breach list */
+.breach-list { margin: 32px 0; padding: 28px 30px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; position: relative; }
+.breach-list::before { content: ''; position: absolute; top: -1px; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, var(--red), transparent); }
+.breach-list-label { font-family: var(--mono); font-size: 10px; color: #ffbfc4; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px; }
+.breach-item { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; padding: 14px 0; border-bottom: 1px dashed var(--border); }
+.breach-item:last-child { border-bottom: none; }
+.breach-year { font-family: var(--display); font-size: 1.1rem; font-weight: 700; color: #ffbfc4; letter-spacing: 0.5px; }
+.breach-name { font-family: var(--body); font-size: 15px; color: var(--text); line-height: 1.5; }
+.breach-name strong { color: var(--text-strong); }
+.breach-count { font-family: var(--mono); font-size: 11px; color: var(--red); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
+
+.inline-cta { margin: 40px 0; padding: 28px 30px; background: linear-gradient(135deg, var(--bg-card) 0%, rgba(50,224,196,0.04) 140%); border: 1px solid var(--border-bright); border-radius: 6px; position: relative; }
+.inline-cta::before { content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.inline-cta p { font-family: var(--body); font-size: 15.5px; line-height: 1.7; color: var(--text); margin-bottom: 16px; }
+.inline-cta p strong { color: var(--text-strong); }
+.inline-cta .btns { display: flex; gap: 12px; flex-wrap: wrap; }
+.sources { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 18px 22px; margin: 32px 0; }
+.sources-label { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+.sources a { display: block; font-family: var(--mono); font-size: 12px; color: var(--text-mid); text-decoration: none; padding: 4px 0; border-bottom: none; }
+.sources a:hover { color: var(--teal); }
+.related-section { background: var(--bg-deep); padding: 56px 0; border-top: 1px solid var(--border); }
+.related-title { font-family: var(--mono); font-size: 11px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px; }
+.related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.related-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 24px 26px; text-decoration: none; color: inherit; transition: all 0.25s; position: relative; }
+.related-card::before { content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, rgba(50,224,196,0.2), transparent); }
+.related-card:hover { background: var(--bg-card-hi); border-color: var(--border-bright); transform: translateX(3px); }
+.related-card h3 { font-family: var(--display); font-size: 1.05rem; font-weight: 700; color: var(--text-strong); line-height: 1.25; margin-bottom: 10px; letter-spacing: -0.2px; }
+.related-card h3 em { font-style: normal; color: var(--teal); }
+.related-card p { font-family: var(--body); font-size: 13.5px; color: var(--text-mid); line-height: 1.6; }
+.related-card .meta { margin-top: 10px; font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+.back-to-blog { font-family: var(--mono); font-size: 10px; color: var(--text-mid); text-decoration: none; letter-spacing: 2px; text-transform: uppercase; display: inline-block; }
+.back-to-blog::before { content: '\2190'; margin-right: 8px; }
+.back-to-blog:hover { color: var(--teal); }
+footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(--border); position: relative; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+.footer-brand { font-family: var(--display); font-size: 1rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.footer-brand-dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.footer-tagline { font-family: var(--body); font-size: 13px; color: var(--text-mid); line-height: 1.7; max-width: 360px; margin-bottom: 20px; }
+.footer-micro { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; line-height: 2; }
+.footer-col-title { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.footer-col a { display: block; font-family: var(--body); font-size: 13.5px; color: var(--text-mid); text-decoration: none; padding: 4px 0; transition: color 0.2s; }
+.footer-col a:hover { color: var(--teal); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 16px; }
+.footer-copy { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal { display: flex; gap: 18px; }
+.footer-legal a { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); text-decoration: none; letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal a:hover { color: var(--teal); }
+.footer-barcode { font-size: 9px; letter-spacing: 2px; color: var(--text-ghost); }
+@media (max-width: 900px) { .related-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr 1fr; } .breach-item { grid-template-columns: 1fr; gap: 6px; } }
+@media (max-width: 600px) { .nav-links { gap: 14px; } .nav-links li:not(.nav-li-cta):not(.nav-li-alert) { display: none; } .footer-grid { grid-template-columns: 1fr; } .byline-share { width: 100%; } }
+</style>
+</head>
+<body>
+
+<div class="breaking"><div class="breaking-viewport"><div class="breaking-label">▶ Breaking</div><div class="breaking-track"><div class="breaking-content">Meta is ending end-to-end encryption on Instagram DMs — May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span>Meta is ending end-to-end encryption on Instagram DMs — May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span></div></div></div></div>
+
+<nav class="top"><div class="nav-inner"><a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a><ul class="nav-links"><li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li><li><a href="/features.html">Features</a></li><li><a href="/security.html">Security</a></li><li><a href="/blog/">Blog</a></li><li><a href="/faq.html">FAQ</a></li><li class="nav-li-cta"><a href="/download.html" class="nav-cta">Download</a></li></ul></div></nav>
+
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">Mandatory age verification is a privacy disaster by design</span></div>
+</div>
+
+<section class="post-hero">
+  <div class="container-narrow">
+    <div class="post-kicker-row"><span class="post-tag">▸ Policy</span><span class="post-date">2026-04-24</span><span class="post-read">▸ 10 min read</span></div>
+    <h1>Mandatory age verification is a <em>privacy disaster by design</em>.</h1>
+    <p class="post-standfirst">Discord leaked <strong>70,000 government-ID photos</strong> in October 2025. Its verification partner <em>Persona</em> exposed another <strong>2,500 files</strong> in February 2026. These weren't implementation bugs. This is the system working as specified — and no amount of better engineering can fix a <em>structural</em> problem.</p>
+    <div class="post-byline">
+      <div class="byline-author"><span class="dot"></span>OpenDescent Team</div>
+      <div class="byline-share">
+        <a href="https://twitter.com/intent/tweet?text=Mandatory%20age%20verification%20is%20a%20privacy%20disaster%20by%20design&url=https%3A%2F%2Fopen-descent.com%2Fblog%2Fage-verification-privacy-disaster.html" target="_blank" rel="noopener" class="share-btn">▸ Share on X</a>
+        <a href="https://www.reddit.com/submit?url=https%3A%2F%2Fopen-descent.com%2Fblog%2Fage-verification-privacy-disaster.html&title=Mandatory%20age%20verification%20is%20a%20privacy%20disaster%20by%20design" target="_blank" rel="noopener" class="share-btn">▸ Post on Reddit</a>
+        <a href="https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fopen-descent.com%2Fblog%2Fage-verification-privacy-disaster.html&t=Mandatory%20age%20verification%20is%20a%20privacy%20disaster%20by%20design" target="_blank" rel="noopener" class="share-btn">▸ Hacker News</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<article class="article-body">
+  <div class="container-narrow prose">
+
+    <p>
+      The Discord story, briefly, in case you missed it. On October 3, 2025, attackers compromised a single customer-service account at <strong>5CA</strong>, a third-party vendor Discord uses for support. The attackers — who <a href="https://discord.com/press-releases/update-on-security-incident-involving-third-party-customer-service" target="_blank" rel="noopener">called themselves</a> "Scattered LAPSUS$ Hunters" — kept the access for 58 hours. Among the data they stole were <strong>approximately 70,000 government-ID photos</strong> that Discord users had uploaded when appealing age-related decisions.
+    </p>
+
+    <p>
+      Four months later, in February 2026, Discord's partner for age verification — <em>Persona</em>, a Peter Thiel-backed identity-verification company — was found to have <a href="https://fortune.com/2026/02/24/discord-peter-thiel-backed-persona-identity-verification-breach/" target="_blank" rel="noopener">left its frontend code publicly accessible</a>, with roughly 2,500 files exposed on a government-authorised endpoint. Discord, to its credit, <a href="https://www.gamedeveloper.com/business/-we-failed-at-our-most-basic-job-discord-delays-age-verification-rollout" target="_blank" rel="noopener">cut ties with Persona publicly</a> and delayed its mandatory age-verification rollout from March 2026 to "the second half of 2026."
+    </p>
+
+    <p>
+      The reporting on these incidents, understandably, focused on Discord. How it picked a third-party vendor that wasn't secure. How it let a single support account be compromised for 58 hours. How it didn't notice. These are legitimate critiques. But they miss the larger story, which is this: <strong>Discord is not the anomaly. Discord is the norm</strong>. Any system that requires a large company to hold government-issued identity documents at scale will, given enough time, leak them. The question isn't whether. The question is when.
+    </p>
+
+    <div class="pullquote">
+      Age verification isn't an implementation bug. It's a <em>centralisation</em> problem. No amount of better engineering can fix a structural flaw.
+    </div>
+
+    <h2><span class="num">§ 01</span>This is the system working as specified</h2>
+
+    <p>
+      A bug is something that shouldn't happen — a programmer made a mistake, and if they correct the mistake, the problem goes away. What happened to Discord isn't a bug. It's the specified behaviour of the system playing out exactly as the system was built.
+    </p>
+
+    <p>
+      Mandatory age verification works like this: a platform is required by regulation (or chooses, in advance of regulation) to confirm that a user is over some age. To do so, it asks the user to upload a government-issued ID, typically via a third-party "identity verification provider." The provider runs some checks — human review, OCR on the ID, a liveness match against a selfie — and returns a verdict. The platform records the verdict. Somewhere in this process, a <strong>complete scan of the user's government ID</strong> exists in storage for some period.
+    </p>
+
+    <p>
+      The specified behaviour, then, is:
+    </p>
+
+    <ol>
+      <li>Every user uploads a scan of their driver's licence, passport, or national ID.</li>
+      <li>That scan is stored, for verification, audit, and appeal purposes, for at least some period.</li>
+      <li>The storage exists at the provider, at the platform, or at both.</li>
+      <li>The provider usually has thousands of employees, dozens of contractors, and at least one customer-service layer that staff will occasionally be phished out of.</li>
+    </ol>
+
+    <p>
+      Running this system at any meaningful scale means continuously operating a large database of government-issued identity documents. The database is, by definition, the most valuable target on the internet — millions of passport-and-face tuples, enough to commit identity theft against individual users for the rest of their lives. The only thing between that database and a determined attacker is the aggregate security posture of the provider, their vendors, their contractors, and their customer-service processes.
+    </p>
+
+    <h2><span class="num">§ 02</span>Every breach of the last twenty years</h2>
+
+    <p>
+      Here's a partial list of breaches that follow the same pattern: a large central database of sensitive identity-adjacent records, one successful attack, a Wikipedia entry. This is a representative sample, not exhaustive.
+    </p>
+
+    <div class="breach-list">
+      <div class="breach-list-label">▶ A pattern, not a bug</div>
+      <div class="breach-item">
+        <div class="breach-year">2017</div>
+        <div class="breach-name"><strong>Equifax</strong> — credit-bureau breach exposing Social Security numbers, dates of birth, driver's licence numbers for most American adults.</div>
+        <div class="breach-count">~147M records</div>
+      </div>
+      <div class="breach-item">
+        <div class="breach-year">2019</div>
+        <div class="breach-name"><strong>Capital One</strong> — misconfigured AWS exposed credit-card applications, SSNs, bank account numbers.</div>
+        <div class="breach-count">~106M records</div>
+      </div>
+      <div class="breach-item">
+        <div class="breach-year">2021</div>
+        <div class="breach-name"><strong>T-Mobile</strong> — one of several breaches; SSNs, driver's licences, phone numbers for customers and prospects.</div>
+        <div class="breach-count">~76M records</div>
+      </div>
+      <div class="breach-item">
+        <div class="breach-year">2022</div>
+        <div class="breach-name"><strong>Medibank (Australia)</strong> — health insurance database including claims data and passport numbers, held for ransom.</div>
+        <div class="breach-count">~9.7M records</div>
+      </div>
+      <div class="breach-item">
+        <div class="breach-year">2023</div>
+        <div class="breach-name"><strong>MOVEit / various</strong> — file-transfer product compromise hit hundreds of orgs holding HR/payroll/identity records.</div>
+        <div class="breach-count">~70M+ records</div>
+      </div>
+      <div class="breach-item">
+        <div class="breach-year">2024</div>
+        <div class="breach-name"><strong>National Public Data</strong> — data broker exposing SSN+DOB+address tuples for essentially every American.</div>
+        <div class="breach-count">~2.9B records</div>
+      </div>
+      <div class="breach-item">
+        <div class="breach-year">2025</div>
+        <div class="breach-name"><strong>Discord / 5CA</strong> — customer-service vendor compromise, government-ID photos from age-appeal uploads.</div>
+        <div class="breach-count">~70K records</div>
+      </div>
+      <div class="breach-item">
+        <div class="breach-year">2026</div>
+        <div class="breach-name"><strong>Discord / Persona</strong> — identity-verification partner left frontend publicly accessible.</div>
+        <div class="breach-count">~2.5K files</div>
+      </div>
+    </div>
+
+    <p>
+      These organisations vary. Some had excellent security teams. Some had terrible ones. Some were following best practices and got hit by a zero-day. Some left an S3 bucket open. Some trusted a vendor, some trusted a contractor, some trusted an employee. What they had in common was that <strong>each of them held a large, centralised database of sensitive identity records</strong>, and in each case, given enough time, that database leaked.
+    </p>
+
+    <p>
+      There is no engineering response to this list that honestly concludes <em>"but the next one will be fine."</em> We have roughly three decades of data on what happens when companies are required to hold identity records at scale. The answer, averaged over the industry, is: <em>they leak</em>. Sometimes within a year. Sometimes after a decade. But the integral over time is close to 1.0.
+    </p>
+
+    <h2><span class="num">§ 03</span>The international trend</h2>
+
+    <p>
+      Discord's rollout is not happening in a vacuum. In 2025 and 2026, several jurisdictions passed or advanced laws that push mandatory age verification forward as policy:
+    </p>
+
+    <ul>
+      <li><strong>UK Online Safety Act</strong> — "highly effective" age assurance for pornography sites and parts of social platforms. Enforced by Ofcom.</li>
+      <li><strong>EU Chat Control 2.0 / CSAR</strong> — the broader regulation includes age-assurance provisions alongside the more-discussed message-scanning provisions. <a href="https://www.eff.org/deeplinks/2026/04/eu-parliament-blocks-mass-scanning-our-chats-whats-next" target="_blank" rel="noopener">Status as of April 2026</a>: Parliament blocked Chat Control 1.0; 2.0 is in trilogue with a target deal of July 2026.</li>
+      <li><strong>Various US states</strong> — Louisiana, Texas, Utah, Mississippi, Virginia, and others have passed age-verification laws for certain types of sites. Some are being challenged in court.</li>
+      <li><strong>Australia's Online Safety Amendment</strong> — rolling out age-assurance requirements for social media platforms for users under 16.</li>
+    </ul>
+
+    <p>
+      The common shape across all of these is: a legal requirement for private companies to collect, verify, and retain evidence of users' ages. The specifics vary — some require a strict government-ID check, some allow estimation from selfies, some are more lenient. But the architectural direction is consistent: <em>more companies, required to hold more sensitive identity information, for more users</em>.
+    </p>
+
+    <p>
+      The EFF has <a href="https://www.eff.org/deeplinks/2026/02/discord-voluntarily-pushes-mandatory-age-verification-despite-recent-data-breach" target="_blank" rel="noopener">made the point repeatedly</a>: "no company — Discord included — should be given custody of your driver's license to chat with your friends." This is a policy position, not a product one. It applies to Discord specifically and to the trend generally.
+    </p>
+
+    <h2><span class="num">§ 04</span>Why we can be confident about the outcome</h2>
+
+    <p>
+      The counter-argument from advocates of mandatory verification is usually some version of: <em>"we'll use privacy-preserving technology; the companies won't actually store the IDs; it'll be fine."</em> Let's take that seriously for a moment.
+    </p>
+
+    <p>
+      There are real privacy-preserving identity schemes. <strong>Zero-knowledge age proofs</strong> exist — you can, in theory, prove you're over 18 without revealing your date of birth, name, or document number. Apple's "Verify with Wallet" flow, the EU's proposed eIDAS wallet, and various academic systems all point toward architectures where the user's device produces a signed proof without the verifier ever seeing the underlying document. These designs are real and good.
+    </p>
+
+    <p>
+      But they are not what's being deployed. The systems being deployed today overwhelmingly ask users to <strong>upload photos of their actual government IDs to third-party providers</strong>. The providers run OCR. Humans review. Data is stored for regulatory compliance reasons, often for years. The systems that could, in principle, avoid this exist only as research papers, pilot programmes, or advocacy position papers. The implementations in the field are not them.
+    </p>
+
+    <p>
+      Even if a perfect zero-knowledge scheme were universally deployed tomorrow, there would still be a significant deployment window during which imperfect systems were the norm. That window is already several years long. The damage done during the window is cumulative and largely irreversible — once a scan of your passport is in a criminal marketplace, it stays in a criminal marketplace indefinitely.
+    </p>
+
+    <div class="pullquote">
+      You cannot have both: <em>mandatory identity collection at scale</em> AND <em>a world where identity doesn't leak</em>. Every breach of the last twenty years has been a demonstration of this.
+    </div>
+
+    <h2><span class="num">§ 05</span>What good child-safety regulation would look like</h2>
+
+    <p>
+      We think child safety online is a real problem. We do not think "make every company hold everyone's government ID" is a good solution to it. We think it is almost exactly the <em>worst</em> solution to it — a solution that creates a new, catastrophic harm (mass ID breaches) while providing modest, easily-circumvented protection against the original harm.
+    </p>
+
+    <p>
+      A better shape of regulation, if one wanted to regulate at all, would include some combination of:
+    </p>
+
+    <ul>
+      <li><strong>Device-level age attestation.</strong> The device confirms the user's age (via a trusted attestation, parental controls, or an OS-mediated check) and signs a proof. Platforms verify the proof without seeing the underlying ID. No central database.</li>
+      <li><strong>Liability shifting to platforms that target children.</strong> Instead of "every platform must verify every user's age," require platforms that specifically target children to be explicitly designed for that (no advertising, stronger moderation). Don't require every general-audience platform to suddenly become an identity-verification vendor.</li>
+      <li><strong>Funding better reporting mechanisms.</strong> Invest in organisations like the IWF and NCMEC, and in cross-platform tools for reporting and removing clearly-illegal content, without requiring platforms to scan everyone's messages or hold everyone's IDs.</li>
+      <li><strong>Not doing mandatory age verification at all.</strong> This is, by process of elimination, the best option, because the damage done by any reasonable implementation of mandatory verification outweighs the damage prevented.</li>
+    </ul>
+
+    <p>
+      We are not anti-regulation. We are anti-regulation-that-makes-the-problem-worse-on-net. Mandatory age verification, as currently specified in most of the laws being passed, falls into the second category.
+    </p>
+
+    <h2><span class="num">§ 06</span>What we built, and why</h2>
+
+    <p>
+      We built OpenDescent with the premise that a messaging app shouldn't require any identification at all. Not a phone number, not an email, not a government ID. <a href="/blog/no-phone-number.html">We wrote a whole post</a> about why phone numbers don't belong in messaging; the argument about IDs is stronger in the same direction.
+    </p>
+
+    <p>
+      When people ask us why OpenDescent doesn't have a "verified account" feature, or why we don't let hub owners require verified IDs for membership, the answer is: we don't want to be responsible for holding that information, and we don't think anyone else should be either. The Discord ID breach wasn't a failure of Discord's security posture. It was a predictable consequence of a system that asked Discord to hold 70,000 driver's licences in the first place. We are very deliberately not building a system that would ask us to hold anything similar.
+    </p>
+
+    <div class="inline-cta">
+      <p><strong>If Discord's age verification is a reason you're looking for alternatives</strong>, OpenDescent is free, open source, and has no "upload your ID" flow for any purpose. Not for age. Not for appeals. Not for verification badges. We don't ask because we don't want the responsibility of holding the answer.</p>
+      <div class="btns">
+        <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
+        <a href="/vs/discord.html" class="btn btn-ghost btn-arrow">vs Discord — full comparison</a>
+      </div>
+    </div>
+
+    <h2><span class="num">§ 07</span>What to do now</h2>
+
+    <p>
+      If you live in a jurisdiction that has passed, or is passing, mandatory age-verification laws: engage your representatives. The argument that <em>mandatory identity collection creates more harm than it prevents</em> is technically sound, historically supported, and — based on polling in most jurisdictions — more popular than lawmakers assume. The EFF, Open Rights Group, and equivalent organisations in other countries are doing the detailed policy work, and they can use support.
+    </p>
+
+    <p>
+      If you use a platform that is rolling out age verification: consider whether the platform is worth the trade-off. Discord has many alternatives for community chat, including <a href="/vs/discord.html">one we built specifically because age verification shouldn't be the price of having a group for your friends</a>. If the alternatives aren't good enough yet, that is itself worth saying out loud — platforms respond to churn.
+    </p>
+
+    <p>
+      And if you build platforms yourself: please do not build identity verification into them. Especially please do not build it into them speculatively, in advance of regulation, to "get ahead of things." Every system that doesn't collect IDs is a system that doesn't lose IDs. That is, in the end, the only reliable defence.
+    </p>
+
+    <div class="sources">
+      <div class="sources-label">Sources cited</div>
+      <a href="https://discord.com/press-releases/update-on-security-incident-involving-third-party-customer-service" target="_blank" rel="noopener">Discord — Update on security incident (5CA breach) ↗</a>
+      <a href="https://www.eff.org/deeplinks/2026/02/discord-voluntarily-pushes-mandatory-age-verification-despite-recent-data-breach" target="_blank" rel="noopener">EFF — Discord voluntarily pushes mandatory age verification ↗</a>
+      <a href="https://fortune.com/2026/02/24/discord-peter-thiel-backed-persona-identity-verification-breach/" target="_blank" rel="noopener">Fortune — Discord cuts ties with Persona after verification data exposed ↗</a>
+      <a href="https://stateofsurveillance.org/news/discord-age-verification-id-biometric-privacy-2026/" target="_blank" rel="noopener">State of Surveillance — Discord leaked 70,000 IDs ↗</a>
+      <a href="https://proton.me/blog/discord-age-verfication-breach" target="_blank" rel="noopener">Proton — Discord ID data breach ↗</a>
+      <a href="https://www.gamedeveloper.com/business/-we-failed-at-our-most-basic-job-discord-delays-age-verification-rollout" target="_blank" rel="noopener">Game Developer — Discord delays age verification rollout ↗</a>
+      <a href="https://www.eff.org/deeplinks/2026/04/eu-parliament-blocks-mass-scanning-our-chats-whats-next" target="_blank" rel="noopener">EFF — EU Parliament blocks Chat Control (April 2026) ↗</a>
+    </div>
+
+    <p style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
+      <a href="/blog/" class="back-to-blog">Back to all posts</a>
+    </p>
+  </div>
+</article>
+
+<section class="related-section">
+  <div class="container-narrow">
+    <div class="related-title">▸ Related posts</div>
+    <div class="related-grid">
+      <a href="/blog/instagram-dms-may-8.html" class="related-card"><h3>May 8: the day Meta <em>admitted it wants to read your DMs</em>.</h3><p>Privacy as policy vs privacy as architecture.</p><div class="meta">▸ 9 min read · Editorial</div></a>
+      <a href="/blog/group-chat-is-not-content.html" class="related-card"><h3>Your group chat is <em>not content</em>.</h3><p>A manifesto on "I have nothing to hide" being the wrong answer.</p><div class="meta">▸ 7 min read · Manifesto</div></a>
+      <a href="/blog/no-phone-number.html" class="related-card"><h3>We'll never ask for your phone number.</h3><p>Why phone numbers are a broken identifier for messaging.</p><div class="meta">▸ 8 min read · Product</div></a>
+      <a href="/blog/what-peer-to-peer-means.html" class="related-card"><h3>What "peer-to-peer" <em>actually means</em>.</h3><p>Three architectural patterns, explained with diagrams.</p><div class="meta">▸ 11 min read · Explainer</div></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <div class="footer-micro">Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth</div>
+      </div>
+      <div class="footer-col"><div class="footer-col-title">Product</div><a href="/features.html">Features</a><a href="/security.html">Security</a><a href="/download.html">Download</a><a href="/faq.html">FAQ</a></div>
+      <div class="footer-col"><div class="footer-col-title">Compare</div><a href="/leaving-instagram.html">Leaving Instagram</a><a href="/vs/signal.html">vs Signal</a><a href="/vs/discord.html">vs Discord</a><a href="/vs/whatsapp.html">vs WhatsApp</a></div>
+      <div class="footer-col"><div class="footer-col-title">Project</div><a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a><a href="/blog/">Blog</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 OpenDescent &nbsp;·&nbsp; MIT Licensed</div>
+      <div class="footer-barcode">▌▌▏▌▏▏▌▌▏▌▏▌▌▏▏▌▏▌▌▏▌▏▏▌</div>
+      <div class="footer-legal"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">Source</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const revObs = new IntersectionObserver((entries) => { entries.forEach((e, i) => { if (e.isIntersecting) { setTimeout(() => e.target.classList.add('visible'), i * 60); revObs.unobserve(e.target); } }); }, { threshold: 0.12 });
+reveals.forEach(el => revObs.observe(el));
+</script>
+</body>
+</html>

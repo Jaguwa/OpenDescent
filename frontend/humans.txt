@@ -1,0 +1,34 @@
+/* HUMANS.TXT */
+/* https://humanstxt.org/ */
+
+/* TEAM */
+  Project:     OpenDescent
+  Tagline:     Private messaging for normal people.
+  Site:        https://open-descent.com
+  Source:      https://github.com/Jaguwa/OpenDescent
+  License:     MIT
+
+/* WHY */
+  Because normal life is worth keeping private.
+  End-to-end encrypted. Peer-to-peer. No central servers, no phone numbers, no accounts.
+
+/* THANKS */
+  Contributors on GitHub · every Founder's Edition supporter ·
+  libp2p maintainers · Signal Foundation · EFF · Matthew Green ·
+  everyone who has ever written the sentence "I have nothing to hide"
+  and let someone explain why that's the wrong frame.
+
+/* TECH */
+  Language:    TypeScript (Node.js, ESM)
+  Networking:  libp2p (Noise, Yamux, KadDHT, DCUtR, Circuit Relay v2)
+  Crypto:      Ed25519 · X25519 · AES-256-GCM · HKDF-SHA256 · BIP39
+  Storage:     LevelDB
+  Transport:   WebSocket · WebRTC (DTLS-SRTP)
+  Desktop:     Electron
+  Frontend:    HTML · CSS · vanilla JS (no framework)
+  Analytics:   Plausible (cookie-free)
+
+/* INTERNAL */
+  オープンディセント // P2P-Mesh-Net // No-Central-Auth
+  Say hi:  https://github.com/Jaguwa/OpenDescent/discussions
+  Report:  https://github.com/Jaguwa/OpenDescent/security/advisories

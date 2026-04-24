@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenDescent Features: Encrypted Messaging, Calls, Hubs, and P2P Architecture (2026)</title>
+<meta name="description" content="Every feature of OpenDescent — end-to-end encrypted messaging, voice and video calls, community hubs, P2P live streaming, anonymous Dead Drops, Dead Man's Switch, signed file sharing, and more.">
+<meta name="keywords" content="opendescent features, encrypted messaging features, p2p chat features, decentralized messenger features, private chat app features, dead drops, dead man's switch, signed file sharing, community hubs encrypted">
+<meta name="author" content="OpenDescent">
+<meta name="theme-color" content="#0f1012">
+<link rel="canonical" href="https://open-descent.com/features.html">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<script async src="https://plausible.io/js/pa-zQ01yi4zP0T_1Tx0kPikj.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://open-descent.com/features.html">
+<meta property="og:title" content="OpenDescent Features: Encrypted Messaging, Calls, Hubs, and P2P Architecture">
+<meta property="og:description" content="Messaging, calls, community hubs, live streaming, Dead Drops, Dead Man's Switch, signed file sharing — all end-to-end encrypted and peer-to-peer.">
+<meta property="og:image" content="https://open-descent.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="OpenDescent">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="OpenDescent Features: Encrypted Messaging, Calls, Hubs, P2P">
+<meta name="twitter:description" content="Every feature of OpenDescent in one place.">
+<meta name="twitter:image" content="https://open-descent.com/og-image.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "OpenDescent Features",
+  "description": "Every feature of OpenDescent, grouped by category — messaging, communities, anonymous features, identity, and networking.",
+  "url": "https://open-descent.com/features.html",
+  "isPartOf": { "@type": "WebSite", "name": "OpenDescent", "url": "https://open-descent.com" }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://open-descent.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Features", "item": "https://open-descent.com/features.html" }
+  ]
+}
+</script>
+
+<style>
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-Wide.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-BoldWide.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+:root {
+  --bg: #0f1012; --bg-deep: #0a0a0c; --bg-surface: #16181c; --bg-card: #1a1d22; --bg-card-hi: #20242a;
+  --teal: #32E0C4; --teal-dim: #0D7377; --teal-glow: #5FFFD6;
+  --red: #e04050; --red-dim: #8a1e2a; --amber: #FFD166;
+  --purple: #c67fff;
+  --text: #EEEEEE; --text-strong: #FFFFFF; --text-mid: #aaaaaa; --text-dim: #666666; --text-ghost: #3a3d42;
+  --border: rgba(255,255,255,0.06); --border-bright: rgba(50,224,196,0.2); --border-red: rgba(224,64,80,0.25);
+  --mono: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --display: 'Array Wide', 'Array', -apple-system, sans-serif;
+  --body: 'Array', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 120px; }
+body { font-family: var(--body); background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 200px; }
+body::after { content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none; background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.45) 100%); }
+
+@keyframes chroma-section { 0%,100% { text-shadow: -1.5px 0 rgba(224,64,80,0.3), 1.5px 0 rgba(50,224,196,0.35); } 50% { text-shadow: -2px 0.5px rgba(224,64,80,0.25), 2px -0.5px rgba(50,224,196,0.4); } }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes signal-wave { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.4); opacity: 0; } }
+
+.container { max-width: 1240px; margin: 0 auto; padding: 0 28px; position: relative; }
+.container-narrow { max-width: 820px; margin: 0 auto; padding: 0 28px; position: relative; }
+section { padding: 84px 0; position: relative; }
+
+.kicker { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 10px; }
+.kicker::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; animation: pulse-dot 2s infinite; }
+.kicker-ghost { color: var(--text-ghost); }
+.kicker-ghost::before { background: var(--text-ghost); }
+
+/* Breaking */
+.breaking { background: linear-gradient(90deg, rgba(224,64,80,0.15), rgba(224,64,80,0.06) 40%, rgba(224,64,80,0.06) 60%, rgba(224,64,80,0.15)); border-bottom: 1px solid var(--border-red); overflow: hidden; position: relative; z-index: 101; }
+.breaking-viewport { display: flex; align-items: center; height: 32px; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.breaking-label { display: inline-flex; align-items: center; gap: 8px; color: #ffeaee; background: var(--red); padding: 7px 14px; height: 100%; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.breaking-label::before { content: ''; width: 6px; height: 6px; background: #ffeaee; border-radius: 50%; animation: pulse-dot 1.2s infinite; }
+.breaking-track { flex: 1; overflow: hidden; position: relative; white-space: nowrap; mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); }
+.breaking-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 60s linear infinite; color: var(--text-mid); }
+.breaking-content a { color: var(--text); text-decoration: none; margin: 0 14px; }
+.breaking-content a:hover { color: var(--teal); }
+.breaking-content .sep { color: var(--red); margin: 0 14px; }
+
+/* Nav */
+nav.top { position: sticky; top: 0; z-index: 100; background: rgba(15,16,18,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 1400px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.nav-brand { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--text); text-decoration: none; animation: chroma-section 5s ease-in-out infinite; display: inline-flex; align-items: center; gap: 10px; }
+.nav-brand .dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.nav-links { display: flex; gap: 28px; list-style: none; align-items: center; }
+.nav-links a { font-family: var(--mono); font-size: 10.5px; color: var(--text-mid); text-decoration: none; text-transform: uppercase; letter-spacing: 1.5px; transition: color 0.2s; }
+.nav-links a:hover { color: var(--teal); }
+.nav-links a.alert { color: #ffb8bf; }
+.nav-links a.alert::before { content: ''; display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-right: 6px; vertical-align: middle; animation: pulse-dot 1.4s infinite; box-shadow: 0 0 8px var(--red); }
+.nav-links a.alert:hover { color: var(--red); }
+.nav-cta { padding: 8px 18px !important; background: transparent; border: 1px solid var(--teal); border-radius: 3px; color: var(--teal) !important; letter-spacing: 2px !important; }
+.nav-cta:hover { background: rgba(50,224,196,0.08); box-shadow: 0 0 14px rgba(50,224,196,0.18); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 4px; font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; text-decoration: none; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-primary { background: var(--teal); color: #07140f; }
+.btn-primary:hover { background: var(--teal-glow); box-shadow: 0 0 24px rgba(50,224,196,0.35); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border-color: var(--border-bright); }
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); box-shadow: 0 0 16px rgba(50,224,196,0.12); }
+.btn-arrow::after { content: '\2192'; font-size: 14px; }
+
+/* Breadcrumb */
+.breadcrumb { padding: 22px 0 0; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-ghost); }
+.breadcrumb a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: var(--teal); }
+.breadcrumb .sep { color: var(--text-ghost); margin: 0 10px; }
+.breadcrumb .current { color: var(--text); }
+
+/* Hero */
+.article-hero { padding: 48px 0 56px; border-bottom: 1px solid var(--border); }
+.hero-meta-row { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 22px; align-items: center; }
+.hero-date { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+.article-hero h1 { font-family: var(--display); font-size: clamp(2.4rem, 4.8vw, 3.6rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.5px; color: var(--text-strong); margin-bottom: 20px; max-width: 900px; }
+.article-hero h1 em { font-style: normal; color: var(--teal); animation: chroma-section 6s ease-in-out infinite; }
+.article-dek { font-family: var(--body); font-size: 17px; line-height: 1.65; color: var(--text-mid); margin-bottom: 28px; max-width: 720px; }
+.hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+
+/* TOC */
+.toc {
+  position: sticky; top: 64px; z-index: 50;
+  background: rgba(15,16,18,0.94);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+}
+.toc-inner {
+  max-width: 1240px; margin: 0 auto; padding: 0 28px;
+  display: flex; gap: 4px; overflow-x: auto;
+  scrollbar-width: none;
+}
+.toc-inner::-webkit-scrollbar { display: none; }
+.toc-label {
+  font-family: var(--mono); font-size: 10px; color: var(--text-ghost);
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 8px 14px; white-space: nowrap; flex-shrink: 0;
+  border-right: 1px solid var(--border); margin-right: 8px;
+}
+.toc-link {
+  font-family: var(--mono); font-size: 11px; color: var(--text-mid);
+  text-decoration: none; padding: 8px 14px; border-radius: 3px;
+  letter-spacing: 1px; text-transform: uppercase;
+  transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+  border: 1px solid transparent;
+}
+.toc-link:hover { color: var(--teal); border-color: var(--border-bright); background: rgba(50,224,196,0.04); }
+.toc-num { color: var(--teal-dim); margin-right: 6px; font-weight: 700; }
+
+/* TL;DR */
+.tldr { max-width: 820px; margin: 56px auto 0; background: var(--bg-card); border: 1px solid var(--border-bright); border-radius: 6px; padding: 28px 32px; position: relative; }
+.tldr::before { content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.tldr-label { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.tldr-label::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.tldr-list { list-style: none; padding: 0; }
+.tldr-list li { padding: 8px 0 8px 24px; position: relative; font-family: var(--body); font-size: 15px; color: var(--text); line-height: 1.7; }
+.tldr-list li::before { content: '›'; position: absolute; left: 0; color: var(--teal); font-weight: 700; font-size: 16px; }
+
+/* Section headers */
+.section-header { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end; margin-bottom: 56px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+.section-title { font-family: var(--display); font-size: clamp(1.6rem, 2.8vw, 2.2rem); font-weight: 700; letter-spacing: -0.5px; color: var(--text-strong); line-height: 1.1; }
+.section-title em { font-style: normal; color: var(--teal); }
+.section-sub { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; text-align: right; }
+
+/* Feature spotlight */
+.feature-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center;
+  padding: 56px 0;
+  border-top: 1px dashed var(--border);
+}
+.feature-row:first-of-type { border-top: none; padding-top: 8px; }
+.feature-row.flip .feature-text { order: 2; }
+.feature-row.flip .feature-visual { order: 1; }
+.feature-num { font-family: var(--mono); font-size: 11px; color: var(--teal); letter-spacing: 3px; margin-bottom: 10px; }
+.feature-row h3 { font-family: var(--display); font-size: clamp(1.5rem, 2.4vw, 2rem); font-weight: 700; line-height: 1.15; color: var(--text-strong); margin-bottom: 16px; letter-spacing: -0.3px; }
+.feature-row h3 em { font-style: normal; color: var(--teal); }
+.feature-row p { font-family: var(--body); font-size: 15px; line-height: 1.75; color: var(--text-mid); margin-bottom: 14px; }
+.feature-row p strong { color: var(--text); }
+.feature-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.feature-chip {
+  font-family: var(--mono); font-size: 10px; color: var(--text-mid);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 3px;
+  background: var(--bg-card);
+}
+.feature-chip.highlight { color: var(--teal); border-color: var(--border-bright); background: rgba(50,224,196,0.05); }
+
+/* Product-shot visuals */
+.shot {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6), 0 0 32px -20px rgba(50,224,196,0.1);
+}
+.shot::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(50,224,196,0.015) 0, rgba(50,224,196,0.015) 1px, transparent 1px, transparent 3px); z-index: 0; }
+.shot-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  background: rgba(50,224,196,0.03);
+  font-family: var(--mono); font-size: 10px; color: var(--teal);
+  letter-spacing: 2px; text-transform: uppercase;
+  position: relative; z-index: 1;
+}
+.shot-head .dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.shot-head .jp { color: var(--text-ghost); margin-left: auto; font-size: 9px; }
+.shot-body { padding: 18px 18px; position: relative; z-index: 1; }
+.shot-footer {
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 8px; color: var(--text-ghost);
+  letter-spacing: 2px; text-transform: uppercase;
+  position: relative; z-index: 1;
+}
+.shot-footer .ok { color: var(--teal); }
+
+/* Message bubbles within shots */
+.bubble { padding: 10px 13px; border-radius: 4px; font-family: var(--body); font-size: 13.5px; line-height: 1.5; color: var(--text); margin-bottom: 8px; }
+.bubble.you { background: rgba(50,224,196,0.08); border: 1px solid rgba(50,224,196,0.18); }
+.bubble.them { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+.bubble.voice { display: flex; align-items: center; gap: 10px; }
+.bubble.file { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; }
+.bubble .user { font-family: var(--display); font-size: 10px; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 4px; }
+.bubble.them .user { color: var(--amber); }
+.wave-bar { display: inline-flex; gap: 2px; flex: 1; }
+.wave-bar span { display: inline-block; width: 2px; background: var(--teal); border-radius: 1px; }
+.wave-bar span:nth-child(1) { height: 6px; } .wave-bar span:nth-child(2) { height: 12px; } .wave-bar span:nth-child(3) { height: 8px; } .wave-bar span:nth-child(4) { height: 18px; } .wave-bar span:nth-child(5) { height: 14px; } .wave-bar span:nth-child(6) { height: 20px; } .wave-bar span:nth-child(7) { height: 10px; } .wave-bar span:nth-child(8) { height: 6px; } .wave-bar span:nth-child(9) { height: 14px; } .wave-bar span:nth-child(10) { height: 8px; } .wave-bar span:nth-child(11) { height: 16px; } .wave-bar span:nth-child(12) { height: 12px; }
+
+/* Call shot */
+.call-shot { text-align: center; padding: 28px 20px; }
+.call-circle {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(50,224,196,0.2), rgba(50,224,196,0.05));
+  border: 2px solid var(--teal);
+  margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+  font-size: 32px; position: relative;
+}
+.call-circle::before, .call-circle::after {
+  content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 1px solid var(--teal);
+  animation: signal-wave 2s ease-out infinite;
+}
+.call-circle::after { animation-delay: 1s; }
+.call-name { font-family: var(--display); font-size: 1.2rem; font-weight: 700; color: var(--text-strong); margin-bottom: 4px; }
+.call-status { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; }
+.call-controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+.call-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-deep); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-mid); }
+.call-btn.hang { background: rgba(224,64,80,0.15); border-color: var(--red); color: var(--red); }
+
+/* Hub shot */
+.hub-mock { display: grid; grid-template-columns: 130px 1fr; min-height: 260px; }
+.hub-side { background: var(--bg-deep); border-right: 1px solid var(--border); padding: 14px 10px; }
+.hub-side-title { font-family: var(--display); font-size: 10px; font-weight: 700; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.hub-side-cat { font-family: var(--mono); font-size: 8px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; margin: 12px 0 4px; }
+.hub-side-chan { padding: 3px 6px; color: var(--text-mid); font-size: 11px; display: flex; align-items: center; gap: 5px; border-radius: 2px; }
+.hub-side-chan.on { background: rgba(50,224,196,0.08); color: var(--teal); }
+.hub-side-chan .hash { color: var(--text-ghost); }
+.hub-main { padding: 14px 16px; }
+.hub-main-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.hub-main-title { font-family: var(--display); font-size: 11px; font-weight: 700; color: var(--text-strong); letter-spacing: 1px; }
+.hub-e2e { font-family: var(--mono); font-size: 8px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; padding: 3px 7px; border: 1px solid var(--border-bright); border-radius: 2px; }
+
+/* Stream shot */
+.stream-shot { padding: 0; }
+.stream-frame {
+  aspect-ratio: 16/9;
+  background: linear-gradient(135deg, #1a1a2e 0%, #0a0a1a 70%);
+  position: relative; display: flex; align-items: center; justify-content: center;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.stream-frame::before {
+  content: 'LIVE'; position: absolute; top: 12px; left: 12px;
+  font-family: var(--display); font-size: 10px; font-weight: 700; color: #fff;
+  background: var(--red); padding: 4px 8px; border-radius: 2px;
+  letter-spacing: 2px;
+}
+.stream-frame::after {
+  content: ''; position: absolute; top: 14px; left: 52px; width: 8px; height: 8px;
+  background: #fff; border-radius: 50%; animation: pulse-dot 1.2s infinite;
+}
+.stream-viewers { position: absolute; top: 12px; right: 12px; font-family: var(--mono); font-size: 10px; color: var(--text); background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 2px; letter-spacing: 1px; }
+.stream-mesh {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+  padding: 18px; font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1px; text-transform: uppercase;
+}
+.mesh-node { padding: 6px 8px; border: 1px solid var(--border); border-radius: 3px; text-align: center; background: var(--bg-deep); }
+.mesh-node.live { border-color: var(--teal); color: var(--teal); background: rgba(50,224,196,0.05); }
+
+/* Dead drop shot */
+.dd-shot { padding: 22px 22px; font-family: var(--mono); font-size: 11px; line-height: 1.8; color: var(--text); }
+.dd-line { display: flex; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.dd-line:last-child { border-bottom: none; }
+.dd-line .label { color: var(--text-ghost); min-width: 80px; letter-spacing: 1.5px; text-transform: uppercase; font-size: 9px; }
+.dd-line .value { color: var(--text); flex: 1; word-break: break-all; }
+.dd-line .value.teal { color: var(--teal); }
+.dd-line .value.amber { color: var(--amber); }
+
+/* DMS shot */
+.dms-shot { padding: 22px; }
+.dms-header-row { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.dms-title { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--text-strong); letter-spacing: 1px; }
+.dms-badge { font-family: var(--mono); font-size: 9px; color: var(--amber); letter-spacing: 2px; text-transform: uppercase; padding: 3px 8px; border: 1px solid rgba(255,209,102,0.3); border-radius: 2px; background: rgba(255,209,102,0.08); }
+.dms-timer { text-align: center; padding: 18px 0; }
+.dms-timer-num { font-family: var(--display); font-size: 2.4rem; font-weight: 700; color: var(--amber); line-height: 1; text-shadow: 0 0 20px rgba(255,209,102,0.25); }
+.dms-timer-label { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; margin-top: 6px; }
+.dms-recipients { font-family: var(--body); font-size: 12px; color: var(--text-mid); padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.dms-recipients .label { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; display: block; margin-bottom: 6px; }
+.dms-checkin { display: flex; gap: 8px; margin-top: 14px; }
+.dms-checkin button { flex: 1; padding: 8px 12px; font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; background: transparent; border: 1px solid var(--border-bright); color: var(--teal); border-radius: 3px; cursor: pointer; }
+
+/* Identity shot */
+.id-shot { padding: 22px; font-family: var(--mono); font-size: 11px; }
+.id-row { display: flex; gap: 14px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.id-row:last-child { border-bottom: none; }
+.id-row .label { color: var(--text-ghost); min-width: 90px; letter-spacing: 1.5px; text-transform: uppercase; font-size: 9px; }
+.id-row .value { color: var(--teal); flex: 1; word-break: break-all; }
+.id-mnemonic { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.id-word { font-family: var(--mono); font-size: 11px; padding: 6px 8px; background: var(--bg-deep); border: 1px solid var(--border); border-radius: 2px; color: var(--text); text-align: center; }
+.id-word .idx { color: var(--text-ghost); font-size: 8px; margin-right: 4px; }
+
+/* Mesh network shot */
+.mesh-shot-vis { padding: 18px; }
+.mesh-svg { width: 100%; height: 240px; }
+
+/* FAQ */
+.faq-section { background: var(--bg-deep); }
+.faq-list { max-width: 860px; margin: 0 auto; }
+.faq-item { border-bottom: 1px solid var(--border); padding: 22px 0; }
+.faq-q { display: flex; justify-content: space-between; align-items: center; font-family: var(--display); font-size: 1.1rem; font-weight: 700; color: var(--text-strong); margin-bottom: 10px; }
+.faq-q-num { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; }
+.faq-a { font-family: var(--body); font-size: 14.5px; color: var(--text-mid); line-height: 1.8; }
+.faq-a a { color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim); }
+.faq-a a:hover { border-bottom-style: solid; }
+
+/* CTA */
+.cta-band { background: var(--bg); border-top: 1px solid var(--border); padding: 72px 0; text-align: center; }
+.cta-band h2 { font-family: var(--display); font-size: clamp(1.6rem, 2.8vw, 2.2rem); font-weight: 700; line-height: 1.2; color: var(--text-strong); margin-bottom: 16px; }
+.cta-band h2 em { font-style: normal; color: var(--teal); }
+.cta-band p { font-family: var(--body); font-size: 15px; color: var(--text-mid); line-height: 1.7; margin: 0 auto 28px; max-width: 600px; }
+.cta-band .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* Footer */
+footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid var(--border); position: relative; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+.footer-brand { font-family: var(--display); font-size: 1rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.footer-brand-dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.footer-tagline { font-family: var(--body); font-size: 13px; color: var(--text-mid); line-height: 1.7; max-width: 360px; margin-bottom: 20px; }
+.footer-micro { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; line-height: 2; }
+.footer-col-title { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.footer-col a { display: block; font-family: var(--body); font-size: 13.5px; color: var(--text-mid); text-decoration: none; padding: 4px 0; transition: color 0.2s; }
+.footer-col a:hover { color: var(--teal); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 16px; }
+.footer-copy { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal { display: flex; gap: 18px; }
+.footer-legal a { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); text-decoration: none; letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal a:hover { color: var(--teal); }
+.footer-barcode { font-size: 9px; letter-spacing: 2px; color: var(--text-ghost); }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .feature-row { grid-template-columns: 1fr; gap: 32px; padding: 40px 0; }
+  .feature-row.flip .feature-text { order: 1; }
+  .feature-row.flip .feature-visual { order: 2; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .section-header { grid-template-columns: 1fr; }
+  .section-sub { text-align: left; }
+  .toc { top: 56px; }
+}
+@media (max-width: 600px) {
+  .nav-links { gap: 14px; }
+  .nav-links li:not(.nav-li-cta):not(.nav-li-alert) { display: none; }
+  .tldr { padding: 22px; }
+  .footer-grid { grid-template-columns: 1fr; }
+  section { padding: 64px 0; }
+  .hub-mock { grid-template-columns: 1fr; }
+  .hub-side { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- Breaking ticker -->
+<div class="breaking">
+  <div class="breaking-viewport">
+    <div class="breaking-label">▶ Breaking</div>
+    <div class="breaking-track">
+      <div class="breaking-content">
+        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        <a href="/leaving-instagram.html">Here's what to use instead →</a>
+        <span class="sep">//</span>
+        Discord leaked 70,000 government IDs.
+        <a href="/vs/discord.html">Why we built this →</a>
+        <span class="sep">//</span>
+        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        <a href="/#download">Download →</a>
+        <span class="sep">//</span>
+        Normal life deserves privacy.
+        <span class="sep">//</span>
+        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        <a href="/leaving-instagram.html">Here's what to use instead →</a>
+        <span class="sep">//</span>
+        Discord leaked 70,000 government IDs.
+        <a href="/vs/discord.html">Why we built this →</a>
+        <span class="sep">//</span>
+        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        <a href="/#download">Download →</a>
+        <span class="sep">//</span>
+        Normal life deserves privacy.
+        <span class="sep">//</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="top">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a>
+    <ul class="nav-links">
+      <li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li>
+      <li><a href="/features.html">Features</a></li>
+      <li><a href="/#security">Security</a></li>
+      <li><a href="/#compare">Compare</a></li>
+      <li><a href="/#faq">FAQ</a></li>
+      <li class="nav-li-cta"><a href="/#download" class="nav-cta">Download</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="container">
+  <div class="breadcrumb">
+    <a href="/">Home</a><span class="sep">/</span><span class="current">Features</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="article-hero">
+  <div class="container">
+    <div class="hero-meta-row">
+      <span class="kicker">Features &nbsp;/&nbsp; The full set</span>
+      <span class="hero-date">v0.5.4 · 2026-04-24</span>
+    </div>
+    <h1>Everything a modern chat app does. <em>Nothing that spies on you.</em></h1>
+    <p class="article-dek">
+      Text, voice, video, files, communities, live streaming, anonymous drops, identity recovery — every feature you'd expect from a polished messenger, end-to-end encrypted by default and peer-to-peer underneath. This is everything OpenDescent does today.
+    </p>
+    <div class="hero-ctas">
+      <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
+      <a href="#messaging" class="btn btn-ghost btn-arrow">Start with messaging</a>
+    </div>
+  </div>
+</section>
+
+<!-- TOC -->
+<div class="toc">
+  <div class="toc-inner">
+    <span class="toc-label">On this page</span>
+    <a href="#messaging" class="toc-link"><span class="toc-num">01</span>Messages, calls, files</a>
+    <a href="#communities" class="toc-link"><span class="toc-num">02</span>Communities &amp; hubs</a>
+    <a href="#anonymous" class="toc-link"><span class="toc-num">03</span>Anonymous features</a>
+    <a href="#identity" class="toc-link"><span class="toc-num">04</span>Identity &amp; recovery</a>
+    <a href="#network" class="toc-link"><span class="toc-num">05</span>Under the hood</a>
+  </div>
+</div>
+
+<!-- TL;DR -->
+<div class="container">
+  <div class="tldr reveal">
+    <div class="tldr-label">Short version</div>
+    <ul class="tldr-list">
+      <li><strong>Private conversations:</strong> 1-on-1 text, group chats (with key rotation), voice and video calls, file transfer — all end-to-end encrypted on your device.</li>
+      <li><strong>Community hubs:</strong> Discord-shaped spaces with text channels, voice channels, roles, invites — peer-replicated, no central server.</li>
+      <li><strong>Anonymous layer:</strong> Dead Drops (onion-routed posts), Dead Man's Switch (auto-send on missed check-in), and a trust web for vouching.</li>
+      <li><strong>Yours to keep:</strong> cryptographic identity with 12-word mnemonic recovery. No phone, no email, no account. Ever.</li>
+      <li><strong>Under the hood:</strong> libp2p mesh, DCUtR hole-punching, circuit relay fallback, store-and-forward for offline peers.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- §01 MESSAGES, CALLS, FILES -->
+<section id="messaging">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2 class="section-title">Messages, calls, files — <em>encrypted before anything leaves your device</em>.</h2>
+      <div class="section-sub">§ 01 &nbsp;/&nbsp; Private conversations</div>
+    </div>
+
+    <!-- Encrypted messaging -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-num">01.01 &nbsp;·&nbsp; Messaging</div>
+        <h3>1-on-1 messages and <em>group chats</em> that you own.</h3>
+        <p>
+          Every message runs through a fresh X25519 key agreement and an AES-256-GCM encryption before it leaves your device. Group chats use a shared symmetric key with <strong>automatic rotation when members leave</strong> — so past messages stay private even if someone exits the group.
+        </p>
+        <p>
+          Messages persist locally, encrypted at rest, with a <strong>store-and-forward</strong> relay path if your recipient is offline — their next peer to see the message will hold it until they come back online. No plaintext ever touches a server.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">AES-256-GCM</span>
+          <span class="feature-chip">X25519 DH</span>
+          <span class="feature-chip">Forward secrecy</span>
+          <span class="feature-chip">Key rotation</span>
+          <span class="feature-chip">Store-and-forward</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>DM &nbsp;·&nbsp; sam <span class="jp">暗号化済</span></div>
+          <div class="shot-body">
+            <div class="bubble them"><span class="user">sam</span>landed safe ✈</div>
+            <div class="bubble you">miss you already</div>
+            <div class="bubble them"><span class="user">sam</span>call you once I'm at the hotel</div>
+            <div class="bubble you">🎙 voice note · 0:12</div>
+          </div>
+          <div class="shot-footer">
+            <span>Ed25519 f7a3:2c91</span>
+            <span class="ok">E2E · delivered</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Voice & video -->
+    <div class="feature-row flip reveal">
+      <div class="feature-text">
+        <div class="feature-num">01.02 &nbsp;·&nbsp; Calls</div>
+        <h3>Voice and video calls <em>without an intermediary</em>.</h3>
+        <p>
+          WebRTC with DTLS-SRTP encryption. Your device connects directly to theirs when possible — TURN relay fallback only when NAT won't allow a direct path. When a TURN relay is used, it only sees <strong>encrypted packets passing through</strong>; it never has the keys.
+        </p>
+        <p>
+          Signalling (the handshake that sets up the call) travels over the same libp2p network as your messages, so <strong>nobody needs to know your phone number</strong> to call you. Usernames are enough.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">WebRTC</span>
+          <span class="feature-chip">DTLS-SRTP</span>
+          <span class="feature-chip">STUN / TURN</span>
+          <span class="feature-chip">Direct peer</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Call &nbsp;·&nbsp; active <span class="jp">通話中</span></div>
+          <div class="shot-body call-shot">
+            <div class="call-circle">📞</div>
+            <div class="call-name">Mei</div>
+            <div class="call-status">Encrypted · 00:42</div>
+            <div class="call-controls">
+              <div class="call-btn">🎙</div>
+              <div class="call-btn">📹</div>
+              <div class="call-btn hang">✕</div>
+            </div>
+          </div>
+          <div class="shot-footer">
+            <span>DTLS-SRTP</span>
+            <span class="ok">Peer-to-peer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File sharing -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-num">01.03 &nbsp;·&nbsp; Files</div>
+        <h3>Files that are <em>signed, sharded, and verified</em>.</h3>
+        <p>
+          Every file you send produces a <strong>signed manifest</strong> — a canonical description of the file's chunks, hashes, and total SHA-256 signed by your Ed25519 key. The recipient verifies the signature before assembling the file, so tampering by anyone in transit is caught.
+        </p>
+        <p>
+          Large files are split into chunks with <strong>XOR-parity sharding</strong>, so a missing or corrupt chunk can be reconstructed from the others. Chunks flow through the mesh without assembling anywhere in the middle — only on your device and the recipient's.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">Ed25519 signatures</span>
+          <span class="feature-chip">SHA-256 integrity</span>
+          <span class="feature-chip">XOR parity</span>
+          <span class="feature-chip">Chunked transfer</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Transfer &nbsp;·&nbsp; lecture-notes.pdf <span class="jp">転送中</span></div>
+          <div class="shot-body">
+            <div class="bubble file">📎 lecture-notes.pdf · 2.3 MB</div>
+            <div class="bubble file" style="font-size:10px;">SHA-256: 4f8b:9c2e:7a10:b3df:12ac:...</div>
+            <div class="bubble file" style="font-size:10px;">Sig: Ed25519 verified ✓</div>
+            <div class="bubble file" style="font-size:10px;color:var(--teal);">Shards: 12 / 12 delivered</div>
+          </div>
+          <div class="shot-footer">
+            <span>Signed manifest</span>
+            <span class="ok">Integrity ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 COMMUNITIES -->
+<section id="communities" style="background: var(--bg-deep);">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2 class="section-title">Communities — <em>the shape of a Discord server, without the server</em>.</h2>
+      <div class="section-sub">§ 02 &nbsp;/&nbsp; Hubs, channels, streaming</div>
+    </div>
+
+    <!-- Hubs -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-num">02.01 &nbsp;·&nbsp; Hubs</div>
+        <h3>Community hubs with <em>channels, roles, and invites</em>.</h3>
+        <p>
+          A hub is a peer-replicated community space. It has <strong>categories, text channels, voice channels, roles and permissions, invite links</strong>, and every feature you'd expect from a Discord server — but the hub exists across members' devices rather than on a central server.
+        </p>
+        <p>
+          Moderation (kicks, bans, mutes) is enforced through signed role changes distributed through the hub. There's no hub owner who can be subpoenaed, and no company that can shut a hub down from outside.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">Peer-replicated</span>
+          <span class="feature-chip">Text / voice channels</span>
+          <span class="feature-chip">Roles</span>
+          <span class="feature-chip">Invite links</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot hub-mock">
+          <div class="hub-side">
+            <div class="hub-side-title">study-group</div>
+            <div class="hub-side-cat">Text</div>
+            <div class="hub-side-chan on"><span class="hash">#</span>general</div>
+            <div class="hub-side-chan"><span class="hash">#</span>assignments</div>
+            <div class="hub-side-chan"><span class="hash">#</span>memes</div>
+            <div class="hub-side-cat">Voice</div>
+            <div class="hub-side-chan"><span class="hash">🔊</span>study</div>
+            <div class="hub-side-chan"><span class="hash">🔊</span>afk</div>
+          </div>
+          <div class="hub-main">
+            <div class="hub-main-head">
+              <div class="hub-main-title"># general</div>
+              <div class="hub-e2e">🔒 E2E</div>
+            </div>
+            <div class="bubble them" style="margin-bottom:6px;font-size:12px;"><span class="user">sam</span>finals week, brace</div>
+            <div class="bubble you" style="margin-bottom:6px;font-size:12px;">sending notes now 📎</div>
+            <div class="bubble them" style="margin-bottom:0;font-size:12px;"><span class="user">mei</span>ty ❤</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live streaming -->
+    <div class="feature-row flip reveal">
+      <div class="feature-text">
+        <div class="feature-num">02.02 &nbsp;·&nbsp; Live streaming</div>
+        <h3>P2P live streaming <em>that scales with viewers, not servers</em>.</h3>
+        <p>
+          Go live inside a hub and your stream is distributed <strong>mesh-pull style</strong> — each viewer pulls chunks from a few peers and redistributes to others, the way BitTorrent works for static files, applied to live video. The more people watching, the stronger the distribution gets.
+        </p>
+        <p>
+          No central streaming server. No rights for a middleman to pull the stream. Viewers join via the hub; the stream is end-to-end encrypted and ends when you do.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">WebRTC DataChannels</span>
+          <span class="feature-chip">Mesh-pull</span>
+          <span class="feature-chip">Scales with viewers</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot stream-shot">
+          <div class="stream-frame">
+            <div style="font-family:var(--display); font-size:10px; color:var(--text-mid); letter-spacing:2px; text-transform:uppercase;">▶ streaming</div>
+            <div class="stream-viewers">▸ 42 peers</div>
+          </div>
+          <div class="stream-mesh">
+            <div class="mesh-node live">NODE 01</div>
+            <div class="mesh-node">NODE 02</div>
+            <div class="mesh-node live">NODE 03</div>
+            <div class="mesh-node">NODE 04</div>
+            <div class="mesh-node live">NODE 05</div>
+            <div class="mesh-node">NODE 06</div>
+            <div class="mesh-node live">NODE 07</div>
+            <div class="mesh-node live">NODE 08</div>
+            <div class="mesh-node">NODE 09</div>
+            <div class="mesh-node live">NODE 10</div>
+          </div>
+          <div class="shot-footer">
+            <span>Mesh-pull distribution</span>
+            <span class="ok">No central stream</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §03 ANONYMOUS -->
+<section id="anonymous">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2 class="section-title">Anonymous features — <em>for the conversations that shouldn't have a name attached</em>.</h2>
+      <div class="section-sub">§ 03 &nbsp;/&nbsp; Dead drops, DMS, trust</div>
+    </div>
+
+    <!-- Dead drops -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-num">03.01 &nbsp;·&nbsp; Dead Drops</div>
+        <h3>Onion-routed posts with <em>no identity attached</em>.</h3>
+        <p>
+          A Dead Drop is a post that travels through several layered-encrypted hops before landing in a public space. Each hop only sees the next hop — none of them know both sender and destination. <strong>Proof-of-work spam prevention</strong> stops floods. A <strong>daily rotating network key</strong> means yesterday's drops can't be correlated with today's.
+        </p>
+        <p>
+          No account is attached. No metadata is collected. For journalists and sources, whistleblowers, or anyone whose message needs to exist without an author.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">Onion routing</span>
+          <span class="feature-chip">Proof-of-work</span>
+          <span class="feature-chip">Daily key rotation</span>
+          <span class="feature-chip">No identity</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Dead Drop &nbsp;·&nbsp; compose <span class="jp">匿名投稿</span></div>
+          <div class="shot-body dd-shot">
+            <div class="dd-line"><span class="label">Author</span><span class="value">— anonymous</span></div>
+            <div class="dd-line"><span class="label">Route</span><span class="value teal">onion · 5 hops</span></div>
+            <div class="dd-line"><span class="label">PoW</span><span class="value amber">solving · 1.2s</span></div>
+            <div class="dd-line"><span class="label">Day key</span><span class="value">d4:2026-04-24</span></div>
+            <div class="dd-line"><span class="label">Payload</span><span class="value">[encrypted · 412 bytes]</span></div>
+            <div class="dd-line"><span class="label">Status</span><span class="value teal">▶ ready to drop</span></div>
+          </div>
+          <div class="shot-footer">
+            <span>No author · no trace</span>
+            <span class="ok">Anonymous ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dead Man's Switch -->
+    <div class="feature-row flip reveal">
+      <div class="feature-text">
+        <div class="feature-num">03.02 &nbsp;·&nbsp; Dead Man's Switch</div>
+        <h3>Messages that send <em>only if you don't check in</em>.</h3>
+        <p>
+          Set up a Dead Man's Switch with a custom timer (1 hour to 30 days) and a list of messages to send to specific people if you don't check in before time runs out. <strong>Check in and the clock resets.</strong> Miss a check-in and the messages go.
+        </p>
+        <p>
+          Useful for travel situations, journalists protecting sources, activists preparing for detention, or anyone preparing for the worst. The switch runs on peer-to-peer infrastructure — no company to compel or disable.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">Custom timer · 1h → 30d</span>
+          <span class="feature-chip">Multiple recipients</span>
+          <span class="feature-chip">Peer-enforced</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Dead Man's Switch &nbsp;·&nbsp; armed <span class="jp">作動中</span></div>
+          <div class="shot-body dms-shot">
+            <div class="dms-header-row">
+              <div class="dms-title">"Travel · week of 2026-05-01"</div>
+              <div class="dms-badge">★ ARMED</div>
+            </div>
+            <div class="dms-timer">
+              <div class="dms-timer-num">03 : 12 : 44</div>
+              <div class="dms-timer-label">Until next check-in</div>
+            </div>
+            <div class="dms-recipients">
+              <span class="label">Will send to</span>
+              mum · sam · jaz &nbsp;(3 recipients)
+            </div>
+            <div class="dms-checkin">
+              <button>✓ Check in now</button>
+              <button>⚙ Edit</button>
+            </div>
+          </div>
+          <div class="shot-footer">
+            <span>Peer-enforced · no central authority</span>
+            <span class="ok">★ Active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trust web -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-num">03.03 &nbsp;·&nbsp; Trust web</div>
+        <h3>A <em>web of vouching</em> to spot impersonators.</h3>
+        <p>
+          Because there's no central registry, anyone can pick any username. The trust web lets your contacts <strong>vouch for each other's keys</strong> — so when you see a new handle, you can see which of your existing contacts have confirmed that key belongs to who it claims to be.
+        </p>
+        <p>
+          Combined with <strong>Trust-On-First-Use (TOFU) key pinning</strong>, this gives you a human-scale alternative to certificate authorities — social-graph verification instead of a single company saying who's real.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">TOFU pinning</span>
+          <span class="feature-chip">Vouching</span>
+          <span class="feature-chip">No CA</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Trust &nbsp;·&nbsp; @mei <span class="jp">信頼</span></div>
+          <div class="shot-body dd-shot">
+            <div class="dd-line"><span class="label">Handle</span><span class="value">@mei</span></div>
+            <div class="dd-line"><span class="label">Key</span><span class="value teal">Ed25519 · 4f8b:9c2e:7a10:b3df</span></div>
+            <div class="dd-line"><span class="label">Pinned</span><span class="value">2026-01-03 · 112 days</span></div>
+            <div class="dd-line"><span class="label">Vouched by</span><span class="value teal">sam · jaz · marcus · 5 more</span></div>
+            <div class="dd-line"><span class="label">Key changes</span><span class="value">0 · unchanged since pinning</span></div>
+            <div class="dd-line"><span class="label">Status</span><span class="value teal">▶ Trusted ✓</span></div>
+          </div>
+          <div class="shot-footer">
+            <span>Social-graph verification</span>
+            <span class="ok">No CA</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §04 IDENTITY -->
+<section id="identity" style="background: var(--bg-deep);">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2 class="section-title">Your identity, <em>actually yours</em>.</h2>
+      <div class="section-sub">§ 04 &nbsp;/&nbsp; Keys, recovery, zero PII</div>
+    </div>
+
+    <!-- Identity -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-num">04.01 &nbsp;·&nbsp; Cryptographic identity</div>
+        <h3>A keypair on your device <em>is your account</em>.</h3>
+        <p>
+          The first time you open OpenDescent, it generates an <strong>Ed25519 keypair</strong> locally. That keypair is your identity. There's no registration server, no database row with your name on it, no email confirmation. You're a public key on a network.
+        </p>
+        <p>
+          You pick a human-readable username. If someone's already using it, you'll pick a different one. Usernames are local-to-your-invite-graph, not globally registered — so two different groups could have someone called <em>@sam</em> without collision.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">Ed25519</span>
+          <span class="feature-chip">Local keygen</span>
+          <span class="feature-chip">No registration server</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Identity &nbsp;·&nbsp; @you <span class="jp">身元</span></div>
+          <div class="shot-body id-shot">
+            <div class="id-row"><span class="label">Handle</span><span class="value">@you</span></div>
+            <div class="id-row"><span class="label">Public key</span><span class="value">Ed25519 · d4:f2:9a:...</span></div>
+            <div class="id-row"><span class="label">Created</span><span class="value">2026-04-24 · local only</span></div>
+            <div class="id-row"><span class="label">Phone</span><span class="value">— not collected</span></div>
+            <div class="id-row"><span class="label">Email</span><span class="value">— not collected</span></div>
+            <div class="id-row"><span class="label">ID</span><span class="value">— not collected</span></div>
+          </div>
+          <div class="shot-footer">
+            <span>Generated on device</span>
+            <span class="ok">Zero PII</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mnemonic -->
+    <div class="feature-row flip reveal">
+      <div class="feature-text">
+        <div class="feature-num">04.02 &nbsp;·&nbsp; 12-word recovery</div>
+        <h3>Lose the phone, <em>keep the account</em>.</h3>
+        <p>
+          The first time you create your identity, the app shows you a <strong>12-word BIP39 mnemonic</strong>. Write it down, save it in your password manager — that 12-word phrase is the deterministic seed for your Ed25519 key. Anywhere you enter the same 12 words, you get the same identity back.
+        </p>
+        <p>
+          This is the <em>only</em> path to recovery. There is no "forgot password" link, because there's no central account to reset. Lose the phrase without a backup and the account is gone — which is the same trade-off as the point of end-to-end encryption in the first place.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">BIP39 mnemonic</span>
+          <span class="feature-chip">Deterministic</span>
+          <span class="feature-chip">Cross-device</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Recovery phrase <span class="jp">復元</span></div>
+          <div class="shot-body id-shot">
+            <div class="id-mnemonic">
+              <div class="id-word"><span class="idx">01</span>forest</div>
+              <div class="id-word"><span class="idx">02</span>echo</div>
+              <div class="id-word"><span class="idx">03</span>river</div>
+              <div class="id-word"><span class="idx">04</span>quiet</div>
+              <div class="id-word"><span class="idx">05</span>orbit</div>
+              <div class="id-word"><span class="idx">06</span>flame</div>
+              <div class="id-word"><span class="idx">07</span>north</div>
+              <div class="id-word"><span class="idx">08</span>spire</div>
+              <div class="id-word"><span class="idx">09</span>amber</div>
+              <div class="id-word"><span class="idx">10</span>glass</div>
+              <div class="id-word"><span class="idx">11</span>drift</div>
+              <div class="id-word"><span class="idx">12</span>bloom</div>
+            </div>
+          </div>
+          <div class="shot-footer">
+            <span>BIP39 · 128-bit entropy</span>
+            <span class="ok">Your only key</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §05 UNDER THE HOOD -->
+<section id="network">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2 class="section-title">Under the hood — <em>the network that makes it all peer-to-peer</em>.</h2>
+      <div class="section-sub">§ 05 &nbsp;/&nbsp; libp2p mesh, DCUtR, relay</div>
+    </div>
+
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-num">05.01 &nbsp;·&nbsp; libp2p mesh</div>
+        <h3>A mesh network <em>where the network is the users</em>.</h3>
+        <p>
+          OpenDescent is built on <strong>libp2p</strong> — the same peer-to-peer stack that powers IPFS, Filecoin, and parts of Ethereum. Every device that runs OpenDescent is a full node in the mesh. There's no "OpenDescent server" class of machine; there are just peers.
+        </p>
+        <p>
+          Peer discovery uses <strong>mDNS</strong> on local networks and <strong>KadDHT</strong> across the wider internet. You find the people you want to talk to via their public key; the mesh routes messages between you.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">libp2p</span>
+          <span class="feature-chip">KadDHT</span>
+          <span class="feature-chip">mDNS</span>
+          <span class="feature-chip">Noise</span>
+          <span class="feature-chip">Yamux</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Mesh &nbsp;·&nbsp; 42 peers connected <span class="jp">メッシュ</span></div>
+          <div class="shot-body mesh-shot-vis">
+            <svg class="mesh-svg" viewBox="0 0 360 240" xmlns="http://www.w3.org/2000/svg">
+              <!-- Connections -->
+              <g stroke="rgba(50,224,196,0.25)" stroke-width="0.6" fill="none">
+                <line x1="180" y1="120" x2="80" y2="60" />
+                <line x1="180" y1="120" x2="280" y2="60" />
+                <line x1="180" y1="120" x2="60" y2="180" />
+                <line x1="180" y1="120" x2="300" y2="180" />
+                <line x1="180" y1="120" x2="180" y2="30" />
+                <line x1="180" y1="120" x2="180" y2="210" />
+                <line x1="180" y1="120" x2="100" y2="110" />
+                <line x1="180" y1="120" x2="260" y2="110" />
+                <line x1="80" y1="60" x2="180" y2="30" />
+                <line x1="280" y1="60" x2="180" y2="30" />
+                <line x1="60" y1="180" x2="180" y2="210" />
+                <line x1="300" y1="180" x2="180" y2="210" />
+                <line x1="80" y1="60" x2="100" y2="110" />
+                <line x1="280" y1="60" x2="260" y2="110" />
+                <line x1="60" y1="180" x2="100" y2="110" />
+                <line x1="300" y1="180" x2="260" y2="110" />
+              </g>
+              <!-- Nodes -->
+              <g fill="#32E0C4">
+                <circle cx="180" cy="120" r="5" />
+                <circle cx="80" cy="60" r="3" />
+                <circle cx="280" cy="60" r="3" />
+                <circle cx="60" cy="180" r="3" />
+                <circle cx="300" cy="180" r="3" />
+                <circle cx="180" cy="30" r="3" />
+                <circle cx="180" cy="210" r="3" />
+                <circle cx="100" cy="110" r="3" />
+                <circle cx="260" cy="110" r="3" />
+              </g>
+              <g fill="rgba(50,224,196,0.3)">
+                <circle cx="180" cy="120" r="12" />
+              </g>
+              <text x="180" y="144" text-anchor="middle" font-family="monospace" font-size="8" fill="#32E0C4" letter-spacing="2">YOU</text>
+            </svg>
+          </div>
+          <div class="shot-footer">
+            <span>No central router</span>
+            <span class="ok">Peer-to-peer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row flip reveal">
+      <div class="feature-text">
+        <div class="feature-num">05.02 &nbsp;·&nbsp; NAT traversal</div>
+        <h3>Holes through firewalls, <em>not around your privacy</em>.</h3>
+        <p>
+          Most home networks are behind NAT, which makes direct peer-to-peer connections surprisingly hard. OpenDescent uses <strong>DCUtR (Direct Connection Upgrade through Relay)</strong> for hole-punching, attempting a direct connection through a temporary relay-assisted handshake.
+        </p>
+        <p>
+          When hole-punching fails, traffic falls back to <strong>Circuit Relay v2</strong> — a relay node forwards your encrypted packets but never has the keys. The relay sees ciphertext, nothing more.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">DCUtR</span>
+          <span class="feature-chip">Circuit Relay v2</span>
+          <span class="feature-chip">STUN / TURN</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Connection &nbsp;·&nbsp; establishing <span class="jp">接続中</span></div>
+          <div class="shot-body id-shot">
+            <div class="id-row"><span class="label">Path 01</span><span class="value">direct · mDNS · local</span></div>
+            <div class="id-row"><span class="label">Path 02</span><span class="value teal">DCUtR · hole-punched ✓</span></div>
+            <div class="id-row"><span class="label">Path 03</span><span class="value">relay · fallback</span></div>
+            <div class="id-row"><span class="label">Selected</span><span class="value teal">Path 02 · direct peer</span></div>
+            <div class="id-row"><span class="label">Latency</span><span class="value">42ms</span></div>
+            <div class="id-row"><span class="label">Encrypted</span><span class="value teal">Noise · Yamux</span></div>
+          </div>
+          <div class="shot-footer">
+            <span>Encrypted in transit · end-to-end</span>
+            <span class="ok">Direct ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="feature-num">05.03 &nbsp;·&nbsp; Offline delivery</div>
+        <h3>Messages wait. <em>Until the recipient's online.</em></h3>
+        <p>
+          If your recipient is offline when you send a message, <strong>store-and-forward</strong> holds the encrypted message at another peer in their trust graph until they come back. The holding peer sees ciphertext only — it can't read what it's holding, only that there's a message for a given key.
+        </p>
+        <p>
+          Combined with DHT-based peer discovery, this means you can send messages without knowing whether the recipient is online right now. The mesh figures it out.
+        </p>
+        <div class="feature-chips">
+          <span class="feature-chip highlight">Store-and-forward</span>
+          <span class="feature-chip">DHT routing</span>
+          <span class="feature-chip">Encrypted at rest</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="shot">
+          <div class="shot-head"><span class="dot"></span>Delivery &nbsp;·&nbsp; queued <span class="jp">配信待機</span></div>
+          <div class="shot-body id-shot">
+            <div class="id-row"><span class="label">Recipient</span><span class="value">@sam · offline</span></div>
+            <div class="id-row"><span class="label">Messages</span><span class="value">2 queued · encrypted</span></div>
+            <div class="id-row"><span class="label">Holding peer</span><span class="value teal">@jaz · trusted relay</span></div>
+            <div class="id-row"><span class="label">Peer visibility</span><span class="value">ciphertext only</span></div>
+            <div class="id-row"><span class="label">Retry</span><span class="value">next peer sighting</span></div>
+            <div class="id-row"><span class="label">Status</span><span class="value teal">▶ Awaiting</span></div>
+          </div>
+          <div class="shot-footer">
+            <span>Held encrypted · zero plaintext</span>
+            <span class="ok">Queued</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container-narrow">
+    <div class="section-header reveal">
+      <h2 class="section-title">Feature questions, <em>straight answers</em>.</h2>
+      <div class="section-sub">§ 06 &nbsp;/&nbsp; FAQ</div>
+    </div>
+    <div class="faq-list reveal">
+      <div class="faq-item">
+        <div class="faq-q"><span>Which features are in v0.5.4 today?</span><span class="faq-q-num">01</span></div>
+        <div class="faq-a">Everything on this page is shipped in v0.5.4: 1-on-1 &amp; group messaging, voice &amp; video calls, file sharing with signed manifests, community hubs with text and voice channels, P2P live streaming, Dead Drops, Dead Man's Switch, trust web, identity + mnemonic recovery, and the full libp2p mesh including DCUtR and circuit relay.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>What's on the roadmap but not in v0.5.4?</span><span class="faq-q-num">02</span></div>
+        <div class="faq-a">Disappearing messages, stickers, macOS and Linux native builds, a mobile PWA, and bots/integrations for hubs. These are the main gaps vs Signal/Discord today.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Is group chat really end-to-end encrypted?</span><span class="faq-q-num">03</span></div>
+        <div class="faq-a">Yes. Group chats use a shared AES-256 key distributed to members via their individual E2E encrypted channels. When a member leaves, a new shared key is generated and distributed to the remaining members — so the ex-member's key can't decrypt future messages (and forward secrecy keeps past ones safe).</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>How does Dead Man's Switch work without a central server?</span><span class="faq-q-num">04</span></div>
+        <div class="faq-a">When you arm a switch, the messages are encrypted to the recipients' keys and distributed to peers with trigger times. Your check-in signal cancels the trigger. If you miss the check-in window, the peers with the trigger release the encrypted messages. No single peer has enough information to fire falsely, and there's no central authority to compel or disable.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Can messages be recovered if I lose my device?</span><span class="faq-q-num">05</span></div>
+        <div class="faq-a">Your 12-word mnemonic recovers your identity on a new device. Messages themselves live on your devices, encrypted at rest — if the device is gone and you didn't back up the local data, the messages are gone (nobody else has a copy, including us). This is the trade-off of true end-to-end encryption.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Does OpenDescent work offline?</span><span class="faq-q-num">06</span></div>
+        <div class="faq-a">Partially. On the same local network, two OpenDescent devices can talk over mDNS with no internet needed. Across the wider internet, you need connectivity to reach peers. There's no "completely offline mode" today, but on-mesh communication without internet access is something we'd like to add.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-band">
+  <div class="container-narrow">
+    <div class="kicker kicker-ghost" style="justify-content: center; margin-bottom: 14px;">Now try it</div>
+    <h2>Download OpenDescent and <em>see every feature on your own machine</em>.</h2>
+    <p>Free, open source, no account required. The full feature set is in v0.5.4 for Windows.</p>
+    <div class="btns">
+      <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
+      <a href="/" class="btn btn-ghost btn-arrow">Back to home</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <div class="footer-micro">
+          Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>
+          オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth
+        </div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Product</div>
+        <a href="/features.html">Features</a>
+        <a href="/#security">Security</a>
+        <a href="/#download">Download</a>
+        <a href="/faq.html">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Compare</div>
+        <a href="/leaving-instagram.html">Leaving Instagram</a>
+        <a href="/vs/signal.html">vs Signal</a>
+        <a href="/vs/discord.html">vs Discord</a>
+        <a href="/vs/whatsapp.html">vs WhatsApp</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Project</div>
+        <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a>
+        <a href="/blog/">Blog</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 OpenDescent &nbsp;·&nbsp; MIT Licensed</div>
+      <div class="footer-barcode">▌▌▏▌▏▏▌▌▏▌▏▌▌▏▏▌▏▌▌▏▌▏▏▌</div>
+      <div class="footer-legal">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">Source</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const revObs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      revObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(el => revObs.observe(el));
+</script>
+</body>
+</html>

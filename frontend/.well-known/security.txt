@@ -1,0 +1,26 @@
+# OpenDescent · security.txt
+# https://open-descent.com/.well-known/security.txt
+# RFC 9116 compliant
+
+# Where to report a vulnerability
+Contact: https://github.com/Jaguwa/OpenDescent/security/advisories/new
+Contact: mailto:security@open-descent.com
+
+# How long this file is valid
+Expires: 2027-04-24T00:00:00.000Z
+
+# Preferred disclosure language
+Preferred-Languages: en
+
+# Canonical URL for this file
+Canonical: https://open-descent.com/.well-known/security.txt
+
+# Policy
+Policy: https://github.com/Jaguwa/OpenDescent/security/policy
+
+# Public acknowledgements (we'll credit responsible reporters here)
+Acknowledgments: https://github.com/Jaguwa/OpenDescent/security/advisories
+
+# We don't have a paid bug bounty yet — but we do say thank you publicly,
+# coordinate on disclosure timelines, and take reports seriously.
+# If we add a bounty in the future, it will be announced here first.

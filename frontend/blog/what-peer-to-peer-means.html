@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What "Peer-to-Peer" Actually Means (And Why Most "Private" Messengers Aren't) | OpenDescent Blog</title>
+<meta name="description" content="An explainer with diagrams. Three architectural patterns — centralized, federated, and peer-to-peer — where each fails, and why the distinction is load-bearing for privacy.">
+<meta name="keywords" content="peer to peer messaging explained, p2p vs federated vs centralized, what is peer to peer, messaging architecture explained, libp2p explained, decentralized messaging architecture">
+<meta name="author" content="OpenDescent">
+<meta name="theme-color" content="#0f1012">
+<link rel="canonical" href="https://open-descent.com/blog/what-peer-to-peer-means.html">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<script async src="https://plausible.io/js/pa-zQ01yi4zP0T_1Tx0kPikj.js"></script>
+<script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()</script>
+
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://open-descent.com/blog/what-peer-to-peer-means.html">
+<meta property="og:title" content="What &quot;Peer-to-Peer&quot; Actually Means">
+<meta property="og:description" content="An explainer with diagrams on centralized, federated, and peer-to-peer messaging.">
+<meta property="og:image" content="https://open-descent.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="OpenDescent">
+<meta property="article:published_time" content="2026-04-24T00:00:00Z">
+<meta property="article:section" content="Explainer">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="What &quot;Peer-to-Peer&quot; Actually Means">
+<meta name="twitter:description" content="Three architectural patterns for private messaging, explained with diagrams.">
+<meta name="twitter:image" content="https://open-descent.com/og-image.png">
+
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "BlogPosting", "headline": "What Peer-to-Peer Actually Means (And Why Most Private Messengers Aren't)", "description": "A technical explainer on the three architectural patterns used by private messengers — centralized, federated, and peer-to-peer — with diagrams of each and honest analysis of where each fails.", "datePublished": "2026-04-24", "dateModified": "2026-04-24", "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" }, "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } }, "image": "https://open-descent.com/og-image.png", "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/what-peer-to-peer-means.html" }, "wordCount": 2150, "articleSection": "Explainer" }
+</script>
+
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [ { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://open-descent.com/" }, { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://open-descent.com/blog/" }, { "@type": "ListItem", "position": 3, "name": "What Peer-to-Peer Actually Means", "item": "https://open-descent.com/blog/what-peer-to-peer-means.html" } ] }
+</script>
+
+<style>
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-Wide.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-BoldWide.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+:root { --bg: #0f1012; --bg-deep: #0a0a0c; --bg-card: #1a1d22; --bg-card-hi: #20242a; --teal: #32E0C4; --teal-dim: #0D7377; --teal-glow: #5FFFD6; --red: #e04050; --amber: #FFD166; --text: #EEEEEE; --text-strong: #FFFFFF; --text-mid: #aaaaaa; --text-dim: #666666; --text-ghost: #3a3d42; --border: rgba(255,255,255,0.06); --border-bright: rgba(50,224,196,0.2); --border-red: rgba(224,64,80,0.25); --border-amber: rgba(255,209,102,0.22); --mono: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace; --display: 'Array Wide', 'Array', -apple-system, sans-serif; --body: 'Array', -apple-system, sans-serif; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--body); background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 200px; }
+body::after { content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none; background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.45) 100%); }
+@keyframes chroma-section { 0%,100% { text-shadow: -1.5px 0 rgba(224,64,80,0.3), 1.5px 0 rgba(50,224,196,0.35); } 50% { text-shadow: -2px 0.5px rgba(224,64,80,0.25), 2px -0.5px rgba(50,224,196,0.4); } }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; position: relative; }
+.container-narrow { max-width: 740px; margin: 0 auto; padding: 0 28px; position: relative; }
+.breaking { background: linear-gradient(90deg, rgba(224,64,80,0.15), rgba(224,64,80,0.06) 40%, rgba(224,64,80,0.06) 60%, rgba(224,64,80,0.15)); border-bottom: 1px solid var(--border-red); overflow: hidden; position: relative; z-index: 101; }
+.breaking-viewport { display: flex; align-items: center; height: 32px; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.breaking-label { display: inline-flex; align-items: center; gap: 8px; color: #ffeaee; background: var(--red); padding: 7px 14px; height: 100%; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.breaking-label::before { content: ''; width: 6px; height: 6px; background: #ffeaee; border-radius: 50%; animation: pulse-dot 1.2s infinite; }
+.breaking-track { flex: 1; overflow: hidden; position: relative; white-space: nowrap; mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); }
+.breaking-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 60s linear infinite; color: var(--text-mid); }
+.breaking-content a { color: var(--text); text-decoration: none; margin: 0 14px; }
+.breaking-content a:hover { color: var(--teal); }
+.breaking-content .sep { color: var(--red); margin: 0 14px; }
+nav.top { position: sticky; top: 0; z-index: 100; background: rgba(15,16,18,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 1400px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.nav-brand { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--text); text-decoration: none; animation: chroma-section 5s ease-in-out infinite; display: inline-flex; align-items: center; gap: 10px; }
+.nav-brand .dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.nav-links { display: flex; gap: 28px; list-style: none; align-items: center; }
+.nav-links a { font-family: var(--mono); font-size: 10.5px; color: var(--text-mid); text-decoration: none; text-transform: uppercase; letter-spacing: 1.5px; transition: color 0.2s; }
+.nav-links a:hover { color: var(--teal); }
+.nav-links a.alert { color: #ffb8bf; }
+.nav-links a.alert::before { content: ''; display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-right: 6px; vertical-align: middle; animation: pulse-dot 1.4s infinite; box-shadow: 0 0 8px var(--red); }
+.nav-links a.alert:hover { color: var(--red); }
+.nav-cta { padding: 8px 18px !important; background: transparent; border: 1px solid var(--teal); border-radius: 3px; color: var(--teal) !important; letter-spacing: 2px !important; }
+.nav-cta:hover { background: rgba(50,224,196,0.08); box-shadow: 0 0 14px rgba(50,224,196,0.18); }
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 4px; font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; text-decoration: none; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-primary { background: var(--teal); color: #07140f; }
+.btn-primary:hover { background: var(--teal-glow); box-shadow: 0 0 24px rgba(50,224,196,0.35); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border-color: var(--border-bright); }
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); box-shadow: 0 0 16px rgba(50,224,196,0.12); }
+.btn-arrow::after { content: '\2192'; font-size: 14px; }
+.breadcrumb { padding: 22px 0 0; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-ghost); }
+.breadcrumb a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: var(--teal); }
+.breadcrumb .sep { color: var(--text-ghost); margin: 0 10px; }
+.breadcrumb .current { color: var(--text); }
+.post-hero { padding: 56px 0 40px; border-bottom: 1px solid var(--border); position: relative; background: radial-gradient(ellipse at 80% 20%, rgba(50,224,196,0.04) 0%, transparent 55%); }
+.post-kicker-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 22px; }
+.post-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; color: var(--amber); border: 1px solid var(--border-amber); background: rgba(255,209,102,0.05); }
+.post-date { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+.post-read { font-family: var(--mono); font-size: 10px; color: var(--teal-dim); letter-spacing: 2px; text-transform: uppercase; }
+.post-hero h1 { font-family: var(--display); font-size: clamp(1.9rem, 4.4vw, 3.2rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.5px; color: var(--text-strong); margin-bottom: 24px; max-width: 900px; }
+.post-hero h1 em { font-style: normal; color: var(--teal); animation: chroma-section 6s ease-in-out infinite; }
+.post-standfirst { font-family: var(--body); font-size: 19px; line-height: 1.55; color: var(--text-mid); max-width: 720px; margin-bottom: 28px; }
+.post-standfirst strong { color: var(--text); }
+.post-byline { display: flex; gap: 24px; align-items: center; padding-top: 18px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.byline-author { font-family: var(--mono); font-size: 11px; color: var(--text); letter-spacing: 1.5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.byline-author .dot { width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.byline-share { display: flex; gap: 8px; flex-wrap: wrap; }
+.share-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-family: var(--mono); font-size: 10px; color: var(--text-mid); text-decoration: none; border: 1px solid var(--border); border-radius: 2px; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.2s; }
+.share-btn:hover { color: var(--teal); border-color: var(--border-bright); background: rgba(50,224,196,0.04); }
+.article-body { padding: 56px 0 72px; }
+.prose p { font-family: var(--body); font-size: 17.5px; line-height: 1.75; color: var(--text); margin-bottom: 22px; }
+.prose p strong { color: var(--text-strong); font-weight: 600; }
+.prose p em { font-style: italic; color: var(--text); }
+.prose h2 { font-family: var(--display); font-size: clamp(1.4rem, 2.4vw, 1.8rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.3px; color: var(--text-strong); margin: 48px 0 18px; }
+.prose h2 em { font-style: normal; color: var(--teal); }
+.prose h2 .num { color: var(--teal-dim); margin-right: 10px; font-size: 0.8em; }
+.prose a { color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim); }
+.prose a:hover { border-bottom-style: solid; }
+.prose ul, .prose ol { margin: 14px 0 28px; padding-left: 28px; }
+.prose ul li, .prose ol li { font-family: var(--body); font-size: 17px; line-height: 1.75; color: var(--text); padding: 5px 0; }
+.prose ul li::marker { color: var(--teal); }
+.prose ol li::marker { color: var(--teal); font-weight: 700; }
+.prose code { font-family: var(--mono); font-size: 15px; color: var(--teal); background: rgba(50,224,196,0.06); padding: 2px 6px; border-radius: 2px; }
+.pullquote { margin: 40px 0; padding: 24px 0 24px 32px; border-left: 3px solid var(--teal); font-family: var(--display); font-size: clamp(1.2rem, 2.2vw, 1.5rem); font-weight: 400; line-height: 1.4; letter-spacing: -0.2px; color: var(--text-strong); }
+.pullquote em { font-style: normal; color: var(--teal); }
+
+/* Architecture diagram cards */
+.arch-card {
+  margin: 36px 0; padding: 36px 36px 32px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; position: relative;
+}
+.arch-card::before { content: ''; position: absolute; top: -1px; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, rgba(50,224,196,0.25), transparent); }
+.arch-card.red::before { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+.arch-card.amber::before { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
+.arch-card.teal::before { background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.arch-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 3px;
+  text-transform: uppercase; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.arch-card.red .arch-label { color: #ffbfc4; }
+.arch-card.red .arch-label::before { content: ''; width: 7px; height: 7px; background: var(--red); border-radius: 50%; box-shadow: 0 0 8px var(--red); }
+.arch-card.amber .arch-label { color: var(--amber); }
+.arch-card.amber .arch-label::before { content: ''; width: 7px; height: 7px; background: var(--amber); border-radius: 50%; box-shadow: 0 0 8px var(--amber); }
+.arch-card.teal .arch-label { color: var(--teal); }
+.arch-card.teal .arch-label::before { content: ''; width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.arch-card h3 { font-family: var(--display); font-size: 1.3rem; font-weight: 700; color: var(--text-strong); margin-bottom: 10px; letter-spacing: 0; }
+.arch-card h3 em { font-style: normal; color: var(--teal); }
+.arch-examples { font-family: var(--mono); font-size: 11px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 22px; }
+.arch-examples strong { color: var(--text-mid); }
+.arch-card svg { width: 100%; max-width: 520px; display: block; margin: 10px auto 22px; }
+.arch-points { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.arch-point { padding: 12px 16px 12px 22px; position: relative; font-family: var(--body); font-size: 14.5px; color: var(--text); line-height: 1.6; background: var(--bg-deep); border-radius: 3px; border: 1px solid var(--border); }
+.arch-point.pro { border-left: 3px solid var(--teal); }
+.arch-point.con { border-left: 3px solid var(--red); }
+.arch-point .tag { font-family: var(--mono); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 4px; }
+.arch-point.pro .tag { color: var(--teal); }
+.arch-point.con .tag { color: #ffbfc4; }
+
+.inline-cta { margin: 40px 0; padding: 28px 30px; background: linear-gradient(135deg, var(--bg-card) 0%, rgba(50,224,196,0.04) 140%); border: 1px solid var(--border-bright); border-radius: 6px; position: relative; }
+.inline-cta::before { content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.inline-cta p { font-family: var(--body); font-size: 15.5px; line-height: 1.7; color: var(--text); margin-bottom: 16px; }
+.inline-cta p strong { color: var(--text-strong); }
+.inline-cta .btns { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.sources { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 18px 22px; margin: 32px 0; }
+.sources-label { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+.sources a { display: block; font-family: var(--mono); font-size: 12px; color: var(--text-mid); text-decoration: none; padding: 4px 0; border-bottom: none; }
+.sources a:hover { color: var(--teal); }
+
+.related-section { background: var(--bg-deep); padding: 56px 0; border-top: 1px solid var(--border); }
+.related-title { font-family: var(--mono); font-size: 11px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px; }
+.related-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.related-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 24px 26px; text-decoration: none; color: inherit; transition: all 0.25s; position: relative; }
+.related-card::before { content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, rgba(50,224,196,0.2), transparent); }
+.related-card:hover { background: var(--bg-card-hi); border-color: var(--border-bright); transform: translateX(3px); }
+.related-card h3 { font-family: var(--display); font-size: 1.05rem; font-weight: 700; color: var(--text-strong); line-height: 1.25; margin-bottom: 10px; letter-spacing: -0.2px; }
+.related-card h3 em { font-style: normal; color: var(--teal); }
+.related-card p { font-family: var(--body); font-size: 13.5px; color: var(--text-mid); line-height: 1.6; }
+.related-card .meta { margin-top: 10px; font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+
+.back-to-blog { font-family: var(--mono); font-size: 10px; color: var(--text-mid); text-decoration: none; letter-spacing: 2px; text-transform: uppercase; display: inline-block; }
+.back-to-blog::before { content: '\2190'; margin-right: 8px; }
+.back-to-blog:hover { color: var(--teal); }
+
+footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(--border); position: relative; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+.footer-brand { font-family: var(--display); font-size: 1rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.footer-brand-dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.footer-tagline { font-family: var(--body); font-size: 13px; color: var(--text-mid); line-height: 1.7; max-width: 360px; margin-bottom: 20px; }
+.footer-micro { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; line-height: 2; }
+.footer-col-title { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.footer-col a { display: block; font-family: var(--body); font-size: 13.5px; color: var(--text-mid); text-decoration: none; padding: 4px 0; transition: color 0.2s; }
+.footer-col a:hover { color: var(--teal); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 16px; }
+.footer-copy { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal { display: flex; gap: 18px; }
+.footer-legal a { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); text-decoration: none; letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal a:hover { color: var(--teal); }
+.footer-barcode { font-size: 9px; letter-spacing: 2px; color: var(--text-ghost); }
+@media (max-width: 900px) { .related-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr 1fr; } .arch-points { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .nav-links { gap: 14px; } .nav-links li:not(.nav-li-cta):not(.nav-li-alert) { display: none; } .footer-grid { grid-template-columns: 1fr; } .byline-share { width: 100%; } }
+</style>
+</head>
+<body>
+
+<div class="breaking"><div class="breaking-viewport"><div class="breaking-label">▶ Breaking</div><div class="breaking-track"><div class="breaking-content">Meta is ending end-to-end encryption on Instagram DMs — May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span>Meta is ending end-to-end encryption on Instagram DMs — May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span></div></div></div></div>
+
+<nav class="top"><div class="nav-inner"><a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a><ul class="nav-links"><li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li><li><a href="/features.html">Features</a></li><li><a href="/security.html">Security</a></li><li><a href="/blog/">Blog</a></li><li><a href="/faq.html">FAQ</a></li><li class="nav-li-cta"><a href="/download.html" class="nav-cta">Download</a></li></ul></div></nav>
+
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">What "peer-to-peer" actually means</span></div>
+</div>
+
+<section class="post-hero">
+  <div class="container-narrow">
+    <div class="post-kicker-row"><span class="post-tag">▸ Explainer</span><span class="post-date">2026-04-24</span><span class="post-read">▸ 11 min read</span></div>
+    <h1>What "peer-to-peer" <em>actually means</em> (and why most "private" messengers aren't).</h1>
+    <p class="post-standfirst">"Peer-to-peer" is a phrase you'll see on almost every privacy product's marketing page. Most of them use it incorrectly. An explainer, with diagrams, of the <strong>three architectural patterns</strong> messengers actually use — centralised, federated, and peer-to-peer — where each fails, and why the distinction is load-bearing for privacy.</p>
+    <div class="post-byline">
+      <div class="byline-author"><span class="dot"></span>OpenDescent Team</div>
+      <div class="byline-share">
+        <a href="https://twitter.com/intent/tweet?text=What%20%22peer-to-peer%22%20actually%20means&url=https%3A%2F%2Fopen-descent.com%2Fblog%2Fwhat-peer-to-peer-means.html" target="_blank" rel="noopener" class="share-btn">▸ Share on X</a>
+        <a href="https://www.reddit.com/submit?url=https%3A%2F%2Fopen-descent.com%2Fblog%2Fwhat-peer-to-peer-means.html&title=What%20%22peer-to-peer%22%20actually%20means" target="_blank" rel="noopener" class="share-btn">▸ Post on Reddit</a>
+        <a href="https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fopen-descent.com%2Fblog%2Fwhat-peer-to-peer-means.html&t=What%20%22peer-to-peer%22%20actually%20means" target="_blank" rel="noopener" class="share-btn">▸ Hacker News</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<article class="article-body">
+  <div class="container-narrow prose">
+
+    <p>
+      There is a phrase that appears on roughly every privacy product's homepage: <strong>"peer-to-peer."</strong> We like the phrase. We use it ourselves, because our messenger genuinely is peer-to-peer. But the phrase does a lot of work it shouldn't have to, because many products using it are <em>not</em> peer-to-peer in any architecturally meaningful sense. They are using the phrase as a vibe — "not Big Tech" — rather than as a technical description.
+    </p>
+
+    <p>
+      This is an explainer. It's the post we wanted to exist when we started talking to people about what OpenDescent is, and we kept finding out they meant three different things by "P2P" depending on who they'd read last. Let's fix that.
+    </p>
+
+    <p>
+      There are, roughly, three patterns in which messaging apps can be built. We'll go through them with diagrams, then talk about where each pattern fails, and then about common misuses of the word "peer-to-peer."
+    </p>
+
+    <h2><span class="num">§ 01</span>Pattern 1: Centralised</h2>
+
+    <div class="arch-card red">
+      <div class="arch-label">Pattern 01</div>
+      <h3>Centralised — <em>one company's servers in the middle</em>.</h3>
+      <div class="arch-examples"><strong>Examples:</strong> Discord · WhatsApp · Signal · iMessage · Telegram · Slack</div>
+
+      <svg viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg">
+        <!-- Server cluster -->
+        <rect x="195" y="105" width="70" height="50" rx="4" fill="rgba(224,64,80,0.12)" stroke="#e04050" stroke-width="1.2"/>
+        <text x="230" y="128" text-anchor="middle" font-family="monospace" font-size="10" fill="#ffbfc4" letter-spacing="2">SERVER</text>
+        <text x="230" y="142" text-anchor="middle" font-family="monospace" font-size="8" fill="#ffbfc4" letter-spacing="1">one company</text>
+        <!-- Users -->
+        <g fill="rgba(170,170,170,0.25)" stroke="#aaa" stroke-width="1">
+          <circle cx="50" cy="50" r="14"/>
+          <circle cx="50" cy="210" r="14"/>
+          <circle cx="410" cy="50" r="14"/>
+          <circle cx="410" cy="210" r="14"/>
+          <circle cx="230" cy="30" r="14"/>
+          <circle cx="230" cy="230" r="14"/>
+        </g>
+        <g font-family="monospace" font-size="9" fill="#aaa" text-anchor="middle" letter-spacing="1">
+          <text x="50" y="54">USER</text>
+          <text x="50" y="214">USER</text>
+          <text x="410" y="54">USER</text>
+          <text x="410" y="214">USER</text>
+          <text x="230" y="34">USER</text>
+          <text x="230" y="234">USER</text>
+        </g>
+        <!-- Lines -->
+        <g stroke="#e04050" stroke-width="1.2" opacity="0.6">
+          <line x1="64" y1="56" x2="198" y2="114"/>
+          <line x1="64" y1="204" x2="198" y2="146"/>
+          <line x1="396" y1="56" x2="262" y2="114"/>
+          <line x1="396" y1="204" x2="262" y2="146"/>
+          <line x1="230" y1="44" x2="230" y2="105"/>
+          <line x1="230" y1="216" x2="230" y2="155"/>
+        </g>
+        <!-- Risk indicator -->
+        <circle cx="230" cy="130" r="50" fill="none" stroke="#e04050" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.4"/>
+      </svg>
+
+      <div class="arch-points">
+        <div class="arch-point pro"><span class="tag">Pros</span>Easy to build, easy to moderate, easy to scale horizontally with known devops patterns, easy to run anti-spam and anti-abuse systems, simple onboarding (email or phone number), mature native mobile apps.</div>
+        <div class="arch-point con"><span class="tag">Cons</span>One company sees all traffic (even if encrypted, at minimum the metadata). One compromise exposes everyone. Subject to subpoena. Subject to policy changes. Can be taken offline. Requires users to trust the operator's ongoing intentions.</div>
+      </div>
+    </div>
+
+    <p>
+      This is the pattern you're used to. Your device talks to Discord's servers. Discord's servers talk to your friend's device. The server is the router, the record-keeper, the moderator, the authority. Without the server, none of you can message each other.
+    </p>
+
+    <p>
+      <strong>End-to-end encryption is orthogonal to this pattern.</strong> Signal, WhatsApp, and iMessage all encrypt message content such that the server can't read it. That's good! It means the server being compromised doesn't spill your message text. But the server still sees <em>who is talking to whom</em>, still has a database of accounts, still requires you to trust that it is running the software it says it is. This is the "privacy as policy" pattern — the encryption guarantees are real, right up until the policy changes. Instagram on May 8, 2026 is the canonical example of the policy changing.
+    </p>
+
+    <div class="pullquote">
+      Centralised + E2E encrypted means the server can't read your messages <em>today</em>. It does not mean the server can't read them <em>tomorrow</em>.
+    </div>
+
+    <h2><span class="num">§ 02</span>Pattern 2: Federated</h2>
+
+    <div class="arch-card amber">
+      <div class="arch-label">Pattern 02</div>
+      <h3>Federated — <em>many servers, speaking the same protocol</em>.</h3>
+      <div class="arch-examples"><strong>Examples:</strong> Matrix / Element · Mastodon · Email · XMPP / Jabber</div>
+
+      <svg viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg">
+        <!-- Three servers -->
+        <g>
+          <rect x="60" y="110" width="50" height="40" rx="4" fill="rgba(255,209,102,0.1)" stroke="#FFD166" stroke-width="1"/>
+          <text x="85" y="130" text-anchor="middle" font-family="monospace" font-size="9" fill="#FFD166" letter-spacing="1">SRV·A</text>
+        </g>
+        <g>
+          <rect x="210" y="60" width="50" height="40" rx="4" fill="rgba(255,209,102,0.1)" stroke="#FFD166" stroke-width="1"/>
+          <text x="235" y="80" text-anchor="middle" font-family="monospace" font-size="9" fill="#FFD166" letter-spacing="1">SRV·B</text>
+        </g>
+        <g>
+          <rect x="350" y="110" width="50" height="40" rx="4" fill="rgba(255,209,102,0.1)" stroke="#FFD166" stroke-width="1"/>
+          <text x="375" y="130" text-anchor="middle" font-family="monospace" font-size="9" fill="#FFD166" letter-spacing="1">SRV·C</text>
+        </g>
+        <!-- Inter-server federation -->
+        <g stroke="#FFD166" stroke-width="1.2" opacity="0.7" stroke-dasharray="3 2">
+          <line x1="110" y1="120" x2="210" y2="90"/>
+          <line x1="260" y1="90" x2="350" y2="120"/>
+          <line x1="110" y1="140" x2="350" y2="140"/>
+        </g>
+        <text x="230" y="180" text-anchor="middle" font-family="monospace" font-size="8" fill="#FFD166" letter-spacing="2" opacity="0.7">FEDERATION PROTOCOL</text>
+        <!-- Users per server -->
+        <g fill="rgba(170,170,170,0.25)" stroke="#aaa" stroke-width="0.8">
+          <circle cx="30" cy="200" r="10"/>
+          <circle cx="60" cy="230" r="10"/>
+          <circle cx="120" cy="220" r="10"/>
+          <circle cx="205" cy="25" r="10"/>
+          <circle cx="265" cy="30" r="10"/>
+          <circle cx="340" cy="200" r="10"/>
+          <circle cx="395" cy="220" r="10"/>
+          <circle cx="430" cy="195" r="10"/>
+        </g>
+        <g stroke="#FFD166" stroke-width="0.8" opacity="0.5">
+          <line x1="35" y1="195" x2="70" y2="150"/>
+          <line x1="65" y1="225" x2="80" y2="150"/>
+          <line x1="115" y1="215" x2="90" y2="150"/>
+          <line x1="210" y1="30" x2="225" y2="100"/>
+          <line x1="260" y1="33" x2="245" y2="100"/>
+          <line x1="345" y1="195" x2="365" y2="150"/>
+          <line x1="390" y1="215" x2="380" y2="150"/>
+          <line x1="425" y1="195" x2="395" y2="150"/>
+        </g>
+      </svg>
+
+      <div class="arch-points">
+        <div class="arch-point pro"><span class="tag">Pros</span>No single company controls everything. You can pick your server based on trust. You can run your own. Email has worked this way since ~1982. Protocol is a standard, so apps interoperate.</div>
+        <div class="arch-point con"><span class="tag">Cons</span>Each server still sees its users' metadata. Server admins still have power over their users. Cross-server E2E is harder and often newer. Smaller servers can be overwhelmed by moderation needs.</div>
+      </div>
+    </div>
+
+    <p>
+      Federation is the model email uses. You have an address at <code>gmail.com</code>; I have one at <code>fastmail.com</code>; we can email each other because Gmail and Fastmail both speak the same protocol (SMTP). Matrix and Element do this for real-time messaging. Mastodon does it for microblogging. XMPP did it for instant messaging back when the word "instant messaging" was novel.
+    </p>
+
+    <p>
+      Federation is a real privacy improvement over pure centralisation. You can choose your server based on who you trust, you can run your own, and no single company has full visibility. But <strong>each server still has a view of its own users</strong>. If you're on a Matrix server run by Element, Element's server still sees which rooms you're in, when you're online, who you message. Federation splits the trust problem into smaller pieces; it doesn't eliminate it.
+    </p>
+
+    <p>
+      Matrix deserves specific credit for one thing: <strong>end-to-end encryption across servers</strong>. When two users on different Matrix servers chat, the message is E2E encrypted between their devices — neither server can read it. That's a meaningful architectural achievement. It still means each server sees the <em>fact</em> of the conversation — who talked to whom, when — but the content is protected.
+    </p>
+
+    <h2><span class="num">§ 03</span>Pattern 3: True peer-to-peer</h2>
+
+    <div class="arch-card teal">
+      <div class="arch-label">Pattern 03</div>
+      <h3>Peer-to-peer — <em>no servers at all</em>.</h3>
+      <div class="arch-examples"><strong>Examples:</strong> OpenDescent · Briar · SimpleX · Cwtch · BitTorrent (non-messaging, but same pattern) · GNU Jami</div>
+
+      <svg viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg">
+        <!-- Mesh of peers -->
+        <g stroke="rgba(50,224,196,0.4)" stroke-width="1" fill="none">
+          <line x1="80" y1="50" x2="230" y2="40"/>
+          <line x1="80" y1="50" x2="150" y2="130"/>
+          <line x1="80" y1="50" x2="80" y2="210"/>
+          <line x1="80" y1="50" x2="230" y2="140"/>
+          <line x1="230" y1="40" x2="380" y2="50"/>
+          <line x1="230" y1="40" x2="230" y2="140"/>
+          <line x1="230" y1="40" x2="310" y2="130"/>
+          <line x1="380" y1="50" x2="380" y2="210"/>
+          <line x1="380" y1="50" x2="310" y2="130"/>
+          <line x1="380" y1="50" x2="230" y2="140"/>
+          <line x1="150" y1="130" x2="230" y2="140"/>
+          <line x1="150" y1="130" x2="80" y2="210"/>
+          <line x1="230" y1="140" x2="310" y2="130"/>
+          <line x1="230" y1="140" x2="230" y2="230"/>
+          <line x1="310" y1="130" x2="380" y2="210"/>
+          <line x1="80" y1="210" x2="230" y2="230"/>
+          <line x1="230" y1="230" x2="380" y2="210"/>
+        </g>
+        <g fill="#32E0C4" stroke="rgba(50,224,196,0.3)" stroke-width="3">
+          <circle cx="80" cy="50" r="10"/>
+          <circle cx="230" cy="40" r="10"/>
+          <circle cx="380" cy="50" r="10"/>
+          <circle cx="150" cy="130" r="10"/>
+          <circle cx="230" cy="140" r="10"/>
+          <circle cx="310" cy="130" r="10"/>
+          <circle cx="80" cy="210" r="10"/>
+          <circle cx="230" cy="230" r="10"/>
+          <circle cx="380" cy="210" r="10"/>
+        </g>
+        <text x="230" y="256" text-anchor="middle" font-family="monospace" font-size="9" fill="#32E0C4" letter-spacing="2">NO CENTRE · NOTHING TO BREACH</text>
+      </svg>
+
+      <div class="arch-points">
+        <div class="arch-point pro"><span class="tag">Pros</span>No server to compromise, subpoena, or shut down. Nothing to breach. No company in a position to change encryption policy. Network exists as long as its users do. Architectural privacy guarantees.</div>
+        <div class="arch-point con"><span class="tag">Cons</span>Harder to build. Moderation is harder — no central authority to remove bad actors. NAT traversal is a real engineering problem. Spam prevention requires different mechanisms (invite gating, trust web, PoW). Smaller user bases today.</div>
+      </div>
+    </div>
+
+    <p>
+      In a true peer-to-peer messenger, your device talks to your friend's device directly. There is no intermediary server that either of you connects to first. When you want to send a message, your device finds your friend's device through a distributed peer-discovery mechanism (usually a Kademlia DHT or similar), opens an encrypted connection, and sends the message. The message goes from your device to theirs — possibly through other peers acting as forwarders if direct connection isn't possible, but never through a company-operated server.
+    </p>
+
+    <p>
+      This is what we built OpenDescent on. The underlying stack is <a href="https://libp2p.io/" target="_blank" rel="noopener">libp2p</a>, the same peer-to-peer networking library that powers IPFS, Filecoin, Ethereum, and Polkadot. Peer discovery uses <code>KadDHT</code> and <code>mDNS</code>. NAT traversal uses <code>DCUtR</code> hole-punching with circuit relay fallback. Every connection is Noise-encrypted at the transport layer. Messages are additionally E2E encrypted inside that tunnel. When we say "peer-to-peer," we mean the architecture described in the diagram above: no server exists, and if you were to attempt to compromise "OpenDescent," you would have to find the company first and it is not there.
+    </p>
+
+    <h2><span class="num">§ 04</span>Common misuses of "peer-to-peer"</h2>
+
+    <p>
+      Here are some phrases you'll see on product pages that are <em>not</em> peer-to-peer, at least not in the architectural sense:
+    </p>
+
+    <ul>
+      <li>
+        <strong>"We use the Signal Protocol, so your messages are peer-to-peer."</strong><br>
+        No. The Signal Protocol is an end-to-end encryption protocol. It can run over centralised or federated or P2P infrastructure. Using the Signal Protocol tells you that messages are encrypted between endpoints. It does not tell you there isn't a server in the middle.
+      </li>
+      <li>
+        <strong>"Messages are never stored on our servers, so it's peer-to-peer."</strong><br>
+        No. "Not stored" and "not routed through" are different. A server that routes messages without storing them still sees who is talking to whom, when, from which IP. It's an improvement over a server that stores forever, but it is not peer-to-peer.
+      </li>
+      <li>
+        <strong>"Our app connects directly between users, so it's peer-to-peer."</strong><br>
+        Depends on the handshake. Many voice/video apps (including traditional WebRTC ones) advertise "direct" connections while routing signalling through a central server. If the signalling server is down, the "direct" connection can't start. That's not the same as true P2P.
+      </li>
+      <li>
+        <strong>"We're decentralised — you can self-host."</strong><br>
+        That's federation, which is good and we respect it, but it's not peer-to-peer. If self-hosting requires running a server, there are still servers — they're just not run by a single company.
+      </li>
+    </ul>
+
+    <p>
+      We are not saying any of these products are bad, or that they're lying. In most cases, they are using "peer-to-peer" loosely because marketing copy has to fit in a hero section. But the distinction matters when you're trying to evaluate a product's privacy properties. "Peer-to-peer" should mean <em>there is no server in the architectural path</em>. If a product's claim breaks down when you ask "whose server is in the handshake?", it isn't P2P.
+    </p>
+
+    <div class="pullquote">
+      "Peer-to-peer" should mean <em>there is no server in the architectural path</em>. If the claim breaks down when you ask "whose server is in the handshake?", it isn't P2P.
+    </div>
+
+    <h2><span class="num">§ 05</span>Why the distinction is load-bearing for privacy</h2>
+
+    <p>
+      All three patterns can be run with end-to-end encryption on message content. In terms of "can a random attacker read my messages in transit?", all three are fine. The distinction becomes important when you ask different questions:
+    </p>
+
+    <ul>
+      <li><strong>"Who sees metadata?"</strong> Centralised: the company. Federated: your server. P2P: direct peers you connected to, but no global view.</li>
+      <li><strong>"What happens if the company is compelled by a court?"</strong> Centralised: they produce what they have (account existence, timestamps, connection metadata). Federated: the relevant server's admin produces what they have. P2P: there is no entity to compel.</li>
+      <li><strong>"What happens if the encryption policy changes?"</strong> Centralised: the company can roll it back (Instagram, May 8). Federated: each server can, independently. P2P: there's no centralised policy to roll back.</li>
+      <li><strong>"What happens if the company goes bankrupt / gets acquired / pivots?"</strong> Centralised: your access depends on their survival. Federated: your access depends on your server's survival. P2P: the network exists as long as its users do.</li>
+    </ul>
+
+    <p>
+      These questions have different answers for each pattern, and the answers matter in different amounts depending on your threat model. For a casual user, centralised + E2E is probably fine most of the time. For a user who cares deeply about architectural guarantees — someone building something they want to outlive any company — the distinction is the whole game.
+    </p>
+
+    <h2><span class="num">§ 06</span>What this means for picking a messenger</h2>
+
+    <p>
+      We don't think there's one right answer. Different patterns suit different users. Here's how we'd think about it:
+    </p>
+
+    <ul>
+      <li><strong>Centralised + E2E (Signal, WhatsApp):</strong> Fine for most people most of the time. Good cryptography, battle-tested. The trade-off is that privacy is a policy commitment, not an architectural one.</li>
+      <li><strong>Federated + E2E (Matrix / Element):</strong> A good middle ground if you want to reduce single-company power without dealing with the complexity of pure P2P. You can self-host if you want to; you can pick a trusted server if you don't.</li>
+      <li><strong>Peer-to-peer (OpenDescent, Briar, SimpleX):</strong> The right choice when you specifically want architectural guarantees over policy guarantees. Accept that the tooling is newer and user bases are smaller. Benefit from the fact that there's no company in a position to change the deal.</li>
+    </ul>
+
+    <div class="inline-cta">
+      <p><strong>If you want to try the P2P pattern</strong>, OpenDescent is the Windows messenger we built to explore it. It's free, open source, uses libp2p under the hood, and has no central server to be wrong about. The README and <a href="/security.html">security page</a> have all the technical detail.</p>
+      <div class="btns">
+        <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
+        <a href="/security.html" class="btn btn-ghost btn-arrow">Full security writeup</a>
+      </div>
+    </div>
+
+    <h2><span class="num">§ 07</span>One last note</h2>
+
+    <p>
+      The word "peer-to-peer" is having a moment, in the same way "decentralised" had a moment ten years ago and "open source" had a moment twenty years before that. The moment is deserved — these are real ideas with real architectural consequences. But the moment also means the words are about to be applied to every product regardless of whether the architecture actually matches.
+    </p>
+
+    <p>
+      The test is simple. When you're evaluating a product that calls itself peer-to-peer, ask: <em>whose server is in the handshake?</em> If the answer is "none," you're looking at the real thing. If the answer is some variant of "ours, but it doesn't store anything," you are looking at a centralised product using the word as vibe. That's fine, sometimes, but it isn't the same thing.
+    </p>
+
+    <p>
+      We built OpenDescent because we wanted a messenger where the answer to that question is "none." You can verify it by reading the code, or by unplugging our website and watching OpenDescent keep working. The network exists between users. Nobody else is in it.
+    </p>
+
+    <div class="sources">
+      <div class="sources-label">References</div>
+      <a href="https://libp2p.io/" target="_blank" rel="noopener">libp2p — peer-to-peer networking stack ↗</a>
+      <a href="https://matrix.org/" target="_blank" rel="noopener">Matrix.org — federated messaging protocol ↗</a>
+      <a href="https://briarproject.org/" target="_blank" rel="noopener">Briar — P2P messenger via Tor / Bluetooth / WiFi ↗</a>
+      <a href="https://simplex.chat/" target="_blank" rel="noopener">SimpleX — messaging without user identifiers ↗</a>
+      <a href="https://signal.org/docs/" target="_blank" rel="noopener">Signal Protocol documentation ↗</a>
+    </div>
+
+    <p style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
+      <a href="/blog/" class="back-to-blog">Back to all posts</a>
+    </p>
+  </div>
+</article>
+
+<section class="related-section">
+  <div class="container-narrow">
+    <div class="related-title">▸ Related posts</div>
+    <div class="related-grid">
+      <a href="/blog/instagram-dms-may-8.html" class="related-card"><h3>May 8: the day Meta <em>admitted it wants to read your DMs</em>.</h3><p>On the difference between privacy as policy and privacy as architecture.</p><div class="meta">▸ 9 min read · Editorial</div></a>
+      <a href="/blog/group-chat-is-not-content.html" class="related-card"><h3>Your group chat is <em>not content</em>.</h3><p>A manifesto on why "I have nothing to hide" is the wrong answer.</p><div class="meta">▸ 7 min read · Manifesto</div></a>
+      <a href="/blog/no-phone-number.html" class="related-card"><h3>We'll never ask for your phone number.</h3><p>Why phone numbers are a broken identifier for messaging, and how we solve the spam problem without one.</p><div class="meta">▸ 8 min read · Product</div></a>
+      <a href="/blog/age-verification-privacy-disaster.html" class="related-card"><h3>Mandatory age verification is a <em>privacy disaster by design</em>.</h3><p>Why the Discord ID breach wasn't an implementation bug.</p><div class="meta">▸ 10 min read · Policy</div></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <div class="footer-micro">Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth</div>
+      </div>
+      <div class="footer-col"><div class="footer-col-title">Product</div><a href="/features.html">Features</a><a href="/security.html">Security</a><a href="/download.html">Download</a><a href="/faq.html">FAQ</a></div>
+      <div class="footer-col"><div class="footer-col-title">Compare</div><a href="/leaving-instagram.html">Leaving Instagram</a><a href="/vs/signal.html">vs Signal</a><a href="/vs/discord.html">vs Discord</a><a href="/vs/whatsapp.html">vs WhatsApp</a></div>
+      <div class="footer-col"><div class="footer-col-title">Project</div><a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a><a href="/blog/">Blog</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 OpenDescent &nbsp;·&nbsp; MIT Licensed</div>
+      <div class="footer-barcode">▌▌▏▌▏▏▌▌▏▌▏▌▌▏▏▌▏▌▌▏▌▏▏▌</div>
+      <div class="footer-legal"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">Source</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const revObs = new IntersectionObserver((entries) => { entries.forEach((e, i) => { if (e.isIntersecting) { setTimeout(() => e.target.classList.add('visible'), i * 60); revObs.unobserve(e.target); } }); }, { threshold: 0.12 });
+reveals.forEach(el => revObs.observe(el));
+</script>
+</body>
+</html>

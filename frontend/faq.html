@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenDescent FAQ: Every Question, Every Answer (2026)</title>
+<meta name="description" content="Straight answers to every common question about OpenDescent — how it works, how it's encrypted, how it compares to Signal/Discord/WhatsApp, how to recover your account, what it costs, and more.">
+<meta name="keywords" content="opendescent faq, opendescent questions, is opendescent free, is opendescent safe, how does opendescent work, opendescent vs signal, opendescent vs discord, opendescent vs whatsapp, opendescent security, opendescent recovery, private messaging faq, encrypted messenger questions">
+<meta name="author" content="OpenDescent">
+<meta name="theme-color" content="#0f1012">
+<link rel="canonical" href="https://open-descent.com/faq.html">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<script async src="https://plausible.io/js/pa-zQ01yi4zP0T_1Tx0kPikj.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://open-descent.com/faq.html">
+<meta property="og:title" content="OpenDescent FAQ: Every Question, Every Answer">
+<meta property="og:description" content="Plain-English answers to every common question about OpenDescent.">
+<meta property="og:image" content="https://open-descent.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="OpenDescent">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="OpenDescent FAQ: Every Question, Every Answer">
+<meta name="twitter:description" content="Straight answers to everything people ask about OpenDescent.">
+<meta name="twitter:image" content="https://open-descent.com/og-image.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://open-descent.com/" },
+    { "@type": "ListItem", "position": 2, "name": "FAQ", "item": "https://open-descent.com/faq.html" }
+  ]
+}
+</script>
+
+<!-- FAQ schema (top 18 most-searched questions for Google rich results) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent is a free, open-source, decentralized peer-to-peer messaging and community app. It offers end-to-end encrypted text messages, voice and video calls, file sharing, community hubs with channels and roles, anonymous onion-routed posts (Dead Drops), and a Dead Man's Switch — all without central servers, phone numbers, emails, or accounts." } },
+    { "@type": "Question", "name": "Is OpenDescent free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. OpenDescent is free and open source under the MIT license. Every core feature — messaging, calls, hubs, encryption, file sharing — is free forever. An optional Pro subscription (£5/month) unlocks larger file transfers and more hubs and helps fund the project, but it is not required for core functionality." } },
+    { "@type": "Question", "name": "Do I need to give you my phone number or email?", "acceptedAnswer": { "@type": "Answer", "text": "No. OpenDescent requires no phone number, no email, and no account. Your identity is an Ed25519 cryptographic keypair generated on your device the first time you open the app. You back it up with a 12-word BIP39 mnemonic phrase — that's it." } },
+    { "@type": "Question", "name": "Is OpenDescent safe?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent uses standard, peer-reviewed cryptographic primitives: Ed25519 for identity and signatures, X25519 for key agreement, AES-256-GCM for message encryption, HKDF-SHA256 for key derivation, and libp2p Noise for transport encryption. Messages are end-to-end encrypted before leaving your device. There are no central servers to breach. The codebase is open source under MIT and auditable by anyone. A formal third-party audit has not yet been performed — it is on the roadmap." } },
+    { "@type": "Question", "name": "Can OpenDescent read my messages?", "acceptedAnswer": { "@type": "Answer", "text": "No — and technically, there is no 'OpenDescent' in a position to. Messages are encrypted on your device before they leave, and OpenDescent has no central servers. There is no company-operated infrastructure between your device and your recipient's. Messages are readable only on the two endpoints, after decryption with the recipient's key." } },
+    { "@type": "Question", "name": "What happens if I lose my 12-word mnemonic phrase?", "acceptedAnswer": { "@type": "Answer", "text": "Your account cannot be recovered without the mnemonic. Because there is no central server storing your identity, there is no 'forgot password' option — the mnemonic is the only way to reconstruct your cryptographic identity on a new device. This is the trade-off of true end-to-end encryption: security properties require that nobody, including us, can recover your account without your key." } },
+    { "@type": "Question", "name": "How is OpenDescent different from Signal?", "acceptedAnswer": { "@type": "Answer", "text": "Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes community hubs with channels and roles (Discord-style) which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps — OpenDescent is currently Windows-only. Use Signal for 1-on-1 with existing contacts; use OpenDescent for peer-to-peer, no-phone-number, or community use cases." } },
+    { "@type": "Question", "name": "How is OpenDescent different from Discord?", "acceptedAnswer": { "@type": "Answer", "text": "Discord text messages are not end-to-end encrypted; Discord servers can read them. OpenDescent's community hubs offer the same shape (text channels, voice channels, categories, roles, invites) but everything is end-to-end encrypted and peer-replicated across members' devices rather than on Discord-operated servers. Discord also leaked 70,000 government-ID photos in October 2025 through a third-party vendor and is pushing mandatory age verification; OpenDescent never asks for your ID." } },
+    { "@type": "Question", "name": "How is OpenDescent different from WhatsApp?", "acceptedAnswer": { "@type": "Answer", "text": "WhatsApp is end-to-end encrypted via the Signal Protocol — the cryptography itself is good. The difference is ownership and architecture: WhatsApp is owned by Meta (the same company ending Instagram encryption on May 8, 2026) and runs on Meta-operated infrastructure. WhatsApp also requires your phone number. OpenDescent has no owning company in a position to roll back encryption via policy update, and requires no phone number." } },
+    { "@type": "Question", "name": "Does OpenDescent have community servers like Discord?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — we call them hubs. A hub has text channels, voice channels, categories, roles and permissions, and invite links. The difference from Discord is that hubs are peer-replicated across members' devices rather than hosted on a central server. There is no hub owner who can be subpoenaed and no company that can shut a hub down from outside." } },
+    { "@type": "Question", "name": "What platforms does OpenDescent work on?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent currently ships as a Windows desktop app (Windows 10+). macOS and Linux builds are in progress. A mobile Progressive Web App is on the roadmap. For now, if you primarily message from a phone, Signal or another mobile-first option may be a better fit today." } },
+    { "@type": "Question", "name": "Can I make voice and video calls on OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Voice and video calls use WebRTC with DTLS-SRTP encryption end-to-end. Calls connect directly between peers when possible and fall back to TURN relays when NAT prevents direct connections. Relays see encrypted packets only — they never have decryption keys." } },
+    { "@type": "Question", "name": "Does OpenDescent collect analytics or track users?", "acceptedAnswer": { "@type": "Answer", "text": "No. The app itself has no analytics, no telemetry, and no tracking. The project cannot know who uses the app, from where, or how often — because there is no central server to report to. The marketing website uses Plausible, a privacy-friendly analytics service that does not use cookies and does not collect personal information." } },
+    { "@type": "Question", "name": "Is OpenDescent open source?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The full codebase is open source under the MIT license at https://github.com/Jaguwa/OpenDescent. You can read it, build it, fork it, modify it, and contribute to it." } },
+    { "@type": "Question", "name": "What is a Dead Drop?", "acceptedAnswer": { "@type": "Answer", "text": "A Dead Drop is an anonymous, onion-routed post that travels through several layered-encrypted hops before landing in a public space. Each hop only sees the next hop — none knows both sender and destination. Proof-of-work prevents spam, and a daily rotating network key means past drops cannot be correlated with current ones. Dead Drops are designed for journalists, sources, and any situation where a message needs to exist without an attributable author." } },
+    { "@type": "Question", "name": "What is a Dead Man's Switch?", "acceptedAnswer": { "@type": "Answer", "text": "A Dead Man's Switch is a feature that automatically sends pre-arranged messages to specific people if you don't check in before a timer expires. You can set the timer from 1 hour to 30 days, choose recipients, and write the messages to send. If you miss a check-in, the messages are released. Useful for travel, activist preparation, or any 'if I don't respond by X, tell these people Y' scenario." } },
+    { "@type": "Question", "name": "Can I use OpenDescent on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Not yet. OpenDescent is currently a Windows desktop app. A mobile Progressive Web App (PWA) is on the roadmap. Native iOS and Android apps are longer-term." } },
+    { "@type": "Question", "name": "How do you make money if OpenDescent is free?", "acceptedAnswer": { "@type": "Answer", "text": "Through an optional Pro subscription (£5/month) that unlocks larger file transfers and more hubs, and through a one-time Founder's Edition (£1 lifetime Pro) for early supporters. Every core feature is free forever, with or without Pro. There are no ads, no data sales, and no tracking — because there is no central infrastructure to run those on." } }
+  ]
+}
+</script>
+
+<style>
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-Wide.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-BoldWide.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+:root {
+  --bg: #0f1012; --bg-deep: #0a0a0c; --bg-surface: #16181c; --bg-card: #1a1d22; --bg-card-hi: #20242a;
+  --teal: #32E0C4; --teal-dim: #0D7377; --teal-glow: #5FFFD6;
+  --red: #e04050; --red-dim: #8a1e2a; --amber: #FFD166;
+  --text: #EEEEEE; --text-strong: #FFFFFF; --text-mid: #aaaaaa; --text-dim: #666666; --text-ghost: #3a3d42;
+  --border: rgba(255,255,255,0.06); --border-bright: rgba(50,224,196,0.2); --border-red: rgba(224,64,80,0.25);
+  --mono: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --display: 'Array Wide', 'Array', -apple-system, sans-serif;
+  --body: 'Array', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 130px; }
+body { font-family: var(--body); background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 200px; }
+body::after { content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none; background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.45) 100%); }
+
+@keyframes chroma-section { 0%,100% { text-shadow: -1.5px 0 rgba(224,64,80,0.3), 1.5px 0 rgba(50,224,196,0.35); } 50% { text-shadow: -2px 0.5px rgba(224,64,80,0.25), 2px -0.5px rgba(50,224,196,0.4); } }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.container { max-width: 1240px; margin: 0 auto; padding: 0 28px; position: relative; }
+.container-narrow { max-width: 900px; margin: 0 auto; padding: 0 28px; position: relative; }
+section { padding: 72px 0; position: relative; }
+
+.kicker { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 10px; }
+.kicker::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; animation: pulse-dot 2s infinite; }
+.kicker-ghost { color: var(--text-ghost); }
+.kicker-ghost::before { background: var(--text-ghost); }
+
+/* Breaking */
+.breaking { background: linear-gradient(90deg, rgba(224,64,80,0.15), rgba(224,64,80,0.06) 40%, rgba(224,64,80,0.06) 60%, rgba(224,64,80,0.15)); border-bottom: 1px solid var(--border-red); overflow: hidden; position: relative; z-index: 101; }
+.breaking-viewport { display: flex; align-items: center; height: 32px; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.breaking-label { display: inline-flex; align-items: center; gap: 8px; color: #ffeaee; background: var(--red); padding: 7px 14px; height: 100%; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.breaking-label::before { content: ''; width: 6px; height: 6px; background: #ffeaee; border-radius: 50%; animation: pulse-dot 1.2s infinite; }
+.breaking-track { flex: 1; overflow: hidden; position: relative; white-space: nowrap; mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); }
+.breaking-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 60s linear infinite; color: var(--text-mid); }
+.breaking-content a { color: var(--text); text-decoration: none; margin: 0 14px; }
+.breaking-content a:hover { color: var(--teal); }
+.breaking-content .sep { color: var(--red); margin: 0 14px; }
+
+/* Nav */
+nav.top { position: sticky; top: 0; z-index: 100; background: rgba(15,16,18,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 1400px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.nav-brand { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--text); text-decoration: none; animation: chroma-section 5s ease-in-out infinite; display: inline-flex; align-items: center; gap: 10px; }
+.nav-brand .dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.nav-links { display: flex; gap: 28px; list-style: none; align-items: center; }
+.nav-links a { font-family: var(--mono); font-size: 10.5px; color: var(--text-mid); text-decoration: none; text-transform: uppercase; letter-spacing: 1.5px; transition: color 0.2s; }
+.nav-links a:hover { color: var(--teal); }
+.nav-links a.alert { color: #ffb8bf; }
+.nav-links a.alert::before { content: ''; display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-right: 6px; vertical-align: middle; animation: pulse-dot 1.4s infinite; box-shadow: 0 0 8px var(--red); }
+.nav-links a.alert:hover { color: var(--red); }
+.nav-cta { padding: 8px 18px !important; background: transparent; border: 1px solid var(--teal); border-radius: 3px; color: var(--teal) !important; letter-spacing: 2px !important; }
+.nav-cta:hover { background: rgba(50,224,196,0.08); box-shadow: 0 0 14px rgba(50,224,196,0.18); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 4px; font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; text-decoration: none; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-primary { background: var(--teal); color: #07140f; }
+.btn-primary:hover { background: var(--teal-glow); box-shadow: 0 0 24px rgba(50,224,196,0.35); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border-color: var(--border-bright); }
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); box-shadow: 0 0 16px rgba(50,224,196,0.12); }
+.btn-arrow::after { content: '\2192'; font-size: 14px; }
+
+/* Breadcrumb */
+.breadcrumb { padding: 22px 0 0; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-ghost); }
+.breadcrumb a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: var(--teal); }
+.breadcrumb .sep { color: var(--text-ghost); margin: 0 10px; }
+.breadcrumb .current { color: var(--text); }
+
+/* Hero */
+.article-hero { padding: 48px 0 56px; border-bottom: 1px solid var(--border); }
+.hero-meta-row { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 22px; align-items: center; }
+.hero-date { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+.article-hero h1 { font-family: var(--display); font-size: clamp(2.4rem, 4.8vw, 3.6rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.5px; color: var(--text-strong); margin-bottom: 20px; max-width: 900px; }
+.article-hero h1 em { font-style: normal; color: var(--teal); animation: chroma-section 6s ease-in-out infinite; }
+.article-dek { font-family: var(--body); font-size: 17px; line-height: 1.65; color: var(--text-mid); margin-bottom: 28px; max-width: 720px; }
+.hero-stats { display: flex; gap: 36px; flex-wrap: wrap; padding-top: 24px; border-top: 1px solid var(--border); }
+.hs-num { font-family: var(--display); font-size: 1.5rem; font-weight: 700; color: var(--teal); }
+.hs-label { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+/* TOC */
+.toc { position: sticky; top: 64px; z-index: 50; background: rgba(15,16,18,0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); padding: 14px 0; }
+.toc-inner { max-width: 1240px; margin: 0 auto; padding: 0 28px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.toc-inner::-webkit-scrollbar { display: none; }
+.toc-label { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; padding: 8px 14px; white-space: nowrap; flex-shrink: 0; border-right: 1px solid var(--border); margin-right: 8px; }
+.toc-link { font-family: var(--mono); font-size: 11px; color: var(--text-mid); text-decoration: none; padding: 8px 14px; border-radius: 3px; letter-spacing: 1px; text-transform: uppercase; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; border: 1px solid transparent; }
+.toc-link:hover { color: var(--teal); border-color: var(--border-bright); background: rgba(50,224,196,0.04); }
+.toc-num { color: var(--teal-dim); margin-right: 6px; font-weight: 700; }
+
+/* Search bar */
+.faq-search-wrap { max-width: 700px; margin: 40px auto 0; }
+.faq-search {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card); border: 1px solid var(--border-bright);
+  border-radius: 6px; padding: 14px 20px;
+  transition: all 0.2s; position: relative;
+}
+.faq-search::before { content: ''; width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); animation: pulse-dot 2s infinite; }
+.faq-search:focus-within { border-color: var(--teal); box-shadow: 0 0 20px rgba(50,224,196,0.15); }
+.faq-search input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: var(--body); font-size: 15px; color: var(--text-strong);
+}
+.faq-search input::placeholder { color: var(--text-dim); }
+.faq-search-hint { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+.faq-noresults {
+  display: none; text-align: center; padding: 40px 20px;
+  font-family: var(--mono); font-size: 13px; color: var(--text-dim); letter-spacing: 1px;
+}
+.faq-noresults.on { display: block; }
+
+/* Category section */
+.cat { padding: 56px 0; border-bottom: 1px solid var(--border); }
+.cat:last-of-type { border-bottom: none; }
+.cat-header {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: baseline;
+  margin-bottom: 36px;
+}
+.cat-num {
+  font-family: var(--display); font-size: 3rem; font-weight: 700;
+  color: var(--teal); opacity: 0.25; letter-spacing: -1px; line-height: 0.9;
+}
+.cat-title { font-family: var(--display); font-size: clamp(1.5rem, 2.4vw, 1.9rem); font-weight: 700; color: var(--text-strong); line-height: 1.15; letter-spacing: -0.3px; }
+.cat-title em { font-style: normal; color: var(--teal); }
+.cat-count { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+
+/* Q&A */
+.qa { padding: 20px 0; border-top: 1px dashed var(--border); }
+.qa:first-of-type { border-top: 1px solid var(--border); padding-top: 22px; }
+.qa-q { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+.qa-q-text { font-family: var(--display); font-size: 1.05rem; font-weight: 700; color: var(--text-strong); line-height: 1.35; letter-spacing: -0.2px; }
+.qa-q-num { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; flex-shrink: 0; padding-top: 4px; }
+.qa-a { font-family: var(--body); font-size: 14.5px; color: var(--text-mid); line-height: 1.8; max-width: 820px; }
+.qa-a a { color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim); }
+.qa-a a:hover { border-bottom-style: solid; }
+.qa-a code { font-family: var(--mono); font-size: 12.5px; color: var(--teal); background: rgba(50,224,196,0.06); padding: 1px 6px; border-radius: 2px; }
+.qa-a strong { color: var(--text); }
+.qa-a em { color: var(--text); font-style: italic; }
+.qa-a ul { margin: 10px 0; padding-left: 22px; }
+.qa-a ul li { padding: 4px 0; }
+.qa-a ul li::marker { color: var(--teal); }
+.qa-tags { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.qa-tag {
+  font-family: var(--mono); font-size: 9px; color: var(--text-ghost);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 8px; border: 1px solid var(--border); border-radius: 2px;
+}
+.qa.hidden { display: none; }
+
+/* Still stuck */
+.stuck-section { background: var(--bg-deep); }
+.stuck-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.stuck-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+  padding: 32px; position: relative; transition: all 0.3s;
+  display: flex; flex-direction: column;
+}
+.stuck-card::before { content: ''; position: absolute; top: -1px; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, rgba(50,224,196,0.25), transparent); }
+.stuck-card:hover { background: var(--bg-card-hi); border-color: var(--border-bright); }
+.stuck-kicker { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.stuck-kicker::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.stuck-card h3 { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--text-strong); margin-bottom: 10px; line-height: 1.25; }
+.stuck-card p { font-family: var(--body); font-size: 14px; color: var(--text-mid); line-height: 1.7; margin-bottom: 18px; flex: 1; }
+.stuck-card a.btn { align-self: flex-start; }
+
+/* CTA */
+.cta-band { background: var(--bg); border-top: 1px solid var(--border); padding: 72px 0; text-align: center; }
+.cta-band h2 { font-family: var(--display); font-size: clamp(1.6rem, 2.8vw, 2.2rem); font-weight: 700; line-height: 1.2; color: var(--text-strong); margin-bottom: 16px; }
+.cta-band h2 em { font-style: normal; color: var(--teal); }
+.cta-band p { font-family: var(--body); font-size: 15px; color: var(--text-mid); line-height: 1.7; margin: 0 auto 28px; max-width: 600px; }
+.cta-band .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* Footer */
+footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid var(--border); position: relative; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+.footer-brand { font-family: var(--display); font-size: 1rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.footer-brand-dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.footer-tagline { font-family: var(--body); font-size: 13px; color: var(--text-mid); line-height: 1.7; max-width: 360px; margin-bottom: 20px; }
+.footer-micro { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; line-height: 2; }
+.footer-col-title { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.footer-col a { display: block; font-family: var(--body); font-size: 13.5px; color: var(--text-mid); text-decoration: none; padding: 4px 0; transition: color 0.2s; }
+.footer-col a:hover { color: var(--teal); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 16px; }
+.footer-copy { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal { display: flex; gap: 18px; }
+.footer-legal a { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); text-decoration: none; letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal a:hover { color: var(--teal); }
+.footer-barcode { font-size: 9px; letter-spacing: 2px; color: var(--text-ghost); }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .stuck-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .toc { top: 56px; }
+  .cat-header { grid-template-columns: auto 1fr; }
+  .cat-count { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .nav-links { gap: 14px; }
+  .nav-links li:not(.nav-li-cta):not(.nav-li-alert) { display: none; }
+  .footer-grid { grid-template-columns: 1fr; }
+  section { padding: 56px 0; }
+  .qa-q { flex-direction: column; gap: 4px; }
+  .hero-stats { gap: 22px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Breaking ticker -->
+<div class="breaking">
+  <div class="breaking-viewport">
+    <div class="breaking-label">▶ Breaking</div>
+    <div class="breaking-track">
+      <div class="breaking-content">
+        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        <a href="/leaving-instagram.html">Here's what to use instead →</a>
+        <span class="sep">//</span>
+        Discord leaked 70,000 government IDs.
+        <a href="/vs/discord.html">Why we built this →</a>
+        <span class="sep">//</span>
+        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        <a href="/#download">Download →</a>
+        <span class="sep">//</span>
+        Normal life deserves privacy.
+        <span class="sep">//</span>
+        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        <a href="/leaving-instagram.html">Here's what to use instead →</a>
+        <span class="sep">//</span>
+        Discord leaked 70,000 government IDs.
+        <a href="/vs/discord.html">Why we built this →</a>
+        <span class="sep">//</span>
+        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        <a href="/#download">Download →</a>
+        <span class="sep">//</span>
+        Normal life deserves privacy.
+        <span class="sep">//</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="top">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a>
+    <ul class="nav-links">
+      <li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li>
+      <li><a href="/features.html">Features</a></li>
+      <li><a href="/security.html">Security</a></li>
+      <li><a href="/#compare">Compare</a></li>
+      <li><a href="/faq.html">FAQ</a></li>
+      <li class="nav-li-cta"><a href="/#download" class="nav-cta">Download</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="container">
+  <div class="breadcrumb">
+    <a href="/">Home</a><span class="sep">/</span><span class="current">FAQ</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="article-hero">
+  <div class="container">
+    <div class="hero-meta-row">
+      <span class="kicker">FAQ &nbsp;/&nbsp; Everything people ask</span>
+      <span class="hero-date">Updated 2026-04-24</span>
+    </div>
+    <h1>Straight answers <em>to the things people actually ask</em>.</h1>
+    <p class="article-dek">
+      Fifty questions across eight categories — getting started, privacy, features, comparisons, recovery, technical details, pricing, and troubleshooting. No marketing fluff, no hand-waving. If your question isn't here, the links at the bottom will get you to an actual human on GitHub.
+    </p>
+    <div class="hero-stats">
+      <div><div class="hs-num">50+</div><div class="hs-label">Questions answered</div></div>
+      <div><div class="hs-num">8</div><div class="hs-label">Categories</div></div>
+      <div><div class="hs-num">0</div><div class="hs-label">Marketing fluff</div></div>
+    </div>
+
+    <div class="faq-search-wrap">
+      <div class="faq-search">
+        <input type="text" id="faq-search-input" placeholder="Search questions — try 'phone number' or 'encryption'..." autocomplete="off">
+        <span class="faq-search-hint" id="faq-search-hint">▶ 50+ answered</span>
+      </div>
+      <div class="faq-noresults" id="faq-noresults">No matches. Try a different term, or <a href="https://github.com/Jaguwa/OpenDescent/discussions" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim);">ask on GitHub Discussions ↗</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOC -->
+<div class="toc">
+  <div class="toc-inner">
+    <span class="toc-label">Categories</span>
+    <a href="#getting-started" class="toc-link"><span class="toc-num">01</span>Getting started</a>
+    <a href="#privacy" class="toc-link"><span class="toc-num">02</span>Privacy &amp; security</a>
+    <a href="#features" class="toc-link"><span class="toc-num">03</span>Features</a>
+    <a href="#compare" class="toc-link"><span class="toc-num">04</span>Comparisons</a>
+    <a href="#account" class="toc-link"><span class="toc-num">05</span>Account &amp; recovery</a>
+    <a href="#technical" class="toc-link"><span class="toc-num">06</span>Technical</a>
+    <a href="#pricing" class="toc-link"><span class="toc-num">07</span>Pricing &amp; Pro</a>
+    <a href="#troubleshoot" class="toc-link"><span class="toc-num">08</span>Troubleshooting</a>
+  </div>
+</div>
+
+<!-- Categories -->
+<div class="container-narrow">
+
+<!-- 01 GETTING STARTED -->
+<section class="cat" id="getting-started">
+  <div class="cat-header">
+    <div class="cat-num">01</div>
+    <div class="cat-title">Getting started &mdash; <em>the basics</em>.</div>
+    <div class="cat-count">8 questions</div>
+  </div>
+
+  <div class="qa" data-search="what is opendescent app decentralized messenger">
+    <div class="qa-q"><div class="qa-q-text">What is OpenDescent?</div><div class="qa-q-num">01.01</div></div>
+    <div class="qa-a">OpenDescent is a free, open-source, decentralized peer-to-peer messaging and community app. It offers end-to-end encrypted text messages, voice and video calls, file sharing, community hubs with channels and roles, anonymous onion-routed posts (Dead Drops), and a Dead Man's Switch — all without central servers, phone numbers, emails, or accounts.</div>
+    <div class="qa-tags"><span class="qa-tag">Overview</span></div>
+  </div>
+
+  <div class="qa" data-search="free cost price paid">
+    <div class="qa-q"><div class="qa-q-text">Is OpenDescent free?</div><div class="qa-q-num">01.02</div></div>
+    <div class="qa-a">Yes. OpenDescent is free and open source under the MIT license. Every core feature — messaging, calls, hubs, encryption, file sharing — is free forever. An optional Pro subscription (£5/month) unlocks larger file transfers and more hubs and helps fund the project, but is <strong>not required</strong> for core functionality.</div>
+    <div class="qa-tags"><span class="qa-tag">Pricing</span></div>
+  </div>
+
+  <div class="qa" data-search="phone email account signup registration">
+    <div class="qa-q"><div class="qa-q-text">Do I need to give you my phone number or email?</div><div class="qa-q-num">01.03</div></div>
+    <div class="qa-a">No. OpenDescent requires no phone number, no email, and no account. Your identity is an Ed25519 cryptographic keypair generated on your device the first time you open the app. You back it up with a 12-word BIP39 mnemonic phrase — that's it.</div>
+    <div class="qa-tags"><span class="qa-tag">Identity</span><span class="qa-tag">Privacy</span></div>
+  </div>
+
+  <div class="qa" data-search="install windows download getting app">
+    <div class="qa-q"><div class="qa-q-text">How do I install OpenDescent?</div><div class="qa-q-num">01.04</div></div>
+    <div class="qa-a">Download the Windows installer from <a href="/#download">the download page</a> or directly from <a href="https://github.com/Jaguwa/OpenDescent/releases" target="_blank" rel="noopener">GitHub Releases</a>. Run the <code>.exe</code>, pick an install location, and you're done. No sign-up, no email confirmation — the app generates your identity on first launch.</div>
+    <div class="qa-tags"><span class="qa-tag">Install</span></div>
+  </div>
+
+  <div class="qa" data-search="platform windows mac linux ios android mobile">
+    <div class="qa-q"><div class="qa-q-text">What platforms does OpenDescent work on?</div><div class="qa-q-num">01.05</div></div>
+    <div class="qa-a">
+      <ul>
+        <li><strong>Windows 10+</strong> — fully supported today (v0.5.4)</li>
+        <li><strong>macOS</strong> — build in progress, coming soon</li>
+        <li><strong>Linux</strong> — build in progress, coming soon</li>
+        <li><strong>iOS / Android</strong> — a Progressive Web App (PWA) is on the roadmap; native apps are longer-term</li>
+      </ul>
+      If mobile-first is a hard requirement for you today, Signal is probably a better fit while we work on it.
+    </div>
+    <div class="qa-tags"><span class="qa-tag">Platforms</span></div>
+  </div>
+
+  <div class="qa" data-search="iphone android phone mobile pwa">
+    <div class="qa-q"><div class="qa-q-text">Is there an iPhone or Android app?</div><div class="qa-q-num">01.06</div></div>
+    <div class="qa-a">Not yet. A Progressive Web App is on the roadmap, which will work on both iOS and Android via the browser. Native apps are further out. For now, OpenDescent is a desktop-first experience.</div>
+    <div class="qa-tags"><span class="qa-tag">Mobile</span><span class="qa-tag">Roadmap</span></div>
+  </div>
+
+  <div class="qa" data-search="how many users user base network size">
+    <div class="qa-q"><div class="qa-q-text">How many people use OpenDescent?</div><div class="qa-q-num">01.07</div></div>
+    <div class="qa-a">Honestly: not many. We launched publicly in 2026 and are still in the early-adopter phase. Because OpenDescent has no analytics and no central server, we don't actually know how many people run the app — which is by design. If you care about reaching a big existing user base today, Signal or WhatsApp are better. If you care about being early on something that <em>is</em> a different architecture, welcome.</div>
+    <div class="qa-tags"><span class="qa-tag">Scale</span></div>
+  </div>
+
+  <div class="qa" data-search="name decentranet rebrand opendescent">
+    <div class="qa-q"><div class="qa-q-text">Why is the app called OpenDescent and not DecentraNet?</div><div class="qa-q-num">01.08</div></div>
+    <div class="qa-a">OpenDescent is the rebrand. The project was originally called DecentraNet internally; some protocol strings still use the old name for backward compatibility with early peers. User-facing, it's OpenDescent everywhere.</div>
+    <div class="qa-tags"><span class="qa-tag">Brand</span></div>
+  </div>
+</section>
+
+<!-- 02 PRIVACY & SECURITY -->
+<section class="cat" id="privacy">
+  <div class="cat-header">
+    <div class="cat-num">02</div>
+    <div class="cat-title">Privacy &amp; security &mdash; <em>what actually happens to your data</em>.</div>
+    <div class="cat-count">9 questions</div>
+  </div>
+
+  <div class="qa" data-search="encryption end to end e2e how works cryptography">
+    <div class="qa-q"><div class="qa-q-text">How is OpenDescent encrypted?</div><div class="qa-q-num">02.01</div></div>
+    <div class="qa-a">Every message uses an <strong>ephemeral X25519 key agreement</strong> with the recipient's long-term key, derives a symmetric key via <strong>HKDF-SHA256</strong>, encrypts with <strong>AES-256-GCM</strong> (authenticated encryption), and signs a hash of the ciphertext with <strong>Ed25519</strong>. Messages travel through <strong>libp2p Noise</strong>-encrypted transport channels. See <a href="/security.html">the security page</a> for the full walkthrough.</div>
+    <div class="qa-tags"><span class="qa-tag">Encryption</span></div>
+  </div>
+
+  <div class="qa" data-search="can read messages spy monitor company">
+    <div class="qa-q"><div class="qa-q-text">Can OpenDescent read my messages?</div><div class="qa-q-num">02.02</div></div>
+    <div class="qa-a">No — and technically, there is no 'OpenDescent' in a position to. Messages are encrypted on your device before they leave, and OpenDescent has no central servers. There is no company-operated infrastructure between your device and your recipient's. Messages are readable only on the two endpoints, after decryption with the recipient's key.</div>
+    <div class="qa-tags"><span class="qa-tag">Privacy</span></div>
+  </div>
+
+  <div class="qa" data-search="safe secure hack vulnerability threat">
+    <div class="qa-q"><div class="qa-q-text">Is OpenDescent safe?</div><div class="qa-q-num">02.03</div></div>
+    <div class="qa-a">OpenDescent uses standard, peer-reviewed cryptographic primitives (Ed25519, X25519, AES-256-GCM, HKDF, libp2p Noise) and the codebase is open source and auditable. No formal third-party audit has been performed yet — that's on the roadmap. For the full honest threat model including what we <em>don't</em> protect against, see <a href="/security.html#threat">the security page's threat model section</a>.</div>
+    <div class="qa-tags"><span class="qa-tag">Security</span></div>
+  </div>
+
+  <div class="qa" data-search="government surveillance state actor nation">
+    <div class="qa-q"><div class="qa-q-text">Is OpenDescent safe from government surveillance?</div><div class="qa-q-num">02.04</div></div>
+    <div class="qa-a">For <strong>message content</strong>: yes, the cryptography is modern and strong enough to resist mass interception of content. For <strong>traffic analysis</strong> (who you're talking to, when): OpenDescent doesn't hide this by default — a sufficiently-resourced observer of internet traffic can see that you're connected to specific peers. Route OpenDescent over Tor or a trusted VPN if that matters for you. For <strong>targeted attacks</strong> on your device: no messenger in existence protects a compromised endpoint from a determined state-level adversary.</div>
+    <div class="qa-tags"><span class="qa-tag">Surveillance</span></div>
+  </div>
+
+  <div class="qa" data-search="audit third party trail of bits ncc cryptographic">
+    <div class="qa-q"><div class="qa-q-text">Has OpenDescent been audited?</div><div class="qa-q-num">02.05</div></div>
+    <div class="qa-a">Not by a professional third-party firm (like Trail of Bits, NCC Group, or Cure53) — not yet. The code is open source and uses standard primitives that are themselves extensively audited. A formal audit is on the roadmap and is partially what the <a href="/#founder">Founder's Edition</a> helps fund. We will not claim 'audited' until we are.</div>
+    <div class="qa-tags"><span class="qa-tag">Audit</span><span class="qa-tag">Transparency</span></div>
+  </div>
+
+  <div class="qa" data-search="data collect analytics tracking telemetry">
+    <div class="qa-q"><div class="qa-q-text">What data does OpenDescent collect?</div><div class="qa-q-num">02.06</div></div>
+    <div class="qa-a">The app: nothing. No analytics, no telemetry, no tracking — because there's no central server to send it to. The marketing website at open-descent.com uses <strong>Plausible</strong>, a privacy-friendly analytics service that does not use cookies and does not collect personal information. No third-party tracking pixels. No advertising SDKs.</div>
+    <div class="qa-tags"><span class="qa-tag">Data</span><span class="qa-tag">Privacy</span></div>
+  </div>
+
+  <div class="qa" data-search="tracked ip address metadata peer">
+    <div class="qa-q"><div class="qa-q-text">Can I be tracked while using OpenDescent?</div><div class="qa-q-num">02.07</div></div>
+    <div class="qa-a">A direct peer you connect to can see your IP at connection time. This is a peer-level observation, not a global one — no single entity has the whole network graph. Your <strong>messages</strong> cannot be read by any peer (only the final recipient can decrypt them). If IP-level privacy matters, route OpenDescent over Tor or a VPN. Also consider <a href="/features.html#anonymous">Dead Drops</a>, which are specifically designed for identity-free posts via onion routing.</div>
+    <div class="qa-tags"><span class="qa-tag">Metadata</span></div>
+  </div>
+
+  <div class="qa" data-search="open source code github mit license">
+    <div class="qa-q"><div class="qa-q-text">Is OpenDescent open source?</div><div class="qa-q-num">02.08</div></div>
+    <div class="qa-a">Yes. The full codebase is open source under the MIT license at <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">github.com/Jaguwa/OpenDescent</a>. You can read it, build it, fork it, modify it, and contribute to it. Everything claimed on this site is verifiable against the source code.</div>
+    <div class="qa-tags"><span class="qa-tag">Open source</span></div>
+  </div>
+
+  <div class="qa" data-search="device stolen lost phone computer compromised">
+    <div class="qa-q"><div class="qa-q-text">What happens if my device is stolen?</div><div class="qa-q-num">02.09</div></div>
+    <div class="qa-a">Your local messages are encrypted at rest — if the device uses disk encryption (Windows BitLocker, macOS FileVault) and a strong password, an attacker with physical access faces substantial effort before they can read anything. If they bypass that, they can read messages on that device and send as you going forward. You should: (1) recover your identity on a new device using your 12-word mnemonic, (2) tell your close contacts your key was potentially compromised and to re-verify via TOFU if possible, and (3) consider generating a new identity and rebuilding from trusted contacts.</div>
+    <div class="qa-tags"><span class="qa-tag">Loss</span><span class="qa-tag">Recovery</span></div>
+  </div>
+</section>
+
+<!-- 03 FEATURES -->
+<section class="cat" id="features">
+  <div class="cat-header">
+    <div class="cat-num">03</div>
+    <div class="cat-title">Features &mdash; <em>what the app actually does</em>.</div>
+    <div class="cat-count">9 questions</div>
+  </div>
+
+  <div class="qa" data-search="voice video call webrtc">
+    <div class="qa-q"><div class="qa-q-text">Can I make voice and video calls?</div><div class="qa-q-num">03.01</div></div>
+    <div class="qa-a">Yes. Voice and video calls use <strong>WebRTC</strong> with <strong>DTLS-SRTP</strong> encryption end-to-end. Connections are direct peer-to-peer when possible and fall back to TURN relays when NAT prevents direct connections. Relays see encrypted packets only — they never have decryption keys.</div>
+    <div class="qa-tags"><span class="qa-tag">Calls</span></div>
+  </div>
+
+  <div class="qa" data-search="send files photos documents attachments">
+    <div class="qa-q"><div class="qa-q-text">Can I send files?</div><div class="qa-q-num">03.02</div></div>
+    <div class="qa-a">Yes. File transfers use <strong>signed manifests</strong> (canonical JSON signed with your Ed25519 key) plus <strong>XOR-parity sharding</strong> for resilience and <strong>SHA-256 integrity hashes</strong> for each chunk. Recipients verify the signature before assembling the file. Free tier has a file size limit; <a href="/#founder">Pro</a> unlocks larger transfers.</div>
+    <div class="qa-tags"><span class="qa-tag">Files</span></div>
+  </div>
+
+  <div class="qa" data-search="discord server community hub channel">
+    <div class="qa-q"><div class="qa-q-text">Can I create a community or server like Discord?</div><div class="qa-q-num">03.03</div></div>
+    <div class="qa-a">Yes — we call them <strong>hubs</strong>. A hub has text channels, voice channels, categories, roles and permissions, and invite links — the same shape as a Discord server. The difference is that hubs are <strong>peer-replicated across members' devices</strong> rather than hosted on a central server. See <a href="/vs/discord.html">OpenDescent vs Discord</a> for the full comparison.</div>
+    <div class="qa-tags"><span class="qa-tag">Hubs</span><span class="qa-tag">Community</span></div>
+  </div>
+
+  <div class="qa" data-search="dead drop anonymous onion routed">
+    <div class="qa-q"><div class="qa-q-text">What are Dead Drops?</div><div class="qa-q-num">03.04</div></div>
+    <div class="qa-a">Dead Drops are <strong>anonymous onion-routed posts</strong>. A post travels through several layered-encrypted hops before landing in a public space — each hop only sees the next hop, so no single node knows both sender and destination. Proof-of-work prevents spam, and a daily rotating network key means past drops can't be correlated with current ones. Designed for sources, whistleblowers, or any conversation that shouldn't have an attributable author.</div>
+    <div class="qa-tags"><span class="qa-tag">Anonymous</span></div>
+  </div>
+
+  <div class="qa" data-search="dead mans switch timer auto send check in">
+    <div class="qa-q"><div class="qa-q-text">What's a Dead Man's Switch?</div><div class="qa-q-num">03.05</div></div>
+    <div class="qa-a">A feature that automatically sends pre-arranged messages to specific people if you don't check in before a timer expires. Set the timer from 1 hour to 30 days, pick recipients, write the messages. Check in and the clock resets; miss a check-in and the messages are sent. Useful for travel, journalists protecting sources, or any "if I don't respond by X, tell these people Y" scenario. The switch runs on peer-to-peer infrastructure — no central authority to compel or disable.</div>
+    <div class="qa-tags"><span class="qa-tag">Dead Man's Switch</span></div>
+  </div>
+
+  <div class="qa" data-search="live stream streaming video broadcast">
+    <div class="qa-q"><div class="qa-q-text">Can I stream live video?</div><div class="qa-q-num">03.06</div></div>
+    <div class="qa-a">Yes. Live streams distribute <strong>mesh-pull style</strong> — each viewer pulls chunks from a few peers and redistributes to others, BitTorrent-style but for live video. The more people watching, the stronger the distribution. No central streaming server, no middleman who could cut the stream.</div>
+    <div class="qa-tags"><span class="qa-tag">Streaming</span></div>
+  </div>
+
+  <div class="qa" data-search="disappearing messages auto delete ephemeral">
+    <div class="qa-q"><div class="qa-q-text">Does OpenDescent have disappearing messages?</div><div class="qa-q-num">03.07</div></div>
+    <div class="qa-a">Not yet. Disappearing messages are on the roadmap for an upcoming release. For now, messages you delete on your device are removed locally, but anyone you sent them to still has a copy on their device.</div>
+    <div class="qa-tags"><span class="qa-tag">Roadmap</span></div>
+  </div>
+
+  <div class="qa" data-search="stickers emoji reactions">
+    <div class="qa-q"><div class="qa-q-text">Does it have stickers or reactions?</div><div class="qa-q-num">03.08</div></div>
+    <div class="qa-a">Emoji reactions: yes. Custom stickers: on the roadmap. Standard emoji and markdown formatting work today.</div>
+    <div class="qa-tags"><span class="qa-tag">Roadmap</span></div>
+  </div>
+
+  <div class="qa" data-search="group chat multiple people conversation">
+    <div class="qa-q"><div class="qa-q-text">Can I have group chats?</div><div class="qa-q-num">03.09</div></div>
+    <div class="qa-a">Yes. Group chats use a shared AES-256 key distributed to members via individual E2E encrypted channels. When a member leaves, a <strong>new shared key is automatically rotated</strong> so the ex-member cannot decrypt future messages. Forward secrecy keeps past ones safe.</div>
+    <div class="qa-tags"><span class="qa-tag">Groups</span></div>
+  </div>
+</section>
+
+<!-- 04 COMPARISONS -->
+<section class="cat" id="compare">
+  <div class="cat-header">
+    <div class="cat-num">04</div>
+    <div class="cat-title">Comparisons &mdash; <em>how we stack up</em>.</div>
+    <div class="cat-count">6 questions</div>
+  </div>
+
+  <div class="qa" data-search="signal alternative difference comparison">
+    <div class="qa-q"><div class="qa-q-text">How is OpenDescent different from Signal?</div><div class="qa-q-num">04.01</div></div>
+    <div class="qa-a">Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes Discord-style community hubs which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps — OpenDescent is currently Windows-only. See <a href="/vs/signal.html">the full comparison</a>.</div>
+    <div class="qa-tags"><span class="qa-tag">vs Signal</span></div>
+  </div>
+
+  <div class="qa" data-search="discord alternative difference comparison id verification">
+    <div class="qa-q"><div class="qa-q-text">How is OpenDescent different from Discord?</div><div class="qa-q-num">04.02</div></div>
+    <div class="qa-a">Discord text messages are not end-to-end encrypted; Discord servers can read them. OpenDescent's hubs offer the same shape (channels, voice, roles, invites) but everything is end-to-end encrypted and peer-replicated. Discord also leaked 70,000 government-ID photos in October 2025 and is pushing mandatory age verification; OpenDescent never asks for your ID. See <a href="/vs/discord.html">the full comparison</a>.</div>
+    <div class="qa-tags"><span class="qa-tag">vs Discord</span></div>
+  </div>
+
+  <div class="qa" data-search="whatsapp alternative difference meta lawsuit">
+    <div class="qa-q"><div class="qa-q-text">How is OpenDescent different from WhatsApp?</div><div class="qa-q-num">04.03</div></div>
+    <div class="qa-a">WhatsApp is end-to-end encrypted via the Signal Protocol — the cryptography itself is good. The difference is ownership: WhatsApp is owned by Meta (the same company ending Instagram encryption on May 8, 2026) and requires your phone number. OpenDescent has no owning company in a position to change the rules, and requires no phone number. See <a href="/vs/whatsapp.html">the full comparison</a>.</div>
+    <div class="qa-tags"><span class="qa-tag">vs WhatsApp</span></div>
+  </div>
+
+  <div class="qa" data-search="telegram secret chat not e2e default">
+    <div class="qa-q"><div class="qa-q-text">Is OpenDescent better than Telegram?</div><div class="qa-q-num">04.04</div></div>
+    <div class="qa-a">Telegram's default chats are <strong>not end-to-end encrypted</strong> — only "Secret Chats," which you must create manually, are E2E (and Secret Chats don't work in groups). Telegram's servers can read your default chats. OpenDescent is E2E by default with no toggle. So yes, on the E2E-by-default axis, OpenDescent is stronger. Telegram has larger networks and more channels/bots today.</div>
+    <div class="qa-tags"><span class="qa-tag">vs Telegram</span></div>
+  </div>
+
+  <div class="qa" data-search="matrix element federated">
+    <div class="qa-q"><div class="qa-q-text">What about Matrix / Element?</div><div class="qa-q-num">04.05</div></div>
+    <div class="qa-a">Matrix (via Element) is <strong>federated</strong> — many servers interoperate, and you can run your own. That's a meaningful privacy improvement over a single-company service like Discord. OpenDescent goes one step further: there's no server at all. Each approach has trade-offs: federation has better moderation tooling and maturity; true P2P removes the server entirely and removes the setup friction of picking or running a homeserver.</div>
+    <div class="qa-tags"><span class="qa-tag">vs Matrix</span></div>
+  </div>
+
+  <div class="qa" data-search="instagram leaving alternative may 8">
+    <div class="qa-q"><div class="qa-q-text">Is OpenDescent a good Instagram DM replacement?</div><div class="qa-q-num">04.06</div></div>
+    <div class="qa-a">For 1-on-1 and small-group private conversations, yes. Instagram DMs lose E2E encryption on May 8, 2026. If you move conversations where privacy actually matters — family, close friends, relationships — to OpenDescent, those conversations stay private. Instagram's broader public/social features (posts, reels, discovery) aren't in OpenDescent's scope. See <a href="/leaving-instagram.html">Leaving Instagram DMs</a> for the full guide.</div>
+    <div class="qa-tags"><span class="qa-tag">Instagram</span></div>
+  </div>
+</section>
+
+<!-- 05 ACCOUNT & RECOVERY -->
+<section class="cat" id="account">
+  <div class="cat-header">
+    <div class="cat-num">05</div>
+    <div class="cat-title">Account &amp; recovery &mdash; <em>your identity, your keys</em>.</div>
+    <div class="cat-count">6 questions</div>
+  </div>
+
+  <div class="qa" data-search="back up mnemonic phrase recovery words">
+    <div class="qa-q"><div class="qa-q-text">How do I back up my account?</div><div class="qa-q-num">05.01</div></div>
+    <div class="qa-a">The first time you create your identity, the app shows you a <strong>12-word BIP39 mnemonic phrase</strong>. Write it down on paper in a safe place, <em>or</em> save it in a trusted password manager (Bitwarden, 1Password, KeePass). That phrase is the only way to recover your account on a new device. Never send it to anyone, and never paste it into any other app.</div>
+    <div class="qa-tags"><span class="qa-tag">Backup</span></div>
+  </div>
+
+  <div class="qa" data-search="12 word phrase recovery bip39 seed">
+    <div class="qa-q"><div class="qa-q-text">What is the 12-word recovery phrase?</div><div class="qa-q-num">05.02</div></div>
+    <div class="qa-a">A 12-word sequence drawn from the <strong>BIP39</strong> standard wordlist (the same system used for crypto wallets). It encodes 128 bits of entropy plus a checksum, and it deterministically derives your Ed25519 identity key. Typing the same 12 words on any OpenDescent device reconstructs the same account.</div>
+    <div class="qa-tags"><span class="qa-tag">Mnemonic</span></div>
+  </div>
+
+  <div class="qa" data-search="lost mnemonic phrase locked out forgot">
+    <div class="qa-q"><div class="qa-q-text">What if I lose my mnemonic phrase?</div><div class="qa-q-num">05.03</div></div>
+    <div class="qa-a">Your account <strong>cannot be recovered</strong> without it. Because there is no central server storing your identity, there is no "forgot password" option — the mnemonic is the only way to reconstruct your cryptographic identity. This is the fundamental trade-off of true E2E encryption: security properties require that nobody, including us, can recover your account without your key.</div>
+    <div class="qa-tags"><span class="qa-tag">Recovery</span></div>
+  </div>
+
+  <div class="qa" data-search="multiple devices sync same account">
+    <div class="qa-q"><div class="qa-q-text">Can I use the same account on multiple devices?</div><div class="qa-q-num">05.04</div></div>
+    <div class="qa-a">Yes, by entering your 12-word mnemonic on each device — each one reconstructs the same identity. There is currently <strong>no cross-device message sync</strong>, though: each device sees only the messages received while it was online. Cross-device sync is on the roadmap but is architecturally tricky to do right without a central coordinating server.</div>
+    <div class="qa-tags"><span class="qa-tag">Multi-device</span></div>
+  </div>
+
+  <div class="qa" data-search="change username handle display name">
+    <div class="qa-q"><div class="qa-q-text">Can I change my username?</div><div class="qa-q-num">05.05</div></div>
+    <div class="qa-a">Yes. Usernames are not globally registered — they exist within the trust graph of your contacts. You can change your display name at any time from Settings. Your cryptographic identity (the underlying Ed25519 key) is permanent; the human-readable name on top of it is not.</div>
+    <div class="qa-tags"><span class="qa-tag">Username</span></div>
+  </div>
+
+  <div class="qa" data-search="delete account remove identity wipe">
+    <div class="qa-q"><div class="qa-q-text">Can I delete my account?</div><div class="qa-q-num">05.06</div></div>
+    <div class="qa-a">You can delete your local data from within the app, which removes your identity and messages from that device. There is no central record to delete, because there is no central database — so "deleting your account" just means removing your keys from your own devices. Messages you sent to others remain on their devices; they always did.</div>
+    <div class="qa-tags"><span class="qa-tag">Deletion</span></div>
+  </div>
+</section>
+
+<!-- 06 TECHNICAL -->
+<section class="cat" id="technical">
+  <div class="cat-header">
+    <div class="cat-num">06</div>
+    <div class="cat-title">Technical &mdash; <em>how it works under the hood</em>.</div>
+    <div class="cat-count">6 questions</div>
+  </div>
+
+  <div class="qa" data-search="peer to peer p2p no server mesh">
+    <div class="qa-q"><div class="qa-q-text">How does OpenDescent work without servers?</div><div class="qa-q-num">06.01</div></div>
+    <div class="qa-a">Every device that runs OpenDescent is a peer in a <strong>libp2p mesh network</strong>. Messages travel directly from peer to peer, encrypted in transit (libp2p Noise) and encrypted end-to-end (AES-256-GCM). Peer discovery uses <strong>mDNS</strong> on local networks and <strong>KadDHT</strong> across the internet. No OpenDescent-operated machine sits between sender and recipient.</div>
+    <div class="qa-tags"><span class="qa-tag">P2P</span><span class="qa-tag">libp2p</span></div>
+  </div>
+
+  <div class="qa" data-search="offline internet not working no connection">
+    <div class="qa-q"><div class="qa-q-text">What happens if the recipient is offline?</div><div class="qa-q-num">06.02</div></div>
+    <div class="qa-a"><strong>Store-and-forward</strong>: the encrypted message is held at another peer in the recipient's trust graph until they come back online. The holding peer sees <em>ciphertext only</em> — it can't read what it's holding, only that there's a message waiting for a specific recipient key.</div>
+    <div class="qa-tags"><span class="qa-tag">Offline</span></div>
+  </div>
+
+  <div class="qa" data-search="firewall nat router hole punch connection">
+    <div class="qa-q"><div class="qa-q-text">Does it work behind a firewall or NAT?</div><div class="qa-q-num">06.03</div></div>
+    <div class="qa-a">Yes. OpenDescent uses <strong>DCUtR (Direct Connection Upgrade through Relay)</strong> for NAT hole-punching, attempting a direct peer connection via a temporary relay-assisted handshake. When hole-punching isn't possible, traffic falls back to <strong>Circuit Relay v2</strong> — a relay node forwards encrypted packets without having the decryption keys.</div>
+    <div class="qa-tags"><span class="qa-tag">NAT</span></div>
+  </div>
+
+  <div class="qa" data-search="libp2p what is network stack">
+    <div class="qa-q"><div class="qa-q-text">What is libp2p?</div><div class="qa-q-num">06.04</div></div>
+    <div class="qa-a"><strong>libp2p</strong> is an open-source peer-to-peer networking stack originally built for IPFS and now used by Filecoin, Ethereum, Polkadot, and many other decentralized systems. OpenDescent uses libp2p for transport (with Noise encryption and Yamux multiplexing), peer discovery (KadDHT, mDNS), and NAT traversal (DCUtR, Circuit Relay v2). It's the reason the network architecture works without servers.</div>
+    <div class="qa-tags"><span class="qa-tag">libp2p</span></div>
+  </div>
+
+  <div class="qa" data-search="no internet offline lan local network">
+    <div class="qa-q"><div class="qa-q-text">Does OpenDescent work without internet?</div><div class="qa-q-num">06.05</div></div>
+    <div class="qa-a">Partially. On the same local network (same Wi-Fi, same LAN), two OpenDescent devices can communicate over <strong>mDNS</strong> with no internet access needed. Across the wider internet, you need connectivity to reach peers. There's no "fully offline mesh mode" today — it's an interesting future direction but not currently shipping.</div>
+    <div class="qa-tags"><span class="qa-tag">Offline</span><span class="qa-tag">LAN</span></div>
+  </div>
+
+  <div class="qa" data-search="signal protocol double ratchet difference">
+    <div class="qa-q"><div class="qa-q-text">Does OpenDescent use the Signal Protocol?</div><div class="qa-q-num">06.06</div></div>
+    <div class="qa-a">No. We use standard primitives (X25519, HKDF-SHA256, AES-256-GCM, Ed25519) assembled directly rather than adopting the Signal Protocol's Double Ratchet. Per-message ephemeral X25519 key agreement gives us forward secrecy without the Double Ratchet's stateful design — which fits peer-to-peer delivery more cleanly than a strictly server-mediated chain. See <a href="/security.html#primitives">the security page</a> for details.</div>
+    <div class="qa-tags"><span class="qa-tag">Crypto</span></div>
+  </div>
+</section>
+
+<!-- 07 PRICING -->
+<section class="cat" id="pricing">
+  <div class="cat-header">
+    <div class="cat-num">07</div>
+    <div class="cat-title">Pricing &amp; Pro &mdash; <em>how we fund a free app</em>.</div>
+    <div class="cat-count">6 questions</div>
+  </div>
+
+  <div class="qa" data-search="paid pro subscription cost price">
+    <div class="qa-q"><div class="qa-q-text">Is there a paid version?</div><div class="qa-q-num">07.01</div></div>
+    <div class="qa-a">Yes — OpenDescent Pro, £5/month. It's <strong>optional</strong>. Every core feature (messaging, calls, hubs, encryption) is free forever. Pro unlocks larger file transfers, more hubs, and helps fund the project.</div>
+    <div class="qa-tags"><span class="qa-tag">Pro</span></div>
+  </div>
+
+  <div class="qa" data-search="pro features what includes unlock">
+    <div class="qa-q"><div class="qa-q-text">What does Pro include?</div><div class="qa-q-num">07.02</div></div>
+    <div class="qa-a">Pro unlocks:
+      <ul>
+        <li>Larger file transfers (higher per-file and monthly caps)</li>
+        <li>Unlimited hubs (free tier caps the number of hubs you can create)</li>
+        <li>Priority support on GitHub Discussions</li>
+        <li>A Pro badge on your profile, if you want one</li>
+      </ul>
+      None of these affect encryption, privacy, or the core messaging experience.
+    </div>
+    <div class="qa-tags"><span class="qa-tag">Pro</span></div>
+  </div>
+
+  <div class="qa" data-search="founder edition lifetime early supporter">
+    <div class="qa-q"><div class="qa-q-text">What is the Founder's Edition?</div><div class="qa-q-num">07.03</div></div>
+    <div class="qa-a">A one-time <strong>£1 purchase for lifetime Pro</strong>, limited to the first few users. It includes everything Pro includes, forever, plus a Founder badge on your profile. We launched it to reward people who supported the project early. See <a href="/#founder">the homepage</a> for current availability.</div>
+    <div class="qa-tags"><span class="qa-tag">Founder</span></div>
+  </div>
+
+  <div class="qa" data-search="cost pricing monthly annual">
+    <div class="qa-q"><div class="qa-q-text">How much is Pro?</div><div class="qa-q-num">07.04</div></div>
+    <div class="qa-a">£5 per month. No annual or longer-term discounts yet (we'll add them once we know what sensible ones look like). Founder's Edition is a one-time £1 purchase for lifetime Pro, while spots remain.</div>
+    <div class="qa-tags"><span class="qa-tag">Pricing</span></div>
+  </div>
+
+  <div class="qa" data-search="make money business model revenue advertising">
+    <div class="qa-q"><div class="qa-q-text">How do you make money if the app is free?</div><div class="qa-q-num">07.05</div></div>
+    <div class="qa-a">Entirely through <strong>Pro subscriptions</strong> and <strong>Founder's Edition</strong> purchases. No ads. No data sales. No "enterprise tier" that compromises on privacy for business customers. We can't run an advertising business because there is no central server to aggregate data from — and that's a feature, not a bug. The subscription model keeps incentives aligned with users, not advertisers.</div>
+    <div class="qa-tags"><span class="qa-tag">Business model</span></div>
+  </div>
+
+  <div class="qa" data-search="donate contribute support help fund">
+    <div class="qa-q"><div class="qa-q-text">Can I donate or contribute?</div><div class="qa-q-num">07.06</div></div>
+    <div class="qa-a">Buying Pro or Founder's Edition is the most direct way to support the project financially. Code contributions are welcome on <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a> — we review all PRs. Spreading the word (Reddit, GitHub stars, sharing comparison pages) materially helps too.</div>
+    <div class="qa-tags"><span class="qa-tag">Support</span></div>
+  </div>
+</section>
+
+<!-- 08 TROUBLESHOOT -->
+<section class="cat" id="troubleshoot">
+  <div class="cat-header">
+    <div class="cat-num">08</div>
+    <div class="cat-title">Troubleshooting &mdash; <em>when things go wrong</em>.</div>
+    <div class="cat-count">6 questions</div>
+  </div>
+
+  <div class="qa" data-search="cant connect peer discovery offline no contacts">
+    <div class="qa-q"><div class="qa-q-text">Why can't I connect to other peers?</div><div class="qa-q-num">08.01</div></div>
+    <div class="qa-a">Usually one of these: (1) your firewall is blocking the libp2p ports — try enabling the app through Windows Firewall when prompted; (2) your NAT is particularly aggressive and DCUtR hole-punching isn't working — circuit relay should kick in automatically; (3) the peer you're trying to reach is offline and store-and-forward hasn't resolved yet — messages will deliver when they return. If problems persist, open a GitHub Discussion with your logs.</div>
+    <div class="qa-tags"><span class="qa-tag">Connectivity</span></div>
+  </div>
+
+  <div class="qa" data-search="voice video call not working audio problem">
+    <div class="qa-q"><div class="qa-q-text">Voice calls aren't working — what do I check?</div><div class="qa-q-num">08.02</div></div>
+    <div class="qa-a">WebRTC calls need: (1) microphone permission in Windows; (2) UDP traffic to STUN/TURN servers; (3) at least one peer that can route the call. If you're on a corporate or school network, UDP is often blocked. On a normal home network, allow OpenDescent through Windows Defender Firewall and it should work. Check that your microphone is selected correctly in Settings.</div>
+    <div class="qa-tags"><span class="qa-tag">Calls</span></div>
+  </div>
+
+  <div class="qa" data-search="bug report issue github crash">
+    <div class="qa-q"><div class="qa-q-text">How do I report a bug?</div><div class="qa-q-num">08.03</div></div>
+    <div class="qa-a">Open an issue on <a href="https://github.com/Jaguwa/OpenDescent/issues" target="_blank" rel="noopener">GitHub Issues</a> with: steps to reproduce, expected behaviour, actual behaviour, your OS version, the app version (shown in Settings → About), and any relevant log output. Most bugs get a response within a day or two.</div>
+    <div class="qa-tags"><span class="qa-tag">Bugs</span></div>
+  </div>
+
+  <div class="qa" data-search="smartscreen warning unsigned installer windows">
+    <div class="qa-q"><div class="qa-q-text">Why does Windows show a SmartScreen warning when I install?</div><div class="qa-q-num">08.04</div></div>
+    <div class="qa-a">Because the installer isn't yet signed with an Extended Validation code-signing certificate (those cost several hundred pounds per year, and we're working up to it). Windows SmartScreen flags any unsigned installer from a new publisher. Click "More info" → "Run anyway" to proceed. You can also verify the installer's SHA-256 hash against the one listed on the <a href="https://github.com/Jaguwa/OpenDescent/releases" target="_blank" rel="noopener">GitHub Releases page</a> before running it.</div>
+    <div class="qa-tags"><span class="qa-tag">Install</span></div>
+  </div>
+
+  <div class="qa" data-search="security vulnerability disclosure report cve">
+    <div class="qa-q"><div class="qa-q-text">Where do I report a security issue?</div><div class="qa-q-num">08.05</div></div>
+    <div class="qa-a">Please use <a href="https://github.com/Jaguwa/OpenDescent/security/advisories" target="_blank" rel="noopener">GitHub Security Advisories</a> for responsible disclosure. We aim to respond within 48 hours on weekdays, coordinate on a disclosure timeline, and credit reporters unless they prefer otherwise. Do not open a public issue for security problems — use the Security tab.</div>
+    <div class="qa-tags"><span class="qa-tag">Security</span></div>
+  </div>
+
+  <div class="qa" data-search="mnemonic lost locked out cant recover">
+    <div class="qa-q"><div class="qa-q-text">I lost my mnemonic — am I locked out forever?</div><div class="qa-q-num">08.06</div></div>
+    <div class="qa-a">If you no longer have both (a) your mnemonic and (b) a device that still has your identity, then yes — the account is gone. This is the trade-off of real end-to-end encryption: the thing that prevents <em>us</em> from reading your messages also prevents us from restoring your account. You can create a new identity and tell your contacts to re-add you. Future releases may include optional social-recovery options (distribute encrypted shards of your key to trusted contacts), but v0.5.4 doesn't have that yet.</div>
+    <div class="qa-tags"><span class="qa-tag">Recovery</span></div>
+  </div>
+</section>
+
+</div>
+
+<!-- Still stuck -->
+<section class="stuck-section">
+  <div class="container-narrow">
+    <div style="text-align: center; margin-bottom: 48px;">
+      <div class="kicker kicker-ghost" style="justify-content: center; margin-bottom: 14px;">Still stuck?</div>
+      <h2 style="font-family: var(--display); font-size: clamp(1.6rem, 2.8vw, 2.2rem); font-weight: 700; color: var(--text-strong); margin-bottom: 12px; line-height: 1.15;">Didn't find what you were looking for?</h2>
+      <p style="font-family: var(--body); font-size: 15px; color: var(--text-mid); line-height: 1.7; max-width: 600px; margin: 0 auto;">Ask on GitHub Discussions — you'll get a real response from the people who actually built the thing.</p>
+    </div>
+    <div class="stuck-grid reveal">
+      <div class="stuck-card">
+        <div class="stuck-kicker">Ask</div>
+        <h3>GitHub Discussions</h3>
+        <p>For general questions, feature suggestions, and community conversation. We read everything. Public, but that's often helpful — your question probably helps someone else too.</p>
+        <a href="https://github.com/Jaguwa/OpenDescent/discussions" target="_blank" rel="noopener" class="btn btn-ghost btn-arrow">Open Discussions</a>
+      </div>
+      <div class="stuck-card">
+        <div class="stuck-kicker">Report</div>
+        <h3>GitHub Issues</h3>
+        <p>For specific bugs, crashes, or reproducible problems. Include your OS, app version, and a description of what happened. We triage everything within a couple of days.</p>
+        <a href="https://github.com/Jaguwa/OpenDescent/issues" target="_blank" rel="noopener" class="btn btn-ghost btn-arrow">Open an Issue</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-band">
+  <div class="container-narrow">
+    <div class="kicker kicker-ghost" style="justify-content: center; margin-bottom: 14px;">Read enough?</div>
+    <h2>The only real answer is <em>try it yourself</em>.</h2>
+    <p>Free, open source, no account required. The full app is v0.5.4 for Windows.</p>
+    <div class="btns">
+      <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
+      <a href="/" class="btn btn-ghost btn-arrow">Back to home</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <div class="footer-micro">
+          Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>
+          オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth
+        </div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Product</div>
+        <a href="/features.html">Features</a>
+        <a href="/security.html">Security</a>
+        <a href="/#download">Download</a>
+        <a href="/faq.html">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Compare</div>
+        <a href="/leaving-instagram.html">Leaving Instagram</a>
+        <a href="/vs/signal.html">vs Signal</a>
+        <a href="/vs/discord.html">vs Discord</a>
+        <a href="/vs/whatsapp.html">vs WhatsApp</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Project</div>
+        <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a>
+        <a href="/blog/">Blog</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 OpenDescent &nbsp;·&nbsp; MIT Licensed</div>
+      <div class="footer-barcode">▌▌▏▌▏▏▌▌▏▌▏▌▌▏▏▌▏▌▌▏▌▏▏▌</div>
+      <div class="footer-legal">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">Source</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const revObs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      revObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(el => revObs.observe(el));
+
+// FAQ search
+const searchInput = document.getElementById('faq-search-input');
+const searchHint = document.getElementById('faq-search-hint');
+const noResults = document.getElementById('faq-noresults');
+const qas = document.querySelectorAll('.qa');
+const cats = document.querySelectorAll('.cat');
+
+searchInput.addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  if (!q) {
+    qas.forEach(el => el.classList.remove('hidden'));
+    cats.forEach(el => el.style.display = '');
+    searchHint.textContent = '▶ 50+ answered';
+    noResults.classList.remove('on');
+    return;
+  }
+  let count = 0;
+  qas.forEach(el => {
+    const haystack = (el.textContent + ' ' + (el.getAttribute('data-search') || '')).toLowerCase();
+    if (haystack.includes(q)) {
+      el.classList.remove('hidden');
+      count++;
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+  // Hide categories that have no visible questions
+  cats.forEach(cat => {
+    const visible = cat.querySelectorAll('.qa:not(.hidden)').length;
+    cat.style.display = visible ? '' : 'none';
+  });
+  searchHint.textContent = count === 1 ? '▶ 1 match' : '▶ ' + count + ' matches';
+  noResults.classList.toggle('on', count === 0);
+});
+</script>
+</body>
+</html>

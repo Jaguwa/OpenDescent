@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenDescent vs Discord: A Private Discord Alternative Without the ID Uploads (2026)</title>
+<meta name="description" content="OpenDescent vs Discord compared feature-by-feature. End-to-end encrypted community hubs, no government ID, no phone number, no central servers — after Discord leaked 70,000 IDs in 2025.">
+<meta name="keywords" content="discord alternative, private discord alternative, encrypted discord alternative, discord alternative no id verification, discord alternative 2026, opendescent vs discord, discord alternative encrypted community chat, discord without age verification">
+<meta name="author" content="OpenDescent">
+<meta name="theme-color" content="#0f1012">
+<link rel="canonical" href="https://open-descent.com/vs/discord.html">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<!-- Analytics -->
+<script async src="https://plausible.io/js/pa-zQ01yi4zP0T_1Tx0kPikj.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://open-descent.com/vs/discord.html">
+<meta property="og:title" content="OpenDescent vs Discord: A Private Discord Alternative Without the ID Uploads">
+<meta property="og:description" content="Community hubs, voice channels, roles — everything Discord does, end-to-end encrypted and peer-to-peer. No phone. No ID. No central server.">
+<meta property="og:image" content="https://open-descent.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="OpenDescent">
+<meta property="article:published_time" content="2026-04-23T00:00:00Z">
+<meta property="article:modified_time" content="2026-04-23T00:00:00Z">
+<meta property="article:section" content="Compare">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="OpenDescent vs Discord: A Private Discord Alternative">
+<meta name="twitter:description" content="Community hubs, voice channels, roles — everything Discord does, end-to-end encrypted and peer-to-peer.">
+<meta name="twitter:image" content="https://open-descent.com/og-image.png">
+
+<!-- Article schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "OpenDescent vs Discord: A Private Discord Alternative Without the ID Uploads",
+  "description": "Feature-by-feature comparison of OpenDescent and Discord for community chat, after Discord leaked 70,000 government IDs in October 2025 and pushed mandatory age verification in 2026.",
+  "datePublished": "2026-04-23",
+  "dateModified": "2026-04-23",
+  "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" },
+  "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } },
+  "image": "https://open-descent.com/og-image.png",
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/vs/discord.html" }
+}
+</script>
+
+<!-- Breadcrumb schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://open-descent.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Compare", "item": "https://open-descent.com/#compare" },
+    { "@type": "ListItem", "position": 3, "name": "vs Discord", "item": "https://open-descent.com/vs/discord.html" }
+  ]
+}
+</script>
+
+<!-- FAQ schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is the best private Discord alternative?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent is the closest thing to a private Discord alternative available today. It supports community hubs with text and voice channels, roles, and invites — like a Discord server — but every message is end-to-end encrypted by default, no phone number or ID is required, and there is no central server that can be breached, subpoenaed, or shut down." } },
+    { "@type": "Question", "name": "Is Discord end-to-end encrypted?", "acceptedAnswer": { "@type": "Answer", "text": "No. Discord encrypts messages in transit (TLS) but not end-to-end. Discord itself can read message content on its servers, which means messages can be scanned, produced under subpoena, or exposed in a server compromise. Voice and video calls received end-to-end encryption in 2024, but text messages did not." } },
+    { "@type": "Question", "name": "Did Discord leak government IDs?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. On October 3, 2025, attackers compromised a Discord customer-service account at third-party vendor 5CA and maintained access for 58 hours, exposing approximately 70,000 government-ID photos that users had uploaded for age-appeal reviews. In February 2026, Discord's age-verification partner Persona was also found to have left its frontend code publicly accessible with ~2,500 files exposed. Discord has since delayed its mandatory age-verification rollout to the second half of 2026." } },
+    { "@type": "Question", "name": "Does OpenDescent have community servers like Discord?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — we call them hubs. A hub has text channels, voice channels, categories, roles and permissions, and invite links — the same shape as a Discord server. The difference is that hubs are peer-replicated across members' devices, not hosted on a central server. There is no hub owner who can be subpoenaed, no company that can shut a hub down, and no plaintext the host can scan." } },
+    { "@type": "Question", "name": "Do I need a phone number or ID for OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "No. OpenDescent requires no phone number, no email, no government ID, and no account. Your identity is a cryptographic keypair generated on your device and backed up by a 12-word mnemonic phrase." } },
+    { "@type": "Question", "name": "Can I run a large community on OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Hubs support text and voice channels, roles, moderation tools, and invite links. Voice channels use WebRTC with direct peer connections when possible. File sharing uses signed manifests and XOR-parity sharding so large files are resilient." } }
+  ]
+}
+</script>
+
+<style>
+/* Fonts */
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Semibold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Array'; src: url('/fonts/Array-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-Wide.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Array Wide'; src: url('/fonts/Array-BoldWide.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+:root {
+  --bg: #0f1012; --bg-deep: #0a0a0c; --bg-surface: #16181c; --bg-card: #1a1d22; --bg-card-hi: #20242a;
+  --teal: #32E0C4; --teal-dim: #0D7377; --teal-glow: #5FFFD6;
+  --red: #e04050; --red-dim: #8a1e2a; --amber: #FFD166;
+  --discord: #5865F2;
+  --text: #EEEEEE; --text-strong: #FFFFFF; --text-mid: #aaaaaa; --text-dim: #666666; --text-ghost: #3a3d42;
+  --border: rgba(255,255,255,0.06); --border-bright: rgba(50,224,196,0.2); --border-red: rgba(224,64,80,0.25);
+  --mono: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --display: 'Array Wide', 'Array', -apple-system, sans-serif;
+  --body: 'Array', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--body); background: var(--bg); color: var(--text);
+  overflow-x: hidden; line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.45) 100%);
+}
+
+@keyframes chroma-section { 0%,100% { text-shadow: -1.5px 0 rgba(224,64,80,0.3), 1.5px 0 rgba(50,224,196,0.35); } 50% { text-shadow: -2px 0.5px rgba(224,64,80,0.25), 2px -0.5px rgba(50,224,196,0.4); } }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; position: relative; }
+.container-narrow { max-width: 820px; margin: 0 auto; padding: 0 28px; position: relative; }
+section { padding: 84px 0; position: relative; }
+
+.kicker { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 10px; }
+.kicker::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; animation: pulse-dot 2s infinite; }
+.kicker-red { color: #ffbfc4; }
+.kicker-red::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
+.kicker-ghost { color: var(--text-ghost); }
+.kicker-ghost::before { background: var(--text-ghost); }
+
+/* Breaking ticker */
+.breaking { background: linear-gradient(90deg, rgba(224,64,80,0.15), rgba(224,64,80,0.06) 40%, rgba(224,64,80,0.06) 60%, rgba(224,64,80,0.15)); border-bottom: 1px solid var(--border-red); overflow: hidden; position: relative; z-index: 101; }
+.breaking-viewport { display: flex; align-items: center; height: 32px; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.breaking-label { display: inline-flex; align-items: center; gap: 8px; color: #ffeaee; background: var(--red); padding: 7px 14px; height: 100%; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.breaking-label::before { content: ''; width: 6px; height: 6px; background: #ffeaee; border-radius: 50%; animation: pulse-dot 1.2s infinite; }
+.breaking-track { flex: 1; overflow: hidden; position: relative; white-space: nowrap; mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); }
+.breaking-content { display: inline-block; padding-left: 100%; animation: ticker-scroll 60s linear infinite; color: var(--text-mid); }
+.breaking-content a { color: var(--text); text-decoration: none; margin: 0 14px; }
+.breaking-content a:hover { color: var(--teal); }
+.breaking-content .sep { color: var(--red); margin: 0 14px; }
+
+/* Nav */
+nav { position: sticky; top: 0; z-index: 100; background: rgba(15,16,18,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 1400px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.nav-brand { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: var(--text); text-decoration: none; animation: chroma-section 5s ease-in-out infinite; display: inline-flex; align-items: center; gap: 10px; }
+.nav-brand .dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.nav-links { display: flex; gap: 28px; list-style: none; align-items: center; }
+.nav-links a { font-family: var(--mono); font-size: 10.5px; color: var(--text-mid); text-decoration: none; text-transform: uppercase; letter-spacing: 1.5px; transition: color 0.2s; }
+.nav-links a:hover { color: var(--teal); }
+.nav-links a.alert { color: #ffb8bf; }
+.nav-links a.alert::before { content: ''; display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-right: 6px; vertical-align: middle; animation: pulse-dot 1.4s infinite; box-shadow: 0 0 8px var(--red); }
+.nav-links a.alert:hover { color: var(--red); }
+.nav-cta { padding: 8px 18px !important; background: transparent; border: 1px solid var(--teal); border-radius: 3px; color: var(--teal) !important; letter-spacing: 2px !important; }
+.nav-cta:hover { background: rgba(50,224,196,0.08); box-shadow: 0 0 14px rgba(50,224,196,0.18); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 4px; font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; text-decoration: none; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-primary { background: var(--teal); color: #07140f; }
+.btn-primary:hover { background: var(--teal-glow); box-shadow: 0 0 24px rgba(50,224,196,0.35); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border-color: var(--border-bright); }
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); box-shadow: 0 0 16px rgba(50,224,196,0.12); }
+.btn-arrow::after { content: '\2192'; font-size: 14px; }
+
+/* Breadcrumb */
+.breadcrumb { padding: 22px 0 0; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-ghost); }
+.breadcrumb a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: var(--teal); }
+.breadcrumb .sep { color: var(--text-ghost); margin: 0 10px; }
+.breadcrumb .current { color: var(--text); }
+
+/* Hero */
+.article-hero {
+  padding: 48px 0 72px;
+  border-bottom: 1px solid var(--border);
+  background: radial-gradient(ellipse at 80% 20%, rgba(88,101,242,0.05) 0%, transparent 55%);
+}
+.article-hero-inner { display: grid; grid-template-columns: 1fr 360px; gap: 48px; align-items: center; margin-top: 28px; }
+.article-hero-left { max-width: 680px; }
+.hero-meta-row { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 22px; align-items: center; }
+.hero-date { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+.article-hero h1 { font-family: var(--display); font-size: clamp(2.2rem, 4.6vw, 3.4rem); font-weight: 700; line-height: 1.06; letter-spacing: -0.5px; color: var(--text-strong); margin-bottom: 22px; }
+.article-hero h1 em { font-style: normal; color: var(--teal); animation: chroma-section 6s ease-in-out infinite; }
+.article-dek { font-family: var(--body); font-size: 17px; line-height: 1.65; color: var(--text-mid); margin-bottom: 32px; max-width: 620px; }
+.hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+
+/* VS emblem */
+.vs-emblem {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px;
+  position: relative;
+  text-align: center;
+}
+.vs-emblem::before { content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.vs-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
+.vs-side { text-align: center; }
+.vs-logo { font-family: var(--display); font-size: 1.05rem; font-weight: 700; color: var(--text-strong); letter-spacing: 1px; line-height: 1; }
+.vs-logo.us { color: var(--teal); }
+.vs-logo.them { color: var(--text); }
+.vs-tag { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; margin-top: 8px; }
+.vs-mid { font-family: var(--display); font-size: 1.3rem; font-weight: 700; color: var(--text-ghost); letter-spacing: 2px; }
+.vs-stats { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-ghost); text-align: left; }
+.vs-stats .l { color: var(--text-mid); }
+.vs-stats .r { color: var(--teal); text-align: right; }
+
+/* TL;DR */
+.tldr { max-width: 820px; margin: 56px auto 0; background: var(--bg-card); border: 1px solid var(--border-bright); border-radius: 6px; padding: 28px 32px; position: relative; }
+.tldr::before { content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.tldr-label { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.tldr-label::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.tldr-list { list-style: none; padding: 0; }
+.tldr-list li { padding: 8px 0 8px 24px; position: relative; font-family: var(--body); font-size: 15px; color: var(--text); line-height: 1.7; }
+.tldr-list li::before { content: '›'; position: absolute; left: 0; color: var(--teal); font-weight: 700; font-size: 16px; }
+
+/* Section headers */
+.section-header { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end; margin-bottom: 40px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+.section-title { font-family: var(--display); font-size: clamp(1.5rem, 2.6vw, 2rem); font-weight: 700; letter-spacing: -0.5px; color: var(--text-strong); line-height: 1.1; }
+.section-title em { font-style: normal; color: var(--teal); }
+.section-sub { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; text-align: right; }
+
+/* Prose */
+.prose p { font-family: var(--body); font-size: 16px; line-height: 1.75; color: var(--text); margin-bottom: 18px; }
+.prose p strong { color: var(--text-strong); }
+.prose h3 { font-family: var(--display); font-size: 1.35rem; font-weight: 700; color: var(--text-strong); margin: 32px 0 14px; letter-spacing: 0; line-height: 1.2; }
+.prose h3 em { font-style: normal; color: var(--teal); }
+.prose ul { margin: 14px 0 24px; padding-left: 24px; }
+.prose ul li { font-family: var(--body); font-size: 15.5px; color: var(--text); line-height: 1.75; padding: 4px 0; }
+.prose ul li::marker { color: var(--teal); }
+.prose a { color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim); }
+.prose a:hover { border-bottom-style: solid; }
+
+/* Quote */
+.quote { border-left: 2px solid var(--teal); padding: 8px 0 8px 24px; margin: 28px 0; font-family: var(--body); font-size: 17px; font-style: italic; color: var(--text); line-height: 1.6; }
+.quote .cite { display: block; margin-top: 10px; padding-top: 10px; font-family: var(--mono); font-size: 10px; font-style: normal; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; }
+.quote .cite a { color: var(--text-mid); text-decoration: none; }
+.quote .cite a:hover { color: var(--teal); }
+
+/* Sources */
+.sources { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin: 28px 0; }
+.sources-label { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.sources a { display: block; font-family: var(--mono); font-size: 11px; color: var(--text-mid); text-decoration: none; padding: 3px 0; }
+.sources a:hover { color: var(--teal); }
+
+/* Fact */
+.fact { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--red); padding: 20px 24px; margin: 24px 0; border-radius: 0 4px 4px 0; }
+.fact-label { font-family: var(--mono); font-size: 10px; color: #ffbfc4; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+.fact-body { font-family: var(--body); font-size: 15px; color: var(--text); line-height: 1.7; }
+.fact-body strong { color: var(--text-strong); }
+
+/* Comparison table (detailed) */
+.compare-section { background: var(--bg-deep); }
+.compare-table-wrap { overflow-x: auto; margin: 30px 0; }
+.compare-table { width: 100%; border-collapse: collapse; font-family: var(--body); font-size: 14px; min-width: 700px; }
+.compare-table thead tr { border-bottom: 1px solid var(--border); }
+.compare-table th { padding: 18px 16px; font-family: var(--display); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-mid); text-align: center; }
+.compare-table th.us { color: var(--teal); }
+.compare-table th.them { color: var(--discord); }
+.compare-table th:first-child { text-align: left; color: var(--text-ghost); font-size: 9px; }
+.compare-table td { padding: 14px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-mid); }
+.compare-table td:first-child { text-align: left; color: var(--text); font-weight: 600; font-family: var(--body); font-size: 14px; }
+.compare-table .us-col { background: rgba(50,224,196,0.04); }
+.compare-table .yes { color: var(--teal); font-weight: 700; }
+.compare-table .no { color: var(--red); }
+.compare-table .meh { color: var(--amber); }
+.compare-table .row-cat { color: var(--teal-dim) !important; font-family: var(--mono) !important; font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 2px; padding-top: 24px; border-bottom: none; }
+
+/* Breach timeline */
+.timeline-section { background: var(--bg); }
+.timeline { position: relative; padding-left: 40px; margin: 28px 0; }
+.timeline::before { content: ''; position: absolute; top: 12px; bottom: 12px; left: 8px; width: 1px; background: linear-gradient(180deg, var(--red), var(--amber), var(--teal)); }
+.tl-entry { position: relative; padding-bottom: 32px; }
+.tl-entry:last-child { padding-bottom: 0; }
+.tl-entry::before { content: ''; position: absolute; top: 4px; left: -38px; width: 17px; height: 17px; border-radius: 50%; background: var(--bg); border: 2px solid var(--red); }
+.tl-entry.ok::before { border-color: var(--teal); }
+.tl-entry.warn::before { border-color: var(--amber); }
+.tl-date { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.tl-title { font-family: var(--display); font-size: 1.1rem; font-weight: 700; color: var(--text-strong); margin-bottom: 8px; line-height: 1.3; }
+.tl-body { font-family: var(--body); font-size: 14.5px; color: var(--text-mid); line-height: 1.75; }
+.tl-body a { color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim); }
+.tl-body a:hover { border-bottom-style: solid; }
+
+/* Hub showcase */
+.hub-section { background: var(--bg-deep); }
+.hub-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; }
+.hub-mock {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  overflow: hidden;
+  display: grid; grid-template-columns: 160px 1fr;
+  min-height: 340px;
+  box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
+  position: relative;
+}
+.hub-mock::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(50,224,196,0.015) 0, rgba(50,224,196,0.015) 1px, transparent 1px, transparent 3px); }
+.hub-sidebar { background: var(--bg-deep); border-right: 1px solid var(--border); padding: 16px 12px; font-family: var(--mono); font-size: 11px; position: relative; z-index: 1; }
+.hub-sidebar-title { font-family: var(--display); font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }
+.hub-cat { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; margin: 14px 0 6px; }
+.hub-chan { padding: 4px 6px; color: var(--text-mid); font-size: 12px; display: flex; align-items: center; gap: 6px; border-radius: 3px; }
+.hub-chan.active { background: rgba(50,224,196,0.08); color: var(--teal); }
+.hub-chan .hash { color: var(--text-ghost); }
+.hub-main { padding: 18px 20px; font-family: var(--body); position: relative; z-index: 1; }
+.hub-header-row { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.hub-chan-title { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--text-strong); letter-spacing: 1px; }
+.hub-e2e-badge { font-family: var(--mono); font-size: 9px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; padding: 3px 8px; border: 1px solid var(--border-bright); border-radius: 2px; }
+.hub-msg { font-size: 13px; padding: 6px 0; color: var(--text); line-height: 1.6; }
+.hub-msg .user { color: var(--teal); font-weight: 600; }
+.hub-msg .user2 { color: var(--amber); font-weight: 600; }
+.hub-msg .user3 { color: #c67fff; font-weight: 600; }
+.hub-msg .time { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); margin-left: 8px; }
+.hub-features { display: flex; flex-direction: column; gap: 20px; }
+.hub-feature { border-left: 2px solid var(--teal); padding: 4px 0 4px 18px; }
+.hub-feature h4 { font-family: var(--display); font-size: 1.05rem; font-weight: 700; color: var(--text-strong); margin-bottom: 4px; letter-spacing: 0.3px; }
+.hub-feature p { font-family: var(--body); font-size: 14px; color: var(--text-mid); line-height: 1.65; }
+
+/* FAQ */
+.faq-section { background: var(--bg); }
+.faq-list { max-width: 860px; margin: 0 auto; }
+.faq-item { border-bottom: 1px solid var(--border); padding: 22px 0; }
+.faq-q { display: flex; justify-content: space-between; align-items: center; font-family: var(--display); font-size: 1.1rem; font-weight: 700; color: var(--text-strong); margin-bottom: 10px; }
+.faq-q-num { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 2px; }
+.faq-a { font-family: var(--body); font-size: 14.5px; color: var(--text-mid); line-height: 1.8; }
+.faq-a a { color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim); }
+.faq-a a:hover { border-bottom-style: solid; }
+
+/* CTA */
+.cta-band { background: var(--bg-deep); border-top: 1px solid var(--border); padding: 72px 0; text-align: center; }
+.cta-band h2 { font-family: var(--display); font-size: clamp(1.6rem, 2.8vw, 2.2rem); font-weight: 700; line-height: 1.2; color: var(--text-strong); margin-bottom: 16px; }
+.cta-band h2 em { font-style: normal; color: var(--teal); }
+.cta-band p { font-family: var(--body); font-size: 15px; color: var(--text-mid); line-height: 1.7; margin: 0 auto 28px; max-width: 600px; }
+.cta-band .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* Footer */
+footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(--border); position: relative; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+.footer-brand { font-family: var(--display); font-size: 1rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.footer-brand-dot { width: 7px; height: 7px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+.footer-tagline { font-family: var(--body); font-size: 13px; color: var(--text-mid); line-height: 1.7; max-width: 360px; margin-bottom: 20px; }
+.footer-micro { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 2px; text-transform: uppercase; line-height: 2; }
+.footer-col-title { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+.footer-col a { display: block; font-family: var(--body); font-size: 13.5px; color: var(--text-mid); text-decoration: none; padding: 4px 0; transition: color 0.2s; }
+.footer-col a:hover { color: var(--teal); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 16px; }
+.footer-copy { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal { display: flex; gap: 18px; }
+.footer-legal a { font-family: var(--mono); font-size: 9px; color: var(--text-ghost); text-decoration: none; letter-spacing: 1.5px; text-transform: uppercase; }
+.footer-legal a:hover { color: var(--teal); }
+.footer-barcode { font-size: 9px; letter-spacing: 2px; color: var(--text-ghost); }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .article-hero-inner { grid-template-columns: 1fr; gap: 32px; }
+  .vs-emblem { max-width: 420px; margin: 0 auto; }
+  .hub-grid { grid-template-columns: 1fr; gap: 32px; }
+  .hub-mock { grid-template-columns: 1fr; min-height: auto; }
+  .hub-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .section-header { grid-template-columns: 1fr; }
+  .section-sub { text-align: left; }
+}
+@media (max-width: 600px) {
+  .nav-links { gap: 14px; }
+  .nav-links li:not(.nav-li-cta):not(.nav-li-alert) { display: none; }
+  .tldr { padding: 22px; }
+  .footer-grid { grid-template-columns: 1fr; }
+  section { padding: 64px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- Breaking ticker -->
+<div class="breaking">
+  <div class="breaking-viewport">
+    <div class="breaking-label">▶ Breaking</div>
+    <div class="breaking-track">
+      <div class="breaking-content">
+        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        <a href="/leaving-instagram.html">Here's what to use instead →</a>
+        <span class="sep">//</span>
+        Discord leaked 70,000 government IDs.
+        <a href="/vs/discord.html">Why we built this →</a>
+        <span class="sep">//</span>
+        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        <a href="/#download">Download →</a>
+        <span class="sep">//</span>
+        Normal life deserves privacy.
+        <span class="sep">//</span>
+        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        <a href="/leaving-instagram.html">Here's what to use instead →</a>
+        <span class="sep">//</span>
+        Discord leaked 70,000 government IDs.
+        <a href="/vs/discord.html">Why we built this →</a>
+        <span class="sep">//</span>
+        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        <a href="/#download">Download →</a>
+        <span class="sep">//</span>
+        Normal life deserves privacy.
+        <span class="sep">//</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a>
+    <ul class="nav-links">
+      <li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li>
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/#security">Security</a></li>
+      <li><a href="/#compare">Compare</a></li>
+      <li><a href="/#faq">FAQ</a></li>
+      <li class="nav-li-cta"><a href="/#download" class="nav-cta">Download</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="container">
+  <div class="breadcrumb">
+    <a href="/">Home</a><span class="sep">/</span><a href="/#compare">Compare</a><span class="sep">/</span><span class="current">vs Discord</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="article-hero">
+  <div class="container">
+    <div class="hero-meta-row">
+      <span class="kicker">Comparison &nbsp;/&nbsp; OpenDescent vs Discord</span>
+      <span class="hero-date">Published 2026-04-23</span>
+    </div>
+    <div class="article-hero-inner">
+      <div class="article-hero-left">
+        <h1>A private Discord alternative <em>that doesn't need your ID</em>.</h1>
+        <p class="article-dek">
+          Community hubs, text and voice channels, roles, invites — everything a Discord server does — but end-to-end encrypted by default, peer-to-peer, with no phone number, no government ID, and no central server to breach. After Discord leaked 70,000 IDs in 2025 and pushed mandatory age verification in 2026, there's finally a Discord-shaped alternative that isn't asking you to trust it.
+        </p>
+        <div class="hero-ctas">
+          <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
+          <a href="#compare" class="btn btn-ghost btn-arrow">See the comparison</a>
+        </div>
+      </div>
+      <div class="article-hero-right">
+        <div class="vs-emblem">
+          <div class="vs-row">
+            <div class="vs-side">
+              <div class="vs-logo us">OpenDescent</div>
+              <div class="vs-tag">E2E · P2P · No ID</div>
+            </div>
+            <div class="vs-mid">VS</div>
+            <div class="vs-side">
+              <div class="vs-logo them">Discord</div>
+              <div class="vs-tag">Central · ID Verified</div>
+            </div>
+          </div>
+          <div class="vs-stats">
+            <span class="l">Messages E2E</span><span class="r">YES &nbsp;·&nbsp; no</span>
+            <span class="l">Phone required</span><span class="r">no &nbsp;·&nbsp; YES</span>
+            <span class="l">Gov ID required</span><span class="r">no &nbsp;·&nbsp; SOON</span>
+            <span class="l">Hubs / Servers</span><span class="r">YES &nbsp;·&nbsp; yes</span>
+            <span class="l">Breaches '25</span><span class="r">0 &nbsp;·&nbsp; 70K IDs</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TL;DR -->
+<div class="container">
+  <div class="tldr reveal">
+    <div class="tldr-label">Short version</div>
+    <ul class="tldr-list">
+      <li><strong>Discord text messages are not end-to-end encrypted</strong>. Discord can read them, be subpoenaed for them, and — if breached — leak them.</li>
+      <li>In October 2025, Discord's third-party support vendor was compromised, exposing <strong>approximately 70,000 government-ID photos</strong> uploaded for age-appeal reviews. In February 2026, another Discord age-verification partner (Persona) left its frontend publicly accessible.</li>
+      <li>Discord has <strong>delayed its mandatory age-verification rollout to the second half of 2026</strong> after heavy backlash, but the direction of travel is clear.</li>
+      <li>OpenDescent has everything you came to Discord for — hubs, channels, voice, roles, invites — <strong>end-to-end encrypted by default, peer-to-peer, with no ID, no phone, no account</strong>.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Comparison table -->
+<section class="compare-section" id="compare">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2 class="section-title">Feature-by-feature. <em>No marketing asterisks.</em></h2>
+      <div class="section-sub">§ 01 &nbsp;/&nbsp; Compared</div>
+    </div>
+    <div class="compare-table-wrap reveal">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th class="us">OpenDescent</th>
+            <th class="them">Discord</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="row-cat" colspan="3">Privacy</td></tr>
+          <tr><td>End-to-end encrypted messages (text)</td><td class="yes us-col">Yes · default</td><td class="no">No</td></tr>
+          <tr><td>End-to-end encrypted voice calls</td><td class="yes us-col">Yes · default</td><td class="yes">Yes (2024+)</td></tr>
+          <tr><td>End-to-end encrypted file sharing</td><td class="yes us-col">Yes · signed manifests</td><td class="no">No</td></tr>
+          <tr><td>Messages readable by the company</td><td class="yes us-col">No company exists</td><td class="no">Yes</td></tr>
+          <tr><td>Produced under subpoena</td><td class="yes us-col">Nothing to produce</td><td class="no">Yes, routinely</td></tr>
+
+          <tr><td class="row-cat" colspan="3">Identity</td></tr>
+          <tr><td>Phone number required</td><td class="yes us-col">Never</td><td class="no">Yes</td></tr>
+          <tr><td>Email required</td><td class="yes us-col">Never</td><td class="no">Yes</td></tr>
+          <tr><td>Government ID required</td><td class="yes us-col">Never</td><td class="meh">Rolling out H2 2026</td></tr>
+          <tr><td>Account recovery</td><td class="yes us-col">12-word mnemonic</td><td class="meh">Email + phone</td></tr>
+
+          <tr><td class="row-cat" colspan="3">Communities</td></tr>
+          <tr><td>Text channels &amp; categories</td><td class="yes us-col">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>Voice channels</td><td class="yes us-col">Yes · WebRTC</td><td class="yes">Yes</td></tr>
+          <tr><td>Roles &amp; permissions</td><td class="yes us-col">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>Invite links</td><td class="yes us-col">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>Live streaming</td><td class="yes us-col">Yes · mesh-pull P2P</td><td class="yes">Yes · Go Live</td></tr>
+          <tr><td>Bots / integrations</td><td class="meh us-col">Roadmap</td><td class="yes">Yes</td></tr>
+
+          <tr><td class="row-cat" colspan="3">Infrastructure</td></tr>
+          <tr><td>Central servers</td><td class="yes us-col">None</td><td class="no">Discord-operated</td></tr>
+          <tr><td>Can be shut down from outside</td><td class="yes us-col">No</td><td class="no">Yes</td></tr>
+          <tr><td>Ads / tracking</td><td class="yes us-col">None</td><td class="meh">Limited, for now</td></tr>
+          <tr><td>Data breach history (2025)</td><td class="yes us-col">None</td><td class="no">70k IDs exposed</td></tr>
+
+          <tr><td class="row-cat" colspan="3">Platform</td></tr>
+          <tr><td>Open source</td><td class="yes us-col">MIT</td><td class="no">No</td></tr>
+          <tr><td>Desktop (Windows)</td><td class="yes us-col">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>macOS / Linux</td><td class="meh us-col">Soon</td><td class="yes">Yes</td></tr>
+          <tr><td>Mobile</td><td class="meh us-col">Roadmap (PWA)</td><td class="yes">Yes</td></tr>
+          <tr><td>Price</td><td class="yes us-col">Free · Pro £5/mo</td><td class="meh">Free · Nitro $9.99/mo</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Breach timeline -->
+<section class="timeline-section">
+  <div class="container-narrow">
+    <div class="section-header reveal">
+      <h2 class="section-title">Discord's ID problem. <em>A timeline.</em></h2>
+      <div class="section-sub">§ 02 &nbsp;/&nbsp; The breach</div>
+    </div>
+    <div class="prose reveal">
+      <p>Discord's move toward mandatory age verification — and the serial breaches of the companies handling that verification — is the single best reason to look for an alternative for communities now, rather than later.</p>
+
+      <div class="timeline">
+        <div class="tl-entry">
+          <div class="tl-date">October 3, 2025</div>
+          <div class="tl-title">Attackers compromise Discord's third-party support vendor</div>
+          <div class="tl-body">
+            A group calling itself "Scattered LAPSUS$ Hunters" compromised a single support-agent account at 5CA, Discord's third-party customer-service provider, and maintained access for <strong>58 hours</strong>. Approximately <strong>70,000 government-ID photos</strong> that users had uploaded as part of age-appeal reviews were exposed. <a href="https://discord.com/press-releases/update-on-security-incident-involving-third-party-customer-service" target="_blank" rel="noopener">Discord's statement</a>.
+          </div>
+        </div>
+        <div class="tl-entry">
+          <div class="tl-date">February 16, 2026</div>
+          <div class="tl-title">Persona leaves its frontend publicly accessible</div>
+          <div class="tl-body">
+            Researchers discovered that Discord's identity-verification partner <em>Persona</em> — backed by Peter Thiel — had left its front-end code publicly accessible, with <strong>approximately 2,500 files</strong> exposed on a U.S. government endpoint. Discord <a href="https://fortune.com/2026/02/24/discord-peter-thiel-backed-persona-identity-verification-breach/" target="_blank" rel="noopener">publicly cut ties</a> with the vendor.
+          </div>
+        </div>
+        <div class="tl-entry warn">
+          <div class="tl-date">February 25, 2026</div>
+          <div class="tl-title">Discord delays age-verification rollout</div>
+          <div class="tl-body">
+            Four months after the ID theft, Discord had announced a "phased global rollout" of age assurance starting in early March. After the Persona disclosure and sustained user backlash — including widespread Nitro cancellations — Discord <a href="https://www.gamedeveloper.com/business/-we-failed-at-our-most-basic-job-discord-delays-age-verification-rollout" target="_blank" rel="noopener">pushed the rollout to the second half of 2026</a>.
+          </div>
+        </div>
+        <div class="tl-entry ok">
+          <div class="tl-date">Ongoing</div>
+          <div class="tl-title">The direction of travel</div>
+          <div class="tl-body">
+            Delay is not cancellation. Discord's <a href="https://www.eff.org/deeplinks/2026/02/discord-voluntarily-pushes-mandatory-age-verification-despite-recent-data-breach" target="_blank" rel="noopener">own policy stance</a> is that mandatory age verification is coming, just not this quarter. The Electronic Frontier Foundation has been vocal that "no company — Discord included — should be given custody of your driver's license to chat with your friends."
+          </div>
+        </div>
+      </div>
+
+      <div class="fact">
+        <div class="fact-label">▶ The structural problem</div>
+        <div class="fact-body">
+          Age verification isn't an implementation bug — it's a <strong>centralisation problem</strong>. As soon as one company is responsible for holding 100M+ IDs, that company becomes the most valuable target on the internet. Every breach since the beginning of the web has followed the same pattern: a shared database with millions of sensitive records, one successful attack, a new entry in the "data breach" Wikipedia article.
+        </div>
+      </div>
+
+      <div class="sources">
+        <div class="sources-label">Sources</div>
+        <a href="https://www.eff.org/deeplinks/2026/02/discord-voluntarily-pushes-mandatory-age-verification-despite-recent-data-breach" target="_blank" rel="noopener">EFF — Discord voluntarily pushes mandatory age verification ↗</a>
+        <a href="https://stateofsurveillance.org/news/discord-age-verification-id-biometric-privacy-2026/" target="_blank" rel="noopener">State of Surveillance — Discord leaked 70,000 IDs ↗</a>
+        <a href="https://proton.me/blog/discord-age-verfication-breach" target="_blank" rel="noopener">Proton — Discord ID data breach ↗</a>
+        <a href="https://techcrunch.com/2026/03/01/best-discord-alternatives-age-verification-identity-privacy/" target="_blank" rel="noopener">TechCrunch — Best Discord alternatives after age verification ↗</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Hub showcase -->
+<section class="hub-section">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2 class="section-title">Everything you came to Discord for. <em>None of what's making you leave.</em></h2>
+      <div class="section-sub">§ 03 &nbsp;/&nbsp; Hubs</div>
+    </div>
+    <div class="hub-grid reveal">
+      <div class="hub-mock">
+        <div class="hub-sidebar">
+          <div class="hub-sidebar-title">study-group</div>
+          <div class="hub-cat">Text channels</div>
+          <div class="hub-chan active"><span class="hash">#</span>general</div>
+          <div class="hub-chan"><span class="hash">#</span>assignments</div>
+          <div class="hub-chan"><span class="hash">#</span>memes</div>
+          <div class="hub-cat">Voice</div>
+          <div class="hub-chan"><span class="hash">🔊</span>study-room</div>
+          <div class="hub-chan"><span class="hash">🔊</span>afk</div>
+          <div class="hub-cat">Staff</div>
+          <div class="hub-chan"><span class="hash">#</span>mods-only</div>
+        </div>
+        <div class="hub-main">
+          <div class="hub-header-row">
+            <div class="hub-chan-title"># general</div>
+            <div class="hub-e2e-badge">🔒 E2E</div>
+          </div>
+          <div class="hub-msg"><span class="user">sam</span><span class="time">19:42</span><br>did you see the deadline moved?</div>
+          <div class="hub-msg"><span class="user2">jaz</span><span class="time">19:43</span><br>yeah finals week, great</div>
+          <div class="hub-msg"><span class="user3">mei</span><span class="time">19:43</span><br>🎙 voice note · 0:08</div>
+          <div class="hub-msg"><span class="user">sam</span><span class="time">19:44</span><br>sending the notes now</div>
+          <div class="hub-msg"><span class="user2">jaz</span><span class="time">19:44</span><br>📎 lecture-notes.pdf · 2.3 MB</div>
+          <div class="hub-msg"><span class="user">sam</span><span class="time">19:45</span><br>ty ❤️</div>
+        </div>
+      </div>
+      <div class="hub-features">
+        <div class="hub-feature">
+          <h4>Text channels &amp; categories</h4>
+          <p>Organise with the same shape you already know: categories, channels, pinned messages, mentions. Markdown, attachments, link previews — the normal stuff.</p>
+        </div>
+        <div class="hub-feature">
+          <h4>Voice channels</h4>
+          <p>Drop in and out of voice rooms. WebRTC direct peer connections where possible, TURN relay fallback when needed. DTLS-SRTP encryption end-to-end.</p>
+        </div>
+        <div class="hub-feature">
+          <h4>Roles &amp; permissions</h4>
+          <p>Owner, mods, members — and custom roles. Per-channel permissions. Kick, ban, mute. Normal server moderation tools, distributed across members' devices.</p>
+        </div>
+        <div class="hub-feature">
+          <h4>Invite links</h4>
+          <p>Share a one-click invite URL to bring people in. No email required on their end, no phone — just click and join.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container-narrow">
+    <div class="section-header reveal">
+      <h2 class="section-title">Questions, <em>straight answers</em>.</h2>
+      <div class="section-sub">§ 04 &nbsp;/&nbsp; FAQ</div>
+    </div>
+    <div class="faq-list reveal">
+      <div class="faq-item">
+        <div class="faq-q"><span>Is Discord really not end-to-end encrypted?</span><span class="faq-q-num">01</span></div>
+        <div class="faq-a">Discord encrypts messages in transit (TLS), so they can't be intercepted between your device and Discord's servers. But Discord's servers can read the plaintext — which is why Discord can search your messages, respond to moderation flags, and produce messages under subpoena. In 2024 Discord added end-to-end encryption for voice and video calls (DAVE), but text messages remain server-visible. <a href="https://discord.com/blog/meet-dave-e2ee-for-audio-video" target="_blank" rel="noopener">Source</a>.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>How many IDs did Discord leak?</span><span class="faq-q-num">02</span></div>
+        <div class="faq-a">Approximately 70,000 government-ID photos were exposed in the October 2025 breach of Discord's third-party support vendor, 5CA. The IDs had been uploaded by users appealing age-related actions. Discord disclosed the incident in early 2026 and has been the subject of class-action activity since.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Will I have to upload my driver's license to use Discord?</span><span class="faq-q-num">03</span></div>
+        <div class="faq-a">Eventually, in many regions. Discord announced mandatory age verification starting early 2026, delayed it to H2 2026 after the Persona disclosure and user backlash, but has not cancelled the rollout. The scope (which regions, which actions trigger verification) remains in flux. If that's a deal-breaker for you, now is a good time to look elsewhere.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Does OpenDescent have community servers like Discord?</span><span class="faq-q-num">04</span></div>
+        <div class="faq-a">Yes — we call them <strong>hubs</strong>. A hub has text channels, voice channels, categories, roles and permissions, and invite links. The difference is that hubs are peer-replicated across members' devices rather than hosted on a central server. There is no "hub owner" who can be subpoenaed, no company that can shut a hub down, and no plaintext for anyone in the middle to scan.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Can I move my Discord server to OpenDescent?</span><span class="faq-q-num">05</span></div>
+        <div class="faq-a">There's no one-click import (yet — it's on the roadmap). In practice: create a hub with the same channel layout, post an invite link in your Discord announcement channel, and let people migrate organically. Moderation tools and invite links work the way you expect. Most communities we've seen migrate gradually over a few weeks rather than flag-day.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>What about bots and integrations?</span><span class="faq-q-num">06</span></div>
+        <div class="faq-a">Bots are on the roadmap — we're designing them as locally-run agents rather than server-hosted, so they don't re-introduce a central party that can read your channel. If you're running a community that depends on specific Discord bots, you'll want to wait a release or two before moving fully.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Is OpenDescent free?</span><span class="faq-q-num">07</span></div>
+        <div class="faq-a">Yes. Free and open source under the MIT license. An optional Pro subscription (£5/mo) unlocks larger file transfers and more hubs and funds the project. Every core feature — text, voice, video, hubs, roles, invites, encryption — is free forever.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>Do I need a phone or government ID?</span><span class="faq-q-num">08</span></div>
+        <div class="faq-a">No. No phone number, no email, no government ID, no account. Your identity is a cryptographic keypair on your device, backed up with a 12-word phrase.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-band">
+  <div class="container-narrow">
+    <div class="kicker kicker-ghost" style="justify-content: center; margin-bottom: 14px;">If you came this far</div>
+    <h2>Build your community on <em>something that isn't asking for your driver's license</em>.</h2>
+    <p>Free. Open source. No phone number. No government ID. No central server. Everything Discord does for communities — without the breach risk.</p>
+    <div class="btns">
+      <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
+      <a href="/" class="btn btn-ghost btn-arrow">See how it works</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <div class="footer-micro">
+          Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>
+          オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth
+        </div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Product</div>
+        <a href="/#features">Features</a>
+        <a href="/#security">Security</a>
+        <a href="/#download">Download</a>
+        <a href="/faq.html">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Compare</div>
+        <a href="/leaving-instagram.html">Leaving Instagram</a>
+        <a href="/vs/signal.html">vs Signal</a>
+        <a href="/vs/discord.html">vs Discord</a>
+        <a href="/vs/whatsapp.html">vs WhatsApp</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Project</div>
+        <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a>
+        <a href="/blog/">Blog</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 OpenDescent &nbsp;·&nbsp; MIT Licensed</div>
+      <div class="footer-barcode">▌▌▏▌▏▏▌▌▏▌▏▌▌▏▏▌▏▌▌▏▌▏▏▌</div>
+      <div class="footer-legal">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">Source</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const revObs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      revObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(el => revObs.observe(el));
+</script>
+</body>
+</html>
