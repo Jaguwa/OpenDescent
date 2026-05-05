@@ -2284,16 +2284,18 @@ function renderBentoProfile(data) {
     const sizeClass = 'size-' + card.size;
     switch (card.type) {
       case 'identity': {
+        const frameClass = isSafeAvatarFrame(cardData.avatarFrame) ? ` avatar-frame-${cardData.avatarFrame}` : '';
         const avatarHtml = cardData.avatarUrl && isSafeMediaSrc(cardData.avatarUrl)
-          ? `<img src="${cardData.avatarUrl}" class="profile-avatar-large" style="width:80px;height:80px;border-radius:50%;object-fit:cover">`
-          : `<canvas class="profile-avatar-large" width="80" height="80" data-peerid="${peerId}"></canvas>`;
-        const isFounder = (data.isSelf && state.licenseStatus && state.licenseStatus.founder) || cardData.isFounder;
-        const founderBadge = isFounder ? '<span class="founder-badge" title="Founder — one of the first 101">&#9733; FOUNDER</span>' : '';
+          ? `<img src="${cardData.avatarUrl}" class="profile-avatar-large${frameClass}" style="width:80px;height:80px;border-radius:50%;object-fit:cover">`
+          : `<canvas class="profile-avatar-large${frameClass}" width="80" height="80" data-peerid="${peerId}"></canvas>`;
+        const nameStyle = isSafeColor(cardData.usernameColor) ? ` style="color:${cardData.usernameColor}"` : '';
+        const pinHtml = isSafeSupporterPin(cardData.supporterPin)
+          ? `<span class="supporter-pin pin-${cardData.supporterPin}" title="${cardData.supporterPin === 'early-supporter' ? 'Early Supporter — self-claimed' : 'Supporter — self-claimed'}">&#9733;</span>`
+          : '';
         html += `<div class="bento-card card-identity ${sizeClass}">
           ${avatarHtml}
           <div class="identity-info">
-            <h2>${escapeHtml(displayName)}</h2>
-            ${founderBadge}
+            <h2${nameStyle}>${escapeHtml(displayName)}${pinHtml}</h2>
             ${cardData.tagline ? `<div class="tagline">${escapeHtml(cardData.tagline)}</div>` : ''}
             <div class="subtle" style="font-family:monospace;font-size:0.75em;margin-top:4px">${peerId.slice(0, 20)}...</div>
           </div>
@@ -2303,12 +2305,19 @@ function renderBentoProfile(data) {
       case 'vibe':
         if (cardData.vibe) {
           const v = cardData.vibe;
-          const safeGradStart = isSafeColor(v.gradientStart) ? v.gradientStart : '#ff6b6b';
-          const safeGradEnd = isSafeColor(v.gradientEnd) ? v.gradientEnd : '#4ecdc4';
-          html += `<div class="bento-card card-vibe ${sizeClass}" style="background:linear-gradient(135deg,${safeGradStart},${safeGradEnd})">
-            <div class="vibe-emoji">${escapeHtml(v.emoji)}</div>
-            <div class="vibe-text">${escapeHtml(v.text)}</div>
-          </div>`;
+          if (isSafeVibeTheme(cardData.vibeTheme)) {
+            html += `<div class="bento-card card-vibe vibe-theme-${cardData.vibeTheme} ${sizeClass}">
+              <div class="vibe-emoji">${escapeHtml(v.emoji)}</div>
+              <div class="vibe-text">${escapeHtml(v.text)}</div>
+            </div>`;
+          } else {
+            const safeGradStart = isSafeColor(v.gradientStart) ? v.gradientStart : '#ff6b6b';
+            const safeGradEnd = isSafeColor(v.gradientEnd) ? v.gradientEnd : '#4ecdc4';
+            html += `<div class="bento-card card-vibe ${sizeClass}" style="background:linear-gradient(135deg,${safeGradStart},${safeGradEnd})">
+              <div class="vibe-emoji">${escapeHtml(v.emoji)}</div>
+              <div class="vibe-text">${escapeHtml(v.text)}</div>
+            </div>`;
+          }
         }
         break;
       case 'about':
@@ -2626,6 +2635,32 @@ async function showProfileEditModal() {
   state.pendingAvatarUrl = cd.avatarUrl || null;
   updateAvatarPreview(cd.avatarUrl);
 
+  // Cosmetics — Pro only (editor gating; renderer trusts broadcast)
+  document.getElementById('cosmetics-free-hint').classList.toggle('hidden', isPro);
+  document.querySelectorAll('#frame-picker .frame-opt').forEach(b => b.disabled = !isPro);
+  document.querySelectorAll('#vibe-theme-picker .theme-opt').forEach(b => b.disabled = !isPro);
+  document.getElementById('edit-username-color').disabled = !isPro;
+  document.getElementById('btn-username-color-clear').disabled = !isPro;
+  state.pendingAvatarFrame = cd.avatarFrame || '';
+  state.pendingVibeTheme = cd.vibeTheme || '';
+  state.pendingUsernameColor = cd.usernameColor || '';
+  document.querySelectorAll('#frame-picker .frame-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.frame === state.pendingAvatarFrame);
+  });
+  document.querySelectorAll('#vibe-theme-picker .theme-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.theme === state.pendingVibeTheme);
+  });
+  document.getElementById('edit-username-color').value = state.pendingUsernameColor || '#eeeeee';
+
+  // Supporter pin — no Pro gate, but Early variant only shown to Founders in UI
+  const isFounder = state.licenseStatus && state.licenseStatus.founder;
+  state.pendingSupporterPin = cd.supporterPin || '';
+  document.getElementById('pin-early-btn').classList.toggle('hidden', !isFounder);
+  document.getElementById('pin-early-hint').classList.toggle('hidden', !isFounder);
+  document.querySelectorAll('#pin-picker .pin-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.pin === state.pendingSupporterPin);
+  });
+
   document.getElementById('edit-tagline').value = cd.tagline || '';
   document.getElementById('edit-vibe-emoji').value = cd.vibe?.emoji || '';
   document.getElementById('edit-vibe-text').value = cd.vibe?.text || '';
@@ -2693,6 +2728,10 @@ async function saveProfile() {
 
   const cardData = {
     avatarUrl: state.pendingAvatarUrl || undefined,
+    avatarFrame: state.pendingAvatarFrame || undefined,
+    vibeTheme: state.pendingVibeTheme || undefined,
+    usernameColor: state.pendingUsernameColor || undefined,
+    supporterPin: state.pendingSupporterPin || undefined,
     tagline: document.getElementById('edit-tagline').value.trim() || undefined,
     vibe: document.getElementById('edit-vibe-text').value.trim() ? {
       emoji: document.getElementById('edit-vibe-emoji').value || '',
@@ -5093,6 +5132,23 @@ async function loadLicenseStatus() {
     const data = await send('get_license_status');
     state.licenseStatus = data;
     updateLicenseUI(data);
+    // Quietly poll for renewal in the background — auto-applies a fresh license
+    // in standard mode, or surfaces a pending renewal code in anonymous mode.
+    pollSubscriptionInBackground();
+  } catch {}
+}
+
+let lastSubPoll = 0;
+async function pollSubscriptionInBackground() {
+  // Throttle: at most once per hour to avoid hammering the license server
+  if (Date.now() - lastSubPoll < 60 * 60 * 1000) return;
+  lastSubPoll = Date.now();
+  try {
+    const data = await send('check_subscription_status');
+    if (data && data.status === 'renewed') {
+      await loadLicenseStatus();
+      showToast('Pro renewed', 'License extended automatically.', 'success');
+    }
   } catch {}
 }
 
@@ -5138,9 +5194,70 @@ async function upgradeToPro() {
       return;
     }
     window.open(data.checkoutUrl, '_blank');
-    showToast('Checkout opened', 'Complete payment in the new tab, then paste your license key here', 'success');
+    showToast('Checkout opened', 'Complete payment, then paste your redemption code here', 'success');
   } catch (e) {
     showToast('Checkout Error', e.message, 'error');
+  }
+}
+
+async function unlockFounder() {
+  try {
+    const data = await send('get_founder_url');
+    if (!data || !data.checkoutUrl) {
+      showToast('Error', data?.error || 'Could not start checkout', 'error');
+      return;
+    }
+    window.open(data.checkoutUrl, '_blank');
+    showToast('Founder checkout opened', 'Complete the £1 payment, then paste your redemption code here', 'success');
+  } catch (e) {
+    showToast('Checkout Error', e.message, 'error');
+  }
+}
+
+async function redeemCode() {
+  const input = document.getElementById('setting-redeem-code');
+  if (!input) return;
+  const code = input.value.trim();
+  if (!code) { showToast('Redeem', 'Please paste your redemption code', 'error'); return; }
+  const anonCheckbox = document.getElementById('setting-redeem-anonymous');
+  const anonymous = !!(anonCheckbox && anonCheckbox.checked);
+  try {
+    const data = await send('redeem_code', { code, anonymous });
+    state.licenseStatus = { tier: data.tier, valid: data.valid, expiresAt: data.expiresAt, founder: data.founder };
+    state.subscriptionId = data.subscriptionId || null;
+    updateLicenseUI(state.licenseStatus);
+    input.value = '';
+    if (anonCheckbox) anonCheckbox.checked = false;
+    if (data.founder) {
+      showToast('Welcome, Founder.', 'Lifetime Pro activated.', 'success');
+    } else {
+      showToast('Pro Activated!', anonymous ? 'Anonymous mode — server forgot your peer ID.' : 'Welcome to OpenDescent Pro.', 'success');
+    }
+  } catch (e) {
+    showToast('Redemption Failed', e.message, 'error');
+  }
+}
+
+async function checkRenewal() {
+  try {
+    const data = await send('check_subscription_status');
+    if (!data) return;
+    if (data.status === 'renewed') {
+      showToast('License Renewed', 'Pro extended through ' + new Date(data.expiresAt).toLocaleDateString(), 'success');
+      await loadLicenseStatus();
+    } else if (data.status === 'renewal_code_available') {
+      const code = document.getElementById('setting-redeem-code');
+      if (code) code.value = data.renewalCode;
+      showToast('Renewal code ready', 'A new redemption code is waiting — click Activate to apply.', 'success');
+    } else if (data.status === 'current') {
+      showToast('License Current', 'No renewal pending right now.', 'success');
+    } else if (data.status === 'cancelled') {
+      showToast('Subscription Cancelled', 'No active subscription on the server.', 'error');
+    } else if (data.status === 'no_subscription') {
+      showToast('No Subscription', 'No active subscription is linked to this device.', 'error');
+    }
+  } catch (e) {
+    showToast('Check Failed', e.message, 'error');
   }
 }
 
@@ -5714,6 +5831,18 @@ function isSafeMediaSrc(src) {
 function isSafeColor(val) {
   if (!val) return false;
   return /^#[0-9a-fA-F]{3,8}$/.test(val) || /^(rgb|hsl)a?\([0-9, .%]+\)$/.test(val);
+}
+
+function isSafeAvatarFrame(val) {
+  return val === 'pulse' || val === 'glow' || val === 'rainbow' || val === 'gradient';
+}
+
+function isSafeVibeTheme(val) {
+  return val === 'sunset' || val === 'cyber' || val === 'aurora' || val === 'neon' || val === 'pastel';
+}
+
+function isSafeSupporterPin(val) {
+  return val === 'supporter' || val === 'early-supporter';
 }
 
 /** Whitelist check for font style values */
@@ -7114,6 +7243,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Profile edit modal
   document.getElementById('btn-cancel-profile-edit').addEventListener('click', () => document.getElementById('profile-edit-modal').classList.add('hidden'));
   document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
+
+  // Cosmetic Pro pickers — frames, vibe theme, username color
+  document.querySelectorAll('#frame-picker .frame-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      state.pendingAvatarFrame = btn.dataset.frame || '';
+      document.querySelectorAll('#frame-picker .frame-opt').forEach(b => b.classList.toggle('selected', b === btn));
+    });
+  });
+  document.querySelectorAll('#vibe-theme-picker .theme-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      state.pendingVibeTheme = btn.dataset.theme || '';
+      document.querySelectorAll('#vibe-theme-picker .theme-opt').forEach(b => b.classList.toggle('selected', b === btn));
+    });
+  });
+  document.getElementById('edit-username-color').addEventListener('input', (e) => {
+    state.pendingUsernameColor = e.target.value;
+  });
+  document.getElementById('btn-username-color-clear').addEventListener('click', () => {
+    state.pendingUsernameColor = '';
+    document.getElementById('edit-username-color').value = '#eeeeee';
+  });
+  document.querySelectorAll('#pin-picker .pin-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.pendingSupporterPin = btn.dataset.pin || '';
+      document.querySelectorAll('#pin-picker .pin-opt').forEach(b => b.classList.toggle('selected', b === btn));
+    });
+  });
 
   // Comments modal
   document.getElementById('btn-close-comments').addEventListener('click', () => document.getElementById('comments-modal').classList.add('hidden'));

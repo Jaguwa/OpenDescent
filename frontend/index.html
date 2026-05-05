@@ -756,8 +756,9 @@
               <div class="pro-limit-item"><span class="pro-limit-val">10</span><span class="pro-limit-label">GROUP MAX</span></div>
               <div class="pro-limit-item"><span class="pro-limit-val">2</span><span class="pro-limit-label">HUBS</span></div>
             </div>
-            <button class="pro-cta-btn" onclick="upgradeToPro()">&#9656;&#9656; UNLOCK PRO — $5/MO</button>
-            <div class="pro-cta-perks">500MB files · Unlimited groups & hubs · Dead Man's Switch · GIF Avatar</div>
+            <button class="pro-cta-btn" onclick="upgradeToPro()">&#9656;&#9656; UNLOCK PRO — &pound;5/MO</button>
+            <button class="pro-cta-btn pro-cta-founder" onclick="unlockFounder()" id="founder-cta-btn">&#9733; FOUNDER'S EDITION — &pound;1 LIFETIME</button>
+            <div class="pro-cta-perks">500MB files · Unlimited groups &amp; hubs · Dead Man's Switch · Cosmetic perks · GIF avatars</div>
           </div>
           <div id="license-pro-banner" class="pro-cta pro-cta-active hidden">
             <div class="pro-cta-header">
@@ -770,11 +771,31 @@
               <div class="pro-limit-item"><span class="pro-limit-val">&#8734;</span><span class="pro-limit-label">Hubs</span></div>
               <div class="pro-limit-item"><span class="pro-limit-val">&#10003;</span><span class="pro-limit-label">Dead Man's Switch</span></div>
             </div>
+            <button class="btn-secondary btn-small" onclick="checkRenewal()" style="margin-top:10px">Check for renewal</button>
           </div>
-          <div class="pro-key-row">
-            <input type="text" id="setting-license-key" placeholder="Paste license key...">
-            <button class="btn-primary" onclick="activateLicense()">Activate</button>
+
+          <!-- Redemption code: primary path for new purchases -->
+          <div class="redeem-section">
+            <h5 class="redeem-title">Redeem Code</h5>
+            <p class="subtle redeem-hint">Got a redemption code from open-descent.com after checkout? Paste it here.</p>
+            <div class="pro-key-row">
+              <input type="text" id="setting-redeem-code" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="32">
+              <button class="btn-primary" onclick="redeemCode()">Activate</button>
+            </div>
+            <label class="redeem-anonymous">
+              <input type="checkbox" id="setting-redeem-anonymous">
+              <span><strong>Anonymous renewal</strong> — server forgets your peer ID after activation. You'll get a fresh code by email each renewal.</span>
+            </label>
           </div>
+
+          <!-- Legacy license-key paste: secondary for older customers -->
+          <details class="redeem-legacy">
+            <summary>Already have a license key?</summary>
+            <div class="pro-key-row" style="margin-top:8px">
+              <input type="text" id="setting-license-key" placeholder="Paste license key...">
+              <button class="btn-secondary" onclick="activateLicense()">Activate</button>
+            </div>
+          </details>
         </div>
 
         <div class="settings-section">
@@ -1010,6 +1031,39 @@
         </div>
 
         <div class="settings-section">
+          <h4>Supporter Pin</h4>
+          <p class="subtle">A pin you can wear if you support the project. No verification — we trust you to be honest.</p>
+          <div class="pin-picker" id="pin-picker" style="margin-top:6px">
+            <button type="button" class="pin-opt" data-pin="">None</button>
+            <button type="button" class="pin-opt pin-supporter" data-pin="supporter"><span class="pin-icon">&#9733;</span> Supporter</button>
+            <button type="button" class="pin-opt pin-early" data-pin="early-supporter" id="pin-early-btn"><span class="pin-icon">&#9733;</span> Early Supporter</button>
+          </div>
+          <p class="subtle" id="pin-early-hint" style="margin-top:6px;font-size:0.75em">Early Supporter is offered to Founders, but anyone can choose any pin.</p>
+        </div>
+
+        <div class="settings-section" id="cosmetics-section">
+          <h4>Cosmetics <span class="pro-badge-sm" id="cosmetics-pro-badge">PRO</span></h4>
+          <p class="subtle" id="cosmetics-free-hint">Upgrade to Pro to unlock frames, themes, and username color.</p>
+          <div style="margin-top:8px">
+            <label class="settings-label">Avatar frame</label>
+            <div class="frame-picker" id="frame-picker">
+              <button type="button" class="frame-opt" data-frame="">None</button>
+              <button type="button" class="frame-opt" data-frame="pulse">Pulse</button>
+              <button type="button" class="frame-opt" data-frame="glow">Glow</button>
+              <button type="button" class="frame-opt" data-frame="rainbow">Rainbow</button>
+              <button type="button" class="frame-opt" data-frame="gradient">Gradient</button>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <label class="settings-label">Username color</label>
+            <div class="settings-row">
+              <input type="color" id="edit-username-color" value="#eeeeee">
+              <button type="button" class="btn-secondary btn-small" id="btn-username-color-clear">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <h4>Vibe Card</h4>
           <div class="settings-row">
             <input type="text" id="edit-vibe-emoji" placeholder="Emoji" maxlength="4" style="width:60px">
@@ -1018,6 +1072,17 @@
           <div class="settings-row">
             <label>Start: <input type="color" id="edit-vibe-grad-start" value="#ff6b6b"></label>
             <label>End: <input type="color" id="edit-vibe-grad-end" value="#4ecdc4"></label>
+          </div>
+          <div style="margin-top:8px">
+            <label class="settings-label">Theme <span class="pro-badge-sm">PRO</span></label>
+            <div class="theme-picker" id="vibe-theme-picker">
+              <button type="button" class="theme-opt" data-theme="">Custom colors</button>
+              <button type="button" class="theme-opt theme-sunset" data-theme="sunset">Sunset</button>
+              <button type="button" class="theme-opt theme-cyber" data-theme="cyber">Cyber</button>
+              <button type="button" class="theme-opt theme-aurora" data-theme="aurora">Aurora</button>
+              <button type="button" class="theme-opt theme-neon" data-theme="neon">Neon</button>
+              <button type="button" class="theme-opt theme-pastel" data-theme="pastel">Pastel</button>
+            </div>
           </div>
         </div>
 

@@ -1415,26 +1415,175 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 
 .identity-info h2 { font-size: 1.3em; margin-bottom: 2px; }
 
-.founder-badge {
-  display: inline-block;
-  font-family: 'Array Wide', 'Array', sans-serif;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #ffd700;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.08));
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  padding: 2px 8px;
-  border-radius: 2px;
-  margin-bottom: 4px;
-  text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
-  animation: founderGlow 3s ease-in-out infinite;
+/* ─── Cosmetic Pro perks: avatar frames ─────────────────────────────── */
+
+.profile-avatar-large.avatar-frame-pulse {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 12px rgba(50, 224, 196, 0.4);
+  animation: framePulse 2.4s ease-in-out infinite;
+}
+@keyframes framePulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--accent), 0 0 6px rgba(50, 224, 196, 0.3); }
+  50% { box-shadow: 0 0 0 2px var(--accent), 0 0 18px rgba(50, 224, 196, 0.7); }
 }
 
-@keyframes founderGlow {
-  0%, 100% { box-shadow: 0 0 4px rgba(255, 215, 0, 0.1); }
-  50% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.2); }
+.profile-avatar-large.avatar-frame-glow {
+  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.4);
+  animation: frameGlow 3s ease-in-out infinite;
 }
+@keyframes frameGlow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5), 0 0 12px rgba(255, 215, 0, 0.3); }
+  50% { box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.7), 0 0 28px rgba(255, 215, 0, 0.6); }
+}
+
+.profile-avatar-large.avatar-frame-rainbow {
+  position: relative;
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+  background-image: conic-gradient(from 0deg, #ff006e, #fb5607, #ffbe0b, #8338ec, #3a86ff, #ff006e);
+  padding: 3px;
+  animation: frameRainbow 4s linear infinite;
+}
+@keyframes frameRainbow {
+  to { filter: hue-rotate(360deg); }
+}
+
+.profile-avatar-large.avatar-frame-gradient {
+  outline: 2px solid transparent;
+  background:
+    linear-gradient(#1a1a1a, #1a1a1a) padding-box,
+    linear-gradient(135deg, #32E0C4, #58a6ff, #bd93f9, #ff79c6) border-box;
+  border: 3px solid transparent;
+  animation: frameGradient 5s ease-in-out infinite;
+}
+@keyframes frameGradient {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(40deg); }
+}
+
+/* ─── Cosmetic Pro perks: vibe themes ───────────────────────────────── */
+
+.bento-card.vibe-theme-sunset {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 35%, #c2185b 100%);
+}
+.bento-card.vibe-theme-cyber {
+  background: linear-gradient(135deg, #0d0221 0%, #190a3d 40%, #ff006e 100%);
+  color: #32E0C4;
+}
+.bento-card.vibe-theme-aurora {
+  background: linear-gradient(135deg, #00c9a7 0%, #2c699a 50%, #845ec2 100%);
+  background-size: 200% 200%;
+  animation: auroraShift 8s ease-in-out infinite;
+}
+@keyframes auroraShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.bento-card.vibe-theme-neon {
+  background: #0a0a0a;
+  border: 1px solid #ff10f0;
+  box-shadow: inset 0 0 24px rgba(255, 16, 240, 0.2), 0 0 18px rgba(255, 16, 240, 0.3);
+  color: #ff10f0;
+}
+.bento-card.vibe-theme-pastel {
+  background: linear-gradient(135deg, #ffd6e0 0%, #c1f0f6 50%, #d6c1f0 100%);
+  color: #4a4a4a;
+}
+
+/* ─── Cosmetic editor: pickers ──────────────────────────────────────── */
+
+.frame-picker, .theme-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.frame-opt, .theme-opt {
+  font-family: 'Array', sans-serif;
+  font-size: 0.75em;
+  padding: 6px 10px;
+  background: var(--bg-elev, #262626);
+  color: var(--text-muted);
+  border: 1px solid var(--border, #333);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.frame-opt:hover:not(:disabled), .theme-opt:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.frame-opt.selected, .theme-opt.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(50, 224, 196, 0.08);
+}
+.frame-opt:disabled, .theme-opt:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.theme-opt.theme-sunset { background: linear-gradient(135deg, #ff6b35, #c2185b); color: #fff; }
+.theme-opt.theme-cyber { background: linear-gradient(135deg, #0d0221, #ff006e); color: #32E0C4; }
+.theme-opt.theme-aurora { background: linear-gradient(135deg, #00c9a7, #845ec2); color: #fff; }
+.theme-opt.theme-neon { background: #0a0a0a; color: #ff10f0; border-color: #ff10f0; }
+.theme-opt.theme-pastel { background: linear-gradient(135deg, #ffd6e0, #d6c1f0); color: #4a4a4a; }
+
+.settings-label {
+  display: block;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.btn-small {
+  padding: 4px 10px;
+  font-size: 0.75em;
+}
+
+/* ─── Supporter pin (self-claimed, honor system) ────────────────────── */
+
+.supporter-pin {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.75em;
+  vertical-align: middle;
+  line-height: 1;
+}
+.supporter-pin.pin-supporter {
+  color: #58a6ff;
+  text-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
+}
+.supporter-pin.pin-early-supporter {
+  color: #ffb347;
+  text-shadow: 0 0 10px rgba(255, 179, 71, 0.6);
+}
+
+.pin-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pin-opt {
+  font-family: 'Array', sans-serif;
+  font-size: 0.8em;
+  padding: 6px 12px;
+  background: var(--bg-elev, #262626);
+  color: var(--text-muted);
+  border: 1px solid var(--border, #333);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pin-opt:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.pin-opt.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(50, 224, 196, 0.08);
+}
+.pin-opt .pin-icon { margin-right: 3px; }
+.pin-opt.pin-supporter .pin-icon { color: #58a6ff; }
+.pin-opt.pin-early .pin-icon { color: #ffb347; }
 
 /* ─── Vital Signs Card ───────────────────────────────────────────────── */
 
@@ -3628,6 +3777,66 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 6px rgba(50, 224, 196, 0.12);
+}
+
+.pro-cta-founder {
+  border-color: #ffb347;
+  color: #ffb347;
+}
+.pro-cta-founder:hover {
+  background: rgba(255, 179, 71, 0.06);
+  box-shadow: 0 0 20px rgba(255, 179, 71, 0.2), inset 0 0 15px rgba(255, 179, 71, 0.04);
+}
+
+.redeem-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.redeem-title {
+  font-family: 'Array Wide', 'Array', sans-serif;
+  font-size: 0.7em;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.redeem-hint {
+  margin-bottom: 8px;
+  font-size: 0.78em;
+}
+.redeem-anonymous {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.78em;
+  color: var(--text-muted);
+  align-items: flex-start;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.redeem-anonymous input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.redeem-anonymous strong {
+  color: var(--text);
+}
+
+.redeem-legacy {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.85em;
+}
+.redeem-legacy summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.85em;
+  user-select: none;
+}
+.redeem-legacy summary:hover {
+  color: var(--text);
 }
 
 /* ─── Upload Progress Bar ─────────────────────────────────────────────── */

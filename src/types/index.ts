@@ -380,6 +380,15 @@ export interface MusicCardData {
   emoji: string;
 }
 
+/** Pro-only cosmetic frame style applied around the profile avatar */
+export type AvatarFrame = 'pulse' | 'glow' | 'rainbow' | 'gradient';
+
+/** Pro-only named theme that styles the vibe card */
+export type VibeTheme = 'sunset' | 'cyber' | 'aurora' | 'neon' | 'pastel';
+
+/** Self-claimed supporter pin. No verification — anyone can wear any variant. */
+export type SupporterPin = 'supporter' | 'early-supporter';
+
 /** A user's complete profile */
 export interface UserProfile {
   peerId: PeerId;
@@ -391,6 +400,15 @@ export interface UserProfile {
     music?: MusicCardData;
     tagline?: string;
     pinnedPostId?: string;
+    avatarUrl?: string;
+    /** Pro-only cosmetic. Editor gates by license; renderer trusts the broadcast. */
+    avatarFrame?: AvatarFrame;
+    /** Pro-only cosmetic. Hex color for displayName text on the bento profile. */
+    usernameColor?: string;
+    /** Pro-only cosmetic. Named theme overrides vibe gradient when set. */
+    vibeTheme?: VibeTheme;
+    /** Self-claimed supporter pin. Honor system — no cryptographic verification. */
+    supporterPin?: SupporterPin;
   };
   version: number;
   updatedAt: number;

@@ -1769,14 +1769,114 @@ export class APIServer {
         }
 
         case 'get_checkout_url': {
-          const checkoutPeerId = this.deps.node.getPeerId();
+          // No peerId sent — Stripe never sees the OpenDescent identity.
           const licenseServerUrl = (data && data.licenseServer) || 'https://pay.open-descent.com';
           try {
-            const checkoutResult = await this.postJSON(`${licenseServerUrl}/checkout`, { peerId: checkoutPeerId });
+            const checkoutResult = await this.postJSON(`${licenseServerUrl}/checkout`, {});
             if (checkoutResult.url) {
               return this.ok(id, { checkoutUrl: checkoutResult.url });
             }
             return this.err(id, checkoutResult.error || 'Could not create checkout session');
+          } catch (e: any) {
+            return this.err(id, 'License server unreachable: ' + e.message);
+          }
+        }
+
+        case 'get_founder_url': {
+          // Founder's Edition checkout — same anonymity as /checkout.
+          const licenseServerUrl = (data && data.licenseServer) || 'https://pay.open-descent.com';
+          try {
+            const founderResult = await this.postJSON(`${licenseServerUrl}/founder`, {});
+            if (founderResult.url) {
+              return this.ok(id, { checkoutUrl: founderResult.url });
+            }
+            return this.err(id, founderResult.error || 'Could not create checkout session');
+          } catch (e: any) {
+            return this.err(id, 'License server unreachable: ' + e.message);
+          }
+        }
+
+        case 'redeem_code': {
+          // User pastes a redemption code from the post-checkout page.
+          // We send {code, peerId, anonymous} to the license server, receive a
+          // signed license + subscriptionId, persist locally, and activate.
+          if (!data || typeof data.code !== 'string') {
+            return this.err(id, 'Missing redemption code');
+          }
+          const licenseServerUrl = data.licenseServer || 'https://pay.open-descent.com';
+          const peerId = this.deps.node.getPeerId();
+          const anonymous = !!data.anonymous;
+          try {
+            const redeemResult = await this.postJSON(`${licenseServerUrl}/redeem`, {
+              code: data.code.trim(),
+              peerId,
+              anonymous,
+            });
+            if (redeemResult.error || !redeemResult.licenseKey) {
+              return this.err(id, redeemResult.error || 'Redemption failed');
+            }
+            // Verify the license locally before persisting
+            const status = verifyLicense(redeemResult.licenseKey, peerId);
+            if (!status.valid) {
+              return this.err(id, status.error || 'Server returned invalid license');
+            }
+            await this.deps.store.setMeta('license_key', redeemResult.licenseKey);
+            if (redeemResult.subscriptionId) {
+              await this.deps.store.setMeta('subscription_id', redeemResult.subscriptionId);
+              await this.deps.store.setMeta('subscription_anonymous', anonymous ? 'true' : 'false');
+            }
+            this.licenseStatus = status;
+            const maxStorage = TIER_LIMITS[status.tier].maxStorageMB * 1024 * 1024;
+            this.deps.store.setMaxStorageBytes(maxStorage);
+            console.log(`[License] Redeemed (${anonymous ? 'anonymous' : 'standard'}, founder=${redeemResult.founder})`);
+            return this.ok(id, {
+              tier: status.tier,
+              valid: true,
+              expiresAt: status.expiresAt,
+              founder: status.founder,
+              subscriptionId: redeemResult.subscriptionId,
+              limits: TIER_LIMITS[status.tier],
+            });
+          } catch (e: any) {
+            return this.err(id, 'License server unreachable: ' + e.message);
+          }
+        }
+
+        case 'check_subscription_status': {
+          // Polls /sub-status for renewals. Standard mode: auto-applies fresh license.
+          // Anonymous mode: returns a renewal code for the user to redeem.
+          const subId = await this.deps.store.getMeta('subscription_id');
+          if (!subId) {
+            return this.ok(id, { status: 'no_subscription' });
+          }
+          const licenseServerUrl = (data && data.licenseServer) || 'https://pay.open-descent.com';
+          try {
+            const result = await this.getJSON(`${licenseServerUrl}/sub-status?subId=${encodeURIComponent(subId)}`);
+            if (result.licenseKey) {
+              const peerId = this.deps.node.getPeerId();
+              const status = verifyLicense(result.licenseKey, peerId);
+              if (status.valid) {
+                await this.deps.store.setMeta('license_key', result.licenseKey);
+                this.licenseStatus = status;
+                const maxStorage = TIER_LIMITS[status.tier].maxStorageMB * 1024 * 1024;
+                this.deps.store.setMaxStorageBytes(maxStorage);
+                console.log(`[License] Auto-renewed via /sub-status`);
+                return this.ok(id, { status: 'renewed', expiresAt: status.expiresAt });
+              }
+              return this.err(id, 'Renewal license invalid');
+            }
+            if (result.renewalCode) {
+              return this.ok(id, { status: 'renewal_code_available', renewalCode: result.renewalCode });
+            }
+            if (result.status === 'current') {
+              return this.ok(id, { status: 'current' });
+            }
+            if (result.error) {
+              // 404 / cancelled — clear local subscription metadata
+              await this.deps.store.setMeta('subscription_id', '');
+              return this.ok(id, { status: 'cancelled' });
+            }
+            return this.ok(id, { status: 'unknown' });
           } catch (e: any) {
             return this.err(id, 'License server unreachable: ' + e.message);
           }
@@ -2170,6 +2270,33 @@ export class APIServer {
   /** Get current tier limits */
   private getTierLimit(limit: keyof typeof TIER_LIMITS.free): number {
     return checkLimit(this.licenseStatus, limit);
+  }
+
+  /** GET JSON from an external HTTP endpoint (used for license server) */
+  private getJSON(url: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Request timeout')), 10000);
+      const parsed = new URL(url);
+      const isHttps = parsed.protocol === 'https:';
+      const options: http.RequestOptions = {
+        hostname: parsed.hostname,
+        port: parsed.port || (isHttps ? 443 : 80),
+        path: parsed.pathname + parsed.search,
+        method: 'GET',
+      };
+      const req = (isHttps ? https : http).request(options, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          clearTimeout(timeout);
+          try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
+          catch { reject(new Error('Invalid response from license server')); }
+        });
+        res.on('error', (e) => { clearTimeout(timeout); reject(e); });
+      });
+      req.on('error', (e) => { clearTimeout(timeout); reject(e); });
+      req.end();
+    });
   }
 
   /** POST JSON to an external HTTP endpoint (used for license server) */
