@@ -302,7 +302,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
         Discord leaked 70,000 government IDs.
         <a href="/vs/discord.html">Why we built this →</a>
         <span class="sep">//</span>
-        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        OpenDescent v0.5.5 released — privacy: Stripe never sees your peer ID.
         <a href="/#download">Download →</a>
         <span class="sep">//</span>
         Normal life deserves privacy.
@@ -313,7 +313,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
         Discord leaked 70,000 government IDs.
         <a href="/vs/discord.html">Why we built this →</a>
         <span class="sep">//</span>
-        OpenDescent v0.5.4 released — hubs, live streaming, signed file sharing.
+        OpenDescent v0.5.5 released — privacy: Stripe never sees your peer ID.
         <a href="/#download">Download →</a>
         <span class="sep">//</span>
         Normal life deserves privacy.
@@ -350,7 +350,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
   <div class="container">
     <div class="hero-meta-row">
       <span class="kicker">FAQ &nbsp;/&nbsp; Everything people ask</span>
-      <span class="hero-date">Updated 2026-04-24</span>
+      <span class="hero-date">Updated 2026-05-06</span>
     </div>
     <h1>Straight answers <em>to the things people actually ask</em>.</h1>
     <p class="article-dek">
@@ -426,7 +426,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="qa-q"><div class="qa-q-text">What platforms does OpenDescent work on?</div><div class="qa-q-num">01.05</div></div>
     <div class="qa-a">
       <ul>
-        <li><strong>Windows 10+</strong> — fully supported today (v0.5.4)</li>
+        <li><strong>Windows 10+</strong> — fully supported today (v0.5.5)</li>
         <li><strong>macOS</strong> — build in progress, coming soon</li>
         <li><strong>Linux</strong> — build in progress, coming soon</li>
         <li><strong>iOS / Android</strong> — a Progressive Web App (PWA) is on the roadmap; native apps are longer-term</li>
@@ -721,7 +721,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
   <div class="cat-header">
     <div class="cat-num">07</div>
     <div class="cat-title">Pricing &amp; Pro &mdash; <em>how we fund a free app</em>.</div>
-    <div class="cat-count">6 questions</div>
+    <div class="cat-count">8 questions</div>
   </div>
 
   <div class="qa" data-search="paid pro subscription cost price">
@@ -734,19 +734,20 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="qa-q"><div class="qa-q-text">What does Pro include?</div><div class="qa-q-num">07.02</div></div>
     <div class="qa-a">Pro unlocks:
       <ul>
-        <li>Larger file transfers (higher per-file and monthly caps)</li>
-        <li>Unlimited hubs (free tier caps the number of hubs you can create)</li>
+        <li>Larger file transfers (500MB per file vs 35MB on free)</li>
+        <li>Unlimited groups and hubs (free tier caps both)</li>
+        <li>Dead Man's Switch — auto-send messages on missed check-in</li>
+        <li>Cosmetic perks: avatar frames, vibe themes, username color</li>
         <li>Priority support on GitHub Discussions</li>
-        <li>A Pro badge on your profile, if you want one</li>
       </ul>
-      None of these affect encryption, privacy, or the core messaging experience.
+      None of these affect encryption, privacy, or the core messaging experience. We don't sell verified badges or status credentials.
     </div>
     <div class="qa-tags"><span class="qa-tag">Pro</span></div>
   </div>
 
   <div class="qa" data-search="founder edition lifetime early supporter">
     <div class="qa-q"><div class="qa-q-text">What is the Founder's Edition?</div><div class="qa-q-num">07.03</div></div>
-    <div class="qa-a">A one-time <strong>£1 purchase for lifetime Pro</strong>, limited to the first few users. It includes everything Pro includes, forever, plus a Founder badge on your profile. We launched it to reward people who supported the project early. See <a href="/#founder">the homepage</a> for current availability.</div>
+    <div class="qa-a">A one-time <strong>£1 purchase for lifetime Pro</strong>, limited to the first few users. Every Pro feature, forever. We launched it to reward people who supported the project early. See <a href="/#founder">the homepage</a> for current availability.</div>
     <div class="qa-tags"><span class="qa-tag">Founder</span></div>
   </div>
 
@@ -762,8 +763,28 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="qa-tags"><span class="qa-tag">Business model</span></div>
   </div>
 
+  <div class="qa" data-search="payment privacy stripe peer id link identity anonymous redemption code">
+    <div class="qa-q"><div class="qa-q-text">Does paying for Pro link my real identity to my peer ID?</div><div class="qa-q-num">07.06</div></div>
+    <div class="qa-a">
+      <strong>No — Stripe never sees your peer ID.</strong> When you click "Unlock Pro," the checkout session is created without any peer-ID metadata. Stripe sees a payment from your card; it does not see a link to your OpenDescent identity.
+      <br><br>
+      After checkout, you receive a <strong>redemption code</strong> on the success page. You paste that code into the app, where your peer ID lives locally. The code-to-peer-ID binding happens on our license server — Stripe is not part of that handshake.
+      <br><br>
+      For maximum privacy, toggle <strong>Anonymous renewal</strong> at redemption time. The license server will then forget your peer ID after activation, and you'll receive a fresh redemption code by email each renewal cycle. Trade-off: small UX friction, no persistent peer-ID record on our side.
+      <br><br>
+      A non-KYC payment rail (Bitcoin Lightning) is on the roadmap to remove even the Stripe layer for users who want it.
+    </div>
+    <div class="qa-tags"><span class="qa-tag">Privacy</span><span class="qa-tag">Pro</span></div>
+  </div>
+
+  <div class="qa" data-search="redemption code redeem activate license key paste">
+    <div class="qa-q"><div class="qa-q-text">What is the redemption code I see after checkout?</div><div class="qa-q-num">07.07</div></div>
+    <div class="qa-a">A 16-character code (formatted as <code>XXXX-XXXX-XXXX-XXXX</code>) that proves you paid, without identifying you to Stripe. Open the app, go to <strong>Settings → Redeem Code</strong>, paste the code, and click Activate. The code is deleted on redemption — single-use, single-binding to your peer ID. If you lose the code before redeeming, contact support with your Stripe receipt and we can re-issue it.</div>
+    <div class="qa-tags"><span class="qa-tag">Pro</span></div>
+  </div>
+
   <div class="qa" data-search="donate contribute support help fund">
-    <div class="qa-q"><div class="qa-q-text">Can I donate or contribute?</div><div class="qa-q-num">07.06</div></div>
+    <div class="qa-q"><div class="qa-q-text">Can I donate or contribute?</div><div class="qa-q-num">07.08</div></div>
     <div class="qa-a">Buying Pro or Founder's Edition is the most direct way to support the project financially. Code contributions are welcome on <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a> — we review all PRs. Spreading the word (Reddit, GitHub stars, sharing comparison pages) materially helps too.</div>
     <div class="qa-tags"><span class="qa-tag">Support</span></div>
   </div>
@@ -809,7 +830,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="mnemonic lost locked out cant recover">
     <div class="qa-q"><div class="qa-q-text">I lost my mnemonic — am I locked out forever?</div><div class="qa-q-num">08.06</div></div>
-    <div class="qa-a">If you no longer have both (a) your mnemonic and (b) a device that still has your identity, then yes — the account is gone. This is the trade-off of real end-to-end encryption: the thing that prevents <em>us</em> from reading your messages also prevents us from restoring your account. You can create a new identity and tell your contacts to re-add you. Future releases may include optional social-recovery options (distribute encrypted shards of your key to trusted contacts), but v0.5.4 doesn't have that yet.</div>
+    <div class="qa-a">If you no longer have both (a) your mnemonic and (b) a device that still has your identity, then yes — the account is gone. This is the trade-off of real end-to-end encryption: the thing that prevents <em>us</em> from reading your messages also prevents us from restoring your account. You can create a new identity and tell your contacts to re-add you. Future releases may include optional social-recovery options (distribute encrypted shards of your key to trusted contacts), but v0.5.5 doesn't have that yet.</div>
     <div class="qa-tags"><span class="qa-tag">Recovery</span></div>
   </div>
 </section>
@@ -846,7 +867,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
   <div class="container-narrow">
     <div class="kicker kicker-ghost" style="justify-content: center; margin-bottom: 14px;">Read enough?</div>
     <h2>The only real answer is <em>try it yourself</em>.</h2>
-    <p>Free, open source, no account required. The full app is v0.5.4 for Windows.</p>
+    <p>Free, open source, no account required. The full app is v0.5.5 for Windows.</p>
     <div class="btns">
       <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
       <a href="/" class="btn btn-ghost btn-arrow">Back to home</a>

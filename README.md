@@ -66,7 +66,7 @@ Then open http://localhost:8080
 
 ## Founder's Edition
 
-The first 101 users get **lifetime Pro access** for £1. Permanent founder badge on your profile. [Claim yours →](https://open-descent.com/#founder)
+The first 101 users get **lifetime Pro access** for £1 — every Pro feature, forever. [Claim yours →](https://open-descent.com/#founder)
 
 ---
 
