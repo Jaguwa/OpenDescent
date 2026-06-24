@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenDescent FAQ: Every Question, Every Answer (2026)</title>
-<meta name="description" content="Straight answers to every common question about OpenDescent — how it works, how it's encrypted, how it compares to Signal/Discord/WhatsApp, how to recover your account, what it costs, and more.">
+<meta name="description" content="Straight answers to every common question about OpenDescent: how it works, how it's encrypted, how it compares to Signal/Discord/WhatsApp, how to recover your account, what it costs, and more.">
 <meta name="keywords" content="opendescent faq, opendescent questions, is opendescent free, is opendescent safe, how does opendescent work, opendescent vs signal, opendescent vs discord, opendescent vs whatsapp, opendescent security, opendescent recovery, private messaging faq, encrypted messenger questions">
 <meta name="author" content="OpenDescent">
 <meta name="theme-color" content="#0f1012">
@@ -49,24 +49,24 @@
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    { "@type": "Question", "name": "What is OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent is a free, open-source, decentralized peer-to-peer messaging and community app. It offers end-to-end encrypted text messages, voice and video calls, file sharing, community hubs with channels and roles, anonymous onion-routed posts (Dead Drops), and a Dead Man's Switch — all without central servers, phone numbers, emails, or accounts." } },
-    { "@type": "Question", "name": "Is OpenDescent free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. OpenDescent is free and open source under the MIT license. Every core feature — messaging, calls, hubs, encryption, file sharing — is free forever. An optional Pro subscription (£5/month) unlocks larger file transfers and more hubs and helps fund the project, but it is not required for core functionality." } },
-    { "@type": "Question", "name": "Do I need to give you my phone number or email?", "acceptedAnswer": { "@type": "Answer", "text": "No. OpenDescent requires no phone number, no email, and no account. Your identity is an Ed25519 cryptographic keypair generated on your device the first time you open the app. You back it up with a 12-word BIP39 mnemonic phrase — that's it." } },
-    { "@type": "Question", "name": "Is OpenDescent safe?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent uses standard, peer-reviewed cryptographic primitives: Ed25519 for identity and signatures, X25519 for key agreement, AES-256-GCM for message encryption, HKDF-SHA256 for key derivation, and libp2p Noise for transport encryption. Messages are end-to-end encrypted before leaving your device. There are no central servers to breach. The codebase is open source under MIT and auditable by anyone. A formal third-party audit has not yet been performed — it is on the roadmap." } },
-    { "@type": "Question", "name": "Can OpenDescent read my messages?", "acceptedAnswer": { "@type": "Answer", "text": "No — and technically, there is no 'OpenDescent' in a position to. Messages are encrypted on your device before they leave, and OpenDescent has no central servers. There is no company-operated infrastructure between your device and your recipient's. Messages are readable only on the two endpoints, after decryption with the recipient's key." } },
-    { "@type": "Question", "name": "What happens if I lose my 12-word mnemonic phrase?", "acceptedAnswer": { "@type": "Answer", "text": "Your account cannot be recovered without the mnemonic. Because there is no central server storing your identity, there is no 'forgot password' option — the mnemonic is the only way to reconstruct your cryptographic identity on a new device. This is the trade-off of true end-to-end encryption: security properties require that nobody, including us, can recover your account without your key." } },
-    { "@type": "Question", "name": "How is OpenDescent different from Signal?", "acceptedAnswer": { "@type": "Answer", "text": "Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes community hubs with channels and roles (Discord-style) which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps — OpenDescent is currently Windows-only. Use Signal for 1-on-1 with existing contacts; use OpenDescent for peer-to-peer, no-phone-number, or community use cases." } },
+    { "@type": "Question", "name": "What is OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent is a free, open-source, decentralized peer-to-peer messaging and community app. It offers end-to-end encrypted text messages, voice and video calls, file sharing, community hubs with channels and roles, anonymous onion-routed posts (Dead Drops), and a Dead Man's Switch, all without central servers, phone numbers, emails, or accounts." } },
+    { "@type": "Question", "name": "Is OpenDescent free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. OpenDescent is free and open source under the MIT license. Every core feature (messaging, calls, hubs, encryption, file sharing) is free forever. An optional Pro subscription (£5/month) unlocks larger file transfers and more hubs and helps fund the project, but it is not required for core functionality." } },
+    { "@type": "Question", "name": "Do I need to give you my phone number or email?", "acceptedAnswer": { "@type": "Answer", "text": "No. OpenDescent requires no phone number, no email, and no account. Your identity is an Ed25519 cryptographic keypair generated on your device the first time you open the app. You back it up with a 12-word BIP39 mnemonic phrase, and that's it." } },
+    { "@type": "Question", "name": "Is OpenDescent safe?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent uses standard, peer-reviewed cryptographic primitives: Ed25519 for identity and signatures, X25519 for key agreement, AES-256-GCM for message encryption, HKDF-SHA256 for key derivation, and libp2p Noise for transport encryption. Messages are end-to-end encrypted before leaving your device. There are no central servers to breach. The codebase is open source under MIT and auditable by anyone. A formal third-party audit has not yet been performed; it is on the roadmap." } },
+    { "@type": "Question", "name": "Can OpenDescent read my messages?", "acceptedAnswer": { "@type": "Answer", "text": "No. And technically, there is no 'OpenDescent' in a position to. Messages are encrypted on your device before they leave, and OpenDescent has no central servers. There is no company-operated infrastructure between your device and your recipient's. Messages are readable only on the two endpoints, after decryption with the recipient's key." } },
+    { "@type": "Question", "name": "What happens if I lose my 12-word mnemonic phrase?", "acceptedAnswer": { "@type": "Answer", "text": "Your account cannot be recovered without the mnemonic. Because there is no central server storing your identity, there is no 'forgot password' option: the mnemonic is the only way to reconstruct your cryptographic identity on a new device. This is the trade-off of true end-to-end encryption: security properties require that nobody, including us, can recover your account without your key." } },
+    { "@type": "Question", "name": "How is OpenDescent different from Signal?", "acceptedAnswer": { "@type": "Answer", "text": "Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes community hubs with channels and roles (Discord-style) which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps. OpenDescent is currently Windows-only. Use Signal for 1-on-1 with existing contacts; use OpenDescent for peer-to-peer, no-phone-number, or community use cases." } },
     { "@type": "Question", "name": "How is OpenDescent different from Discord?", "acceptedAnswer": { "@type": "Answer", "text": "Discord text messages are not end-to-end encrypted; Discord servers can read them. OpenDescent's community hubs offer the same shape (text channels, voice channels, categories, roles, invites) but everything is end-to-end encrypted and peer-replicated across members' devices rather than on Discord-operated servers. Discord also leaked 70,000 government-ID photos in October 2025 through a third-party vendor and is pushing mandatory age verification; OpenDescent never asks for your ID." } },
-    { "@type": "Question", "name": "How is OpenDescent different from WhatsApp?", "acceptedAnswer": { "@type": "Answer", "text": "WhatsApp is end-to-end encrypted via the Signal Protocol — the cryptography itself is good. The difference is ownership and architecture: WhatsApp is owned by Meta (the same company ending Instagram encryption on May 8, 2026) and runs on Meta-operated infrastructure. WhatsApp also requires your phone number. OpenDescent has no owning company in a position to roll back encryption via policy update, and requires no phone number." } },
-    { "@type": "Question", "name": "Does OpenDescent have community servers like Discord?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — we call them hubs. A hub has text channels, voice channels, categories, roles and permissions, and invite links. The difference from Discord is that hubs are peer-replicated across members' devices rather than hosted on a central server. There is no hub owner who can be subpoenaed and no company that can shut a hub down from outside." } },
+    { "@type": "Question", "name": "How is OpenDescent different from WhatsApp?", "acceptedAnswer": { "@type": "Answer", "text": "WhatsApp is end-to-end encrypted via the Signal Protocol, and the cryptography itself is good. The difference is ownership and architecture: WhatsApp is owned by Meta (the same company ending Instagram encryption on May 8, 2026) and runs on Meta-operated infrastructure. WhatsApp also requires your phone number. OpenDescent has no owning company in a position to roll back encryption via policy update, and requires no phone number." } },
+    { "@type": "Question", "name": "Does OpenDescent have community servers like Discord?", "acceptedAnswer": { "@type": "Answer", "text": "Yes: we call them hubs. A hub has text channels, voice channels, categories, roles and permissions, and invite links. The difference from Discord is that hubs are peer-replicated across members' devices rather than hosted on a central server. There is no hub owner who can be subpoenaed and no company that can shut a hub down from outside." } },
     { "@type": "Question", "name": "What platforms does OpenDescent work on?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent currently ships as a Windows desktop app (Windows 10+). macOS and Linux builds are in progress. A mobile Progressive Web App is on the roadmap. For now, if you primarily message from a phone, Signal or another mobile-first option may be a better fit today." } },
-    { "@type": "Question", "name": "Can I make voice and video calls on OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Voice and video calls use WebRTC with DTLS-SRTP encryption end-to-end. Calls connect directly between peers when possible and fall back to TURN relays when NAT prevents direct connections. Relays see encrypted packets only — they never have decryption keys." } },
-    { "@type": "Question", "name": "Does OpenDescent collect analytics or track users?", "acceptedAnswer": { "@type": "Answer", "text": "No. The app itself has no analytics, no telemetry, and no tracking. The project cannot know who uses the app, from where, or how often — because there is no central server to report to. The marketing website uses Plausible, a privacy-friendly analytics service that does not use cookies and does not collect personal information." } },
+    { "@type": "Question", "name": "Can I make voice and video calls on OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Voice and video calls use WebRTC with DTLS-SRTP encryption end-to-end. Calls connect directly between peers when possible and fall back to TURN relays when NAT prevents direct connections. Relays see encrypted packets only; they never have decryption keys." } },
+    { "@type": "Question", "name": "Does OpenDescent collect analytics or track users?", "acceptedAnswer": { "@type": "Answer", "text": "No. The app itself has no analytics, no telemetry, and no tracking. The project cannot know who uses the app, from where, or how often, because there is no central server to report to. The marketing website uses Plausible, a privacy-friendly analytics service that does not use cookies and does not collect personal information." } },
     { "@type": "Question", "name": "Is OpenDescent open source?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The full codebase is open source under the MIT license at https://github.com/Jaguwa/OpenDescent. You can read it, build it, fork it, modify it, and contribute to it." } },
-    { "@type": "Question", "name": "What is a Dead Drop?", "acceptedAnswer": { "@type": "Answer", "text": "A Dead Drop is an anonymous, onion-routed post that travels through several layered-encrypted hops before landing in a public space. Each hop only sees the next hop — none knows both sender and destination. Proof-of-work prevents spam, and a daily rotating network key means past drops cannot be correlated with current ones. Dead Drops are designed for journalists, sources, and any situation where a message needs to exist without an attributable author." } },
+    { "@type": "Question", "name": "What is a Dead Drop?", "acceptedAnswer": { "@type": "Answer", "text": "A Dead Drop is an anonymous, onion-routed post that travels through several layered-encrypted hops before landing in a public space. Each hop only sees the next hop, so none knows both sender and destination. Proof-of-work prevents spam, and a daily rotating network key means past drops cannot be correlated with current ones. Dead Drops are designed for journalists, sources, and any situation where a message needs to exist without an attributable author." } },
     { "@type": "Question", "name": "What is a Dead Man's Switch?", "acceptedAnswer": { "@type": "Answer", "text": "A Dead Man's Switch is a feature that automatically sends pre-arranged messages to specific people if you don't check in before a timer expires. You can set the timer from 1 hour to 30 days, choose recipients, and write the messages to send. If you miss a check-in, the messages are released. Useful for travel, activist preparation, or any 'if I don't respond by X, tell these people Y' scenario." } },
     { "@type": "Question", "name": "Can I use OpenDescent on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Not yet. OpenDescent is currently a Windows desktop app. A mobile Progressive Web App (PWA) is on the roadmap. Native iOS and Android apps are longer-term." } },
-    { "@type": "Question", "name": "How do you make money if OpenDescent is free?", "acceptedAnswer": { "@type": "Answer", "text": "Through an optional Pro subscription (£5/month) that unlocks larger file transfers and more hubs, and through a one-time Founder's Edition (£1 lifetime Pro) for early supporters. Every core feature is free forever, with or without Pro. There are no ads, no data sales, and no tracking — because there is no central infrastructure to run those on." } }
+    { "@type": "Question", "name": "How do you make money if OpenDescent is free?", "acceptedAnswer": { "@type": "Answer", "text": "Through an optional Pro subscription (£5/month) that unlocks larger file transfers and more hubs, and through a one-time Founder's Edition (£1 lifetime Pro) for early supporters. Every core feature is free forever, with or without Pro. There are no ads, no data sales, and no tracking, because there is no central infrastructure to run those on." } }
   ]
 }
 </script>
@@ -296,24 +296,24 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="breaking-label">▶ Breaking</div>
     <div class="breaking-track">
       <div class="breaking-content">
-        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        Meta is ending end-to-end encryption on Instagram DMs: May 8 2026.
         <a href="/leaving-instagram.html">Here's what to use instead →</a>
         <span class="sep">//</span>
         Discord leaked 70,000 government IDs.
         <a href="/vs/discord.html">Why we built this →</a>
         <span class="sep">//</span>
-        OpenDescent v0.5.6 released — run the network on your own relay.
+        OpenDescent v0.5.6 released: run the network on your own relay.
         <a href="/#download">Download →</a>
         <span class="sep">//</span>
         Normal life deserves privacy.
         <span class="sep">//</span>
-        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        Meta is ending end-to-end encryption on Instagram DMs: May 8 2026.
         <a href="/leaving-instagram.html">Here's what to use instead →</a>
         <span class="sep">//</span>
         Discord leaked 70,000 government IDs.
         <a href="/vs/discord.html">Why we built this →</a>
         <span class="sep">//</span>
-        OpenDescent v0.5.6 released — run the network on your own relay.
+        OpenDescent v0.5.6 released: run the network on your own relay.
         <a href="/#download">Download →</a>
         <span class="sep">//</span>
         Normal life deserves privacy.
@@ -354,7 +354,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     </div>
     <h1>Straight answers <em>to the things people actually ask</em>.</h1>
     <p class="article-dek">
-      Fifty questions across eight categories — getting started, privacy, features, comparisons, recovery, technical details, pricing, and troubleshooting. No marketing fluff, no hand-waving. If your question isn't here, the links at the bottom will get you to an actual human on GitHub.
+      Fifty questions across eight categories: getting started, privacy, features, comparisons, recovery, technical details, pricing, and troubleshooting. No marketing fluff, no hand-waving. If your question isn't here, the links at the bottom will get you to an actual human on GitHub.
     </p>
     <div class="hero-stats">
       <div><div class="hs-num">50+</div><div class="hs-label">Questions answered</div></div>
@@ -364,7 +364,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
     <div class="faq-search-wrap">
       <div class="faq-search">
-        <input type="text" id="faq-search-input" placeholder="Search questions — try 'phone number' or 'encryption'..." autocomplete="off">
+        <input type="text" id="faq-search-input" placeholder="Search questions, e.g. 'phone number' or 'encryption'..." autocomplete="off">
         <span class="faq-search-hint" id="faq-search-hint">▶ 50+ answered</span>
       </div>
       <div class="faq-noresults" id="faq-noresults">No matches. Try a different term, or <a href="https://github.com/Jaguwa/OpenDescent/discussions" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none; border-bottom: 1px dashed var(--teal-dim);">ask on GitHub Discussions ↗</a></div>
@@ -400,25 +400,25 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="what is opendescent app decentralized messenger">
     <div class="qa-q"><div class="qa-q-text">What is OpenDescent?</div><div class="qa-q-num">01.01</div></div>
-    <div class="qa-a">OpenDescent is a free, open-source, decentralized peer-to-peer messaging and community app. It offers end-to-end encrypted text messages, voice and video calls, file sharing, community hubs with channels and roles, anonymous onion-routed posts (Dead Drops), and a Dead Man's Switch — all without central servers, phone numbers, emails, or accounts.</div>
+    <div class="qa-a">OpenDescent is a free, open-source, decentralized peer-to-peer messaging and community app. It offers end-to-end encrypted text messages, voice and video calls, file sharing, community hubs with channels and roles, anonymous onion-routed posts (Dead Drops), and a Dead Man's Switch, all without central servers, phone numbers, emails, or accounts.</div>
     <div class="qa-tags"><span class="qa-tag">Overview</span></div>
   </div>
 
   <div class="qa" data-search="free cost price paid">
     <div class="qa-q"><div class="qa-q-text">Is OpenDescent free?</div><div class="qa-q-num">01.02</div></div>
-    <div class="qa-a">Yes. OpenDescent is free and open source under the MIT license. Every core feature — messaging, calls, hubs, encryption, file sharing — is free forever. An optional Pro subscription (£5/month) unlocks larger file transfers and more hubs and helps fund the project, but is <strong>not required</strong> for core functionality.</div>
+    <div class="qa-a">Yes. OpenDescent is free and open source under the MIT license. Every core feature (messaging, calls, hubs, encryption, file sharing) is free forever. An optional Pro subscription (£5/month) unlocks larger file transfers and more hubs and helps fund the project, but is <strong>not required</strong> for core functionality.</div>
     <div class="qa-tags"><span class="qa-tag">Pricing</span></div>
   </div>
 
   <div class="qa" data-search="phone email account signup registration">
     <div class="qa-q"><div class="qa-q-text">Do I need to give you my phone number or email?</div><div class="qa-q-num">01.03</div></div>
-    <div class="qa-a">No. OpenDescent requires no phone number, no email, and no account. Your identity is an Ed25519 cryptographic keypair generated on your device the first time you open the app. You back it up with a 12-word BIP39 mnemonic phrase — that's it.</div>
+    <div class="qa-a">No. OpenDescent requires no phone number, no email, and no account. Your identity is an Ed25519 cryptographic keypair generated on your device the first time you open the app. You back it up with a 12-word BIP39 mnemonic phrase, and that's it.</div>
     <div class="qa-tags"><span class="qa-tag">Identity</span><span class="qa-tag">Privacy</span></div>
   </div>
 
   <div class="qa" data-search="install windows download getting app">
     <div class="qa-q"><div class="qa-q-text">How do I install OpenDescent?</div><div class="qa-q-num">01.04</div></div>
-    <div class="qa-a">Download the Windows installer from <a href="/#download">the download page</a> or directly from <a href="https://github.com/Jaguwa/OpenDescent/releases" target="_blank" rel="noopener">GitHub Releases</a>. Run the <code>.exe</code>, pick an install location, and you're done. No sign-up, no email confirmation — the app generates your identity on first launch.</div>
+    <div class="qa-a">Download the Windows installer from <a href="/#download">the download page</a> or directly from <a href="https://github.com/Jaguwa/OpenDescent/releases" target="_blank" rel="noopener">GitHub Releases</a>. Run the <code>.exe</code>, pick an install location, and you're done. No sign-up, no email confirmation: the app generates your identity on first launch.</div>
     <div class="qa-tags"><span class="qa-tag">Install</span></div>
   </div>
 
@@ -426,10 +426,10 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="qa-q"><div class="qa-q-text">What platforms does OpenDescent work on?</div><div class="qa-q-num">01.05</div></div>
     <div class="qa-a">
       <ul>
-        <li><strong>Windows 10+</strong> — fully supported today (v0.5.6)</li>
-        <li><strong>macOS</strong> — build in progress, coming soon</li>
-        <li><strong>Linux</strong> — build in progress, coming soon</li>
-        <li><strong>iOS / Android</strong> — a Progressive Web App (PWA) is on the roadmap; native apps are longer-term</li>
+        <li><strong>Windows 10+</strong>: fully supported today (v0.5.6)</li>
+        <li><strong>macOS</strong>: build in progress, coming soon</li>
+        <li><strong>Linux</strong>: build in progress, coming soon</li>
+        <li><strong>iOS / Android</strong>: a Progressive Web App (PWA) is on the roadmap; native apps are longer-term</li>
       </ul>
       If mobile-first is a hard requirement for you today, Signal is probably a better fit while we work on it.
     </div>
@@ -444,7 +444,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="how many users user base network size">
     <div class="qa-q"><div class="qa-q-text">How many people use OpenDescent?</div><div class="qa-q-num">01.07</div></div>
-    <div class="qa-a">Honestly: not many. We launched publicly in 2026 and are still in the early-adopter phase. Because OpenDescent has no analytics and no central server, we don't actually know how many people run the app — which is by design. If you care about reaching a big existing user base today, Signal or WhatsApp are better. If you care about being early on something that <em>is</em> a different architecture, welcome.</div>
+    <div class="qa-a">Honestly: not many. We launched publicly in 2026 and are still in the early-adopter phase. Because OpenDescent has no analytics and no central server, we don't actually know how many people run the app, which is by design. If you care about reaching a big existing user base today, Signal or WhatsApp are better. If you care about being early on something that <em>is</em> a different architecture, welcome.</div>
     <div class="qa-tags"><span class="qa-tag">Scale</span></div>
   </div>
 
@@ -471,37 +471,37 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="can read messages spy monitor company">
     <div class="qa-q"><div class="qa-q-text">Can OpenDescent read my messages?</div><div class="qa-q-num">02.02</div></div>
-    <div class="qa-a">No — and technically, there is no 'OpenDescent' in a position to. Messages are encrypted on your device before they leave, and OpenDescent has no central servers. There is no company-operated infrastructure between your device and your recipient's. Messages are readable only on the two endpoints, after decryption with the recipient's key.</div>
+    <div class="qa-a">No. And technically, there is no 'OpenDescent' in a position to. Messages are encrypted on your device before they leave, and OpenDescent has no central servers. There is no company-operated infrastructure between your device and your recipient's. Messages are readable only on the two endpoints, after decryption with the recipient's key.</div>
     <div class="qa-tags"><span class="qa-tag">Privacy</span></div>
   </div>
 
   <div class="qa" data-search="safe secure hack vulnerability threat">
     <div class="qa-q"><div class="qa-q-text">Is OpenDescent safe?</div><div class="qa-q-num">02.03</div></div>
-    <div class="qa-a">OpenDescent uses standard, peer-reviewed cryptographic primitives (Ed25519, X25519, AES-256-GCM, HKDF, libp2p Noise) and the codebase is open source and auditable. No formal third-party audit has been performed yet — that's on the roadmap. For the full honest threat model including what we <em>don't</em> protect against, see <a href="/security.html#threat">the security page's threat model section</a>.</div>
+    <div class="qa-a">OpenDescent uses standard, peer-reviewed cryptographic primitives (Ed25519, X25519, AES-256-GCM, HKDF, libp2p Noise) and the codebase is open source and auditable. No formal third-party audit has been performed yet; that's on the roadmap. For the full honest threat model including what we <em>don't</em> protect against, see <a href="/security.html#threat">the security page's threat model section</a>.</div>
     <div class="qa-tags"><span class="qa-tag">Security</span></div>
   </div>
 
   <div class="qa" data-search="government surveillance state actor nation">
     <div class="qa-q"><div class="qa-q-text">Is OpenDescent safe from government surveillance?</div><div class="qa-q-num">02.04</div></div>
-    <div class="qa-a">For <strong>message content</strong>: yes, the cryptography is modern and strong enough to resist mass interception of content. For <strong>traffic analysis</strong> (who you're talking to, when): OpenDescent doesn't hide this by default — a sufficiently-resourced observer of internet traffic can see that you're connected to specific peers. Route OpenDescent over Tor or a trusted VPN if that matters for you. For <strong>targeted attacks</strong> on your device: no messenger in existence protects a compromised endpoint from a determined state-level adversary.</div>
+    <div class="qa-a">For <strong>message content</strong>: yes, the cryptography is modern and strong enough to resist mass interception of content. For <strong>traffic analysis</strong> (who you're talking to, when): OpenDescent doesn't hide this by default. A sufficiently-resourced observer of internet traffic can see that you're connected to specific peers. Route OpenDescent over Tor or a trusted VPN if that matters for you. For <strong>targeted attacks</strong> on your device: no messenger in existence protects a compromised endpoint from a determined state-level adversary.</div>
     <div class="qa-tags"><span class="qa-tag">Surveillance</span></div>
   </div>
 
   <div class="qa" data-search="audit third party trail of bits ncc cryptographic">
     <div class="qa-q"><div class="qa-q-text">Has OpenDescent been audited?</div><div class="qa-q-num">02.05</div></div>
-    <div class="qa-a">Not by a professional third-party firm (like Trail of Bits, NCC Group, or Cure53) — not yet. The code is open source and uses standard primitives that are themselves extensively audited. A formal audit is on the roadmap and is partially what the <a href="/#founder">Founder's Edition</a> helps fund. We will not claim 'audited' until we are.</div>
+    <div class="qa-a">Not by a professional third-party firm (like Trail of Bits, NCC Group, or Cure53), not yet. The code is open source and uses standard primitives that are themselves extensively audited. A formal audit is on the roadmap and is partially what the <a href="/#founder">Founder's Edition</a> helps fund. We will not claim 'audited' until we are.</div>
     <div class="qa-tags"><span class="qa-tag">Audit</span><span class="qa-tag">Transparency</span></div>
   </div>
 
   <div class="qa" data-search="data collect analytics tracking telemetry">
     <div class="qa-q"><div class="qa-q-text">What data does OpenDescent collect?</div><div class="qa-q-num">02.06</div></div>
-    <div class="qa-a">The app: nothing. No analytics, no telemetry, no tracking — because there's no central server to send it to. The marketing website at open-descent.com uses <strong>Plausible</strong>, a privacy-friendly analytics service that does not use cookies and does not collect personal information. No third-party tracking pixels. No advertising SDKs.</div>
+    <div class="qa-a">The app: nothing. No analytics, no telemetry, no tracking, because there's no central server to send it to. The marketing website at open-descent.com uses <strong>Plausible</strong>, a privacy-friendly analytics service that does not use cookies and does not collect personal information. No third-party tracking pixels. No advertising SDKs.</div>
     <div class="qa-tags"><span class="qa-tag">Data</span><span class="qa-tag">Privacy</span></div>
   </div>
 
   <div class="qa" data-search="tracked ip address metadata peer">
     <div class="qa-q"><div class="qa-q-text">Can I be tracked while using OpenDescent?</div><div class="qa-q-num">02.07</div></div>
-    <div class="qa-a">A direct peer you connect to can see your IP at connection time. This is a peer-level observation, not a global one — no single entity has the whole network graph. Your <strong>messages</strong> cannot be read by any peer (only the final recipient can decrypt them). If IP-level privacy matters, route OpenDescent over Tor or a VPN. Also consider <a href="/features.html#anonymous">Dead Drops</a>, which are specifically designed for identity-free posts via onion routing.</div>
+    <div class="qa-a">A direct peer you connect to can see your IP at connection time. This is a peer-level observation, not a global one. No single entity has the whole network graph. Your <strong>messages</strong> cannot be read by any peer (only the final recipient can decrypt them). If IP-level privacy matters, route OpenDescent over Tor or a VPN. Also consider <a href="/features.html#anonymous">Dead Drops</a>, which are specifically designed for identity-free posts via onion routing.</div>
     <div class="qa-tags"><span class="qa-tag">Metadata</span></div>
   </div>
 
@@ -513,7 +513,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="device stolen lost phone computer compromised">
     <div class="qa-q"><div class="qa-q-text">What happens if my device is stolen?</div><div class="qa-q-num">02.09</div></div>
-    <div class="qa-a">Your local messages are encrypted at rest — if the device uses disk encryption (Windows BitLocker, macOS FileVault) and a strong password, an attacker with physical access faces substantial effort before they can read anything. If they bypass that, they can read messages on that device and send as you going forward. You should: (1) recover your identity on a new device using your 12-word mnemonic, (2) tell your close contacts your key was potentially compromised and to re-verify via TOFU if possible, and (3) consider generating a new identity and rebuilding from trusted contacts.</div>
+    <div class="qa-a">Your local messages are encrypted at rest. If the device uses disk encryption (Windows BitLocker, macOS FileVault) and a strong password, an attacker with physical access faces substantial effort before they can read anything. If they bypass that, they can read messages on that device and send as you going forward. You should: (1) recover your identity on a new device using your 12-word mnemonic, (2) tell your close contacts your key was potentially compromised and to re-verify via TOFU if possible, and (3) consider generating a new identity and rebuilding from trusted contacts.</div>
     <div class="qa-tags"><span class="qa-tag">Loss</span><span class="qa-tag">Recovery</span></div>
   </div>
 </section>
@@ -528,7 +528,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="voice video call webrtc">
     <div class="qa-q"><div class="qa-q-text">Can I make voice and video calls?</div><div class="qa-q-num">03.01</div></div>
-    <div class="qa-a">Yes. Voice and video calls use <strong>WebRTC</strong> with <strong>DTLS-SRTP</strong> encryption end-to-end. Connections are direct peer-to-peer when possible and fall back to TURN relays when NAT prevents direct connections. Relays see encrypted packets only — they never have decryption keys.</div>
+    <div class="qa-a">Yes. Voice and video calls use <strong>WebRTC</strong> with <strong>DTLS-SRTP</strong> encryption end-to-end. Connections are direct peer-to-peer when possible and fall back to TURN relays when NAT prevents direct connections. Relays see encrypted packets only; they never have decryption keys.</div>
     <div class="qa-tags"><span class="qa-tag">Calls</span></div>
   </div>
 
@@ -540,25 +540,25 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="discord server community hub channel">
     <div class="qa-q"><div class="qa-q-text">Can I create a community or server like Discord?</div><div class="qa-q-num">03.03</div></div>
-    <div class="qa-a">Yes — we call them <strong>hubs</strong>. A hub has text channels, voice channels, categories, roles and permissions, and invite links — the same shape as a Discord server. The difference is that hubs are <strong>peer-replicated across members' devices</strong> rather than hosted on a central server. See <a href="/vs/discord.html">OpenDescent vs Discord</a> for the full comparison.</div>
+    <div class="qa-a">Yes: we call them <strong>hubs</strong>. A hub has text channels, voice channels, categories, roles and permissions, and invite links, the same shape as a Discord server. The difference is that hubs are <strong>peer-replicated across members' devices</strong> rather than hosted on a central server. See <a href="/vs/discord.html">OpenDescent vs Discord</a> for the full comparison.</div>
     <div class="qa-tags"><span class="qa-tag">Hubs</span><span class="qa-tag">Community</span></div>
   </div>
 
   <div class="qa" data-search="dead drop anonymous onion routed">
     <div class="qa-q"><div class="qa-q-text">What are Dead Drops?</div><div class="qa-q-num">03.04</div></div>
-    <div class="qa-a">Dead Drops are <strong>anonymous onion-routed posts</strong>. A post travels through several layered-encrypted hops before landing in a public space — each hop only sees the next hop, so no single node knows both sender and destination. Proof-of-work prevents spam, and a daily rotating network key means past drops can't be correlated with current ones. Designed for sources, whistleblowers, or any conversation that shouldn't have an attributable author.</div>
+    <div class="qa-a">Dead Drops are <strong>anonymous onion-routed posts</strong>. A post travels through several layered-encrypted hops before landing in a public space. Each hop only sees the next hop, so no single node knows both sender and destination. Proof-of-work prevents spam, and a daily rotating network key means past drops can't be correlated with current ones. Designed for sources, whistleblowers, or any conversation that shouldn't have an attributable author.</div>
     <div class="qa-tags"><span class="qa-tag">Anonymous</span></div>
   </div>
 
   <div class="qa" data-search="dead mans switch timer auto send check in">
     <div class="qa-q"><div class="qa-q-text">What's a Dead Man's Switch?</div><div class="qa-q-num">03.05</div></div>
-    <div class="qa-a">A feature that automatically sends pre-arranged messages to specific people if you don't check in before a timer expires. Set the timer from 1 hour to 30 days, pick recipients, write the messages. Check in and the clock resets; miss a check-in and the messages are sent. Useful for travel, journalists protecting sources, or any "if I don't respond by X, tell these people Y" scenario. The switch runs on peer-to-peer infrastructure — no central authority to compel or disable.</div>
+    <div class="qa-a">A feature that automatically sends pre-arranged messages to specific people if you don't check in before a timer expires. Set the timer from 1 hour to 30 days, pick recipients, write the messages. Check in and the clock resets; miss a check-in and the messages are sent. Useful for travel, journalists protecting sources, or any "if I don't respond by X, tell these people Y" scenario. The switch runs on peer-to-peer infrastructure, with no central authority to compel or disable.</div>
     <div class="qa-tags"><span class="qa-tag">Dead Man's Switch</span></div>
   </div>
 
   <div class="qa" data-search="live stream streaming video broadcast">
     <div class="qa-q"><div class="qa-q-text">Can I stream live video?</div><div class="qa-q-num">03.06</div></div>
-    <div class="qa-a">Yes. Live streams distribute <strong>mesh-pull style</strong> — each viewer pulls chunks from a few peers and redistributes to others, BitTorrent-style but for live video. The more people watching, the stronger the distribution. No central streaming server, no middleman who could cut the stream.</div>
+    <div class="qa-a">Yes. Live streams distribute <strong>mesh-pull style</strong>: each viewer pulls chunks from a few peers and redistributes to others, BitTorrent-style but for live video. The more people watching, the stronger the distribution. No central streaming server, no middleman who could cut the stream.</div>
     <div class="qa-tags"><span class="qa-tag">Streaming</span></div>
   </div>
 
@@ -591,7 +591,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="signal alternative difference comparison">
     <div class="qa-q"><div class="qa-q-text">How is OpenDescent different from Signal?</div><div class="qa-q-num">04.01</div></div>
-    <div class="qa-a">Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes Discord-style community hubs which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps — OpenDescent is currently Windows-only. See <a href="/vs/signal.html">the full comparison</a>.</div>
+    <div class="qa-a">Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes Discord-style community hubs which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps. OpenDescent is currently Windows-only. See <a href="/vs/signal.html">the full comparison</a>.</div>
     <div class="qa-tags"><span class="qa-tag">vs Signal</span></div>
   </div>
 
@@ -603,25 +603,25 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="whatsapp alternative difference meta lawsuit">
     <div class="qa-q"><div class="qa-q-text">How is OpenDescent different from WhatsApp?</div><div class="qa-q-num">04.03</div></div>
-    <div class="qa-a">WhatsApp is end-to-end encrypted via the Signal Protocol — the cryptography itself is good. The difference is ownership: WhatsApp is owned by Meta (the same company ending Instagram encryption on May 8, 2026) and requires your phone number. OpenDescent has no owning company in a position to change the rules, and requires no phone number. See <a href="/vs/whatsapp.html">the full comparison</a>.</div>
+    <div class="qa-a">WhatsApp is end-to-end encrypted via the Signal Protocol, and the cryptography itself is good. The difference is ownership: WhatsApp is owned by Meta (the same company ending Instagram encryption on May 8, 2026) and requires your phone number. OpenDescent has no owning company in a position to change the rules, and requires no phone number. See <a href="/vs/whatsapp.html">the full comparison</a>.</div>
     <div class="qa-tags"><span class="qa-tag">vs WhatsApp</span></div>
   </div>
 
   <div class="qa" data-search="telegram secret chat not e2e default">
     <div class="qa-q"><div class="qa-q-text">Is OpenDescent better than Telegram?</div><div class="qa-q-num">04.04</div></div>
-    <div class="qa-a">Telegram's default chats are <strong>not end-to-end encrypted</strong> — only "Secret Chats," which you must create manually, are E2E (and Secret Chats don't work in groups). Telegram's servers can read your default chats. OpenDescent is E2E by default with no toggle. So yes, on the E2E-by-default axis, OpenDescent is stronger. Telegram has larger networks and more channels/bots today.</div>
+    <div class="qa-a">Telegram's default chats are <strong>not end-to-end encrypted</strong>. Only "Secret Chats," which you must create manually, are E2E (and Secret Chats don't work in groups). Telegram's servers can read your default chats. OpenDescent is E2E by default with no toggle. So yes, on the E2E-by-default axis, OpenDescent is stronger. Telegram has larger networks and more channels/bots today.</div>
     <div class="qa-tags"><span class="qa-tag">vs Telegram</span></div>
   </div>
 
   <div class="qa" data-search="matrix element federated">
     <div class="qa-q"><div class="qa-q-text">What about Matrix / Element?</div><div class="qa-q-num">04.05</div></div>
-    <div class="qa-a">Matrix (via Element) is <strong>federated</strong> — many servers interoperate, and you can run your own. That's a meaningful privacy improvement over a single-company service like Discord. OpenDescent goes one step further: there's no server at all. Each approach has trade-offs: federation has better moderation tooling and maturity; true P2P removes the server entirely and removes the setup friction of picking or running a homeserver.</div>
+    <div class="qa-a">Matrix (via Element) is <strong>federated</strong>: many servers interoperate, and you can run your own. That's a meaningful privacy improvement over a single-company service like Discord. OpenDescent goes one step further: there's no server at all. Each approach has trade-offs: federation has better moderation tooling and maturity; true P2P removes the server entirely and removes the setup friction of picking or running a homeserver.</div>
     <div class="qa-tags"><span class="qa-tag">vs Matrix</span></div>
   </div>
 
   <div class="qa" data-search="instagram leaving alternative may 8">
     <div class="qa-q"><div class="qa-q-text">Is OpenDescent a good Instagram DM replacement?</div><div class="qa-q-num">04.06</div></div>
-    <div class="qa-a">For 1-on-1 and small-group private conversations, yes. Instagram DMs lose E2E encryption on May 8, 2026. If you move conversations where privacy actually matters — family, close friends, relationships — to OpenDescent, those conversations stay private. Instagram's broader public/social features (posts, reels, discovery) aren't in OpenDescent's scope. See <a href="/leaving-instagram.html">Leaving Instagram DMs</a> for the full guide.</div>
+    <div class="qa-a">For 1-on-1 and small-group private conversations, yes. Instagram DMs lose E2E encryption on May 8, 2026. If you move conversations where privacy actually matters (family, close friends, relationships) to OpenDescent, those conversations stay private. Instagram's broader public/social features (posts, reels, discovery) aren't in OpenDescent's scope. See <a href="/leaving-instagram.html">Leaving Instagram DMs</a> for the full guide.</div>
     <div class="qa-tags"><span class="qa-tag">Instagram</span></div>
   </div>
 </section>
@@ -648,25 +648,25 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="lost mnemonic phrase locked out forgot">
     <div class="qa-q"><div class="qa-q-text">What if I lose my mnemonic phrase?</div><div class="qa-q-num">05.03</div></div>
-    <div class="qa-a">Your account <strong>cannot be recovered</strong> without it. Because there is no central server storing your identity, there is no "forgot password" option — the mnemonic is the only way to reconstruct your cryptographic identity. This is the fundamental trade-off of true E2E encryption: security properties require that nobody, including us, can recover your account without your key.</div>
+    <div class="qa-a">Your account <strong>cannot be recovered</strong> without it. Because there is no central server storing your identity, there is no "forgot password" option: the mnemonic is the only way to reconstruct your cryptographic identity. This is the fundamental trade-off of true E2E encryption: security properties require that nobody, including us, can recover your account without your key.</div>
     <div class="qa-tags"><span class="qa-tag">Recovery</span></div>
   </div>
 
   <div class="qa" data-search="multiple devices sync same account">
     <div class="qa-q"><div class="qa-q-text">Can I use the same account on multiple devices?</div><div class="qa-q-num">05.04</div></div>
-    <div class="qa-a">Yes, by entering your 12-word mnemonic on each device — each one reconstructs the same identity. There is currently <strong>no cross-device message sync</strong>, though: each device sees only the messages received while it was online. Cross-device sync is on the roadmap but is architecturally tricky to do right without a central coordinating server.</div>
+    <div class="qa-a">Yes, by entering your 12-word mnemonic on each device: each one reconstructs the same identity. There is currently <strong>no cross-device message sync</strong>, though: each device sees only the messages received while it was online. Cross-device sync is on the roadmap but is architecturally tricky to do right without a central coordinating server.</div>
     <div class="qa-tags"><span class="qa-tag">Multi-device</span></div>
   </div>
 
   <div class="qa" data-search="change username handle display name">
     <div class="qa-q"><div class="qa-q-text">Can I change my username?</div><div class="qa-q-num">05.05</div></div>
-    <div class="qa-a">Yes. Usernames are not globally registered — they exist within the trust graph of your contacts. You can change your display name at any time from Settings. Your cryptographic identity (the underlying Ed25519 key) is permanent; the human-readable name on top of it is not.</div>
+    <div class="qa-a">Yes. Usernames are not globally registered; they exist within the trust graph of your contacts. You can change your display name at any time from Settings. Your cryptographic identity (the underlying Ed25519 key) is permanent; the human-readable name on top of it is not.</div>
     <div class="qa-tags"><span class="qa-tag">Username</span></div>
   </div>
 
   <div class="qa" data-search="delete account remove identity wipe">
     <div class="qa-q"><div class="qa-q-text">Can I delete my account?</div><div class="qa-q-num">05.06</div></div>
-    <div class="qa-a">You can delete your local data from within the app, which removes your identity and messages from that device. There is no central record to delete, because there is no central database — so "deleting your account" just means removing your keys from your own devices. Messages you sent to others remain on their devices; they always did.</div>
+    <div class="qa-a">You can delete your local data from within the app, which removes your identity and messages from that device. There is no central record to delete, because there is no central database, so "deleting your account" just means removing your keys from your own devices. Messages you sent to others remain on their devices; they always did.</div>
     <div class="qa-tags"><span class="qa-tag">Deletion</span></div>
   </div>
 </section>
@@ -687,13 +687,13 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="offline internet not working no connection">
     <div class="qa-q"><div class="qa-q-text">What happens if the recipient is offline?</div><div class="qa-q-num">06.02</div></div>
-    <div class="qa-a"><strong>Store-and-forward</strong>: the encrypted message is held at another peer in the recipient's trust graph until they come back online. The holding peer sees <em>ciphertext only</em> — it can't read what it's holding, only that there's a message waiting for a specific recipient key.</div>
+    <div class="qa-a"><strong>Store-and-forward</strong>: the encrypted message is held at another peer in the recipient's trust graph until they come back online. The holding peer sees <em>ciphertext only</em>: it can't read what it's holding, only that there's a message waiting for a specific recipient key.</div>
     <div class="qa-tags"><span class="qa-tag">Offline</span></div>
   </div>
 
   <div class="qa" data-search="firewall nat router hole punch connection">
     <div class="qa-q"><div class="qa-q-text">Does it work behind a firewall or NAT?</div><div class="qa-q-num">06.03</div></div>
-    <div class="qa-a">Yes. OpenDescent uses <strong>DCUtR (Direct Connection Upgrade through Relay)</strong> for NAT hole-punching, attempting a direct peer connection via a temporary relay-assisted handshake. When hole-punching isn't possible, traffic falls back to <strong>Circuit Relay v2</strong> — a relay node forwards encrypted packets without having the decryption keys.</div>
+    <div class="qa-a">Yes. OpenDescent uses <strong>DCUtR (Direct Connection Upgrade through Relay)</strong> for NAT hole-punching, attempting a direct peer connection via a temporary relay-assisted handshake. When hole-punching isn't possible, traffic falls back to <strong>Circuit Relay v2</strong>: a relay node forwards encrypted packets without having the decryption keys.</div>
     <div class="qa-tags"><span class="qa-tag">NAT</span></div>
   </div>
 
@@ -705,13 +705,13 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="no internet offline lan local network">
     <div class="qa-q"><div class="qa-q-text">Does OpenDescent work without internet?</div><div class="qa-q-num">06.05</div></div>
-    <div class="qa-a">Partially. On the same local network (same Wi-Fi, same LAN), two OpenDescent devices can communicate over <strong>mDNS</strong> with no internet access needed. Across the wider internet, you need connectivity to reach peers. There's no "fully offline mesh mode" today — it's an interesting future direction but not currently shipping.</div>
+    <div class="qa-a">Partially. On the same local network (same Wi-Fi, same LAN), two OpenDescent devices can communicate over <strong>mDNS</strong> with no internet access needed. Across the wider internet, you need connectivity to reach peers. There's no "fully offline mesh mode" today; it's an interesting future direction but not currently shipping.</div>
     <div class="qa-tags"><span class="qa-tag">Offline</span><span class="qa-tag">LAN</span></div>
   </div>
 
   <div class="qa" data-search="signal protocol double ratchet difference">
     <div class="qa-q"><div class="qa-q-text">Does OpenDescent use the Signal Protocol?</div><div class="qa-q-num">06.06</div></div>
-    <div class="qa-a">No. We use standard primitives (X25519, HKDF-SHA256, AES-256-GCM, Ed25519) assembled directly rather than adopting the Signal Protocol's Double Ratchet. Per-message ephemeral X25519 key agreement gives us forward secrecy without the Double Ratchet's stateful design — which fits peer-to-peer delivery more cleanly than a strictly server-mediated chain. See <a href="/security.html#primitives">the security page</a> for details.</div>
+    <div class="qa-a">No. We use standard primitives (X25519, HKDF-SHA256, AES-256-GCM, Ed25519) assembled directly rather than adopting the Signal Protocol's Double Ratchet. Per-message ephemeral X25519 key agreement gives us forward secrecy without the Double Ratchet's stateful design, which fits peer-to-peer delivery more cleanly than a strictly server-mediated chain. See <a href="/security.html#primitives">the security page</a> for details.</div>
     <div class="qa-tags"><span class="qa-tag">Crypto</span></div>
   </div>
 </section>
@@ -726,7 +726,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="paid pro subscription cost price">
     <div class="qa-q"><div class="qa-q-text">Is there a paid version?</div><div class="qa-q-num">07.01</div></div>
-    <div class="qa-a">Yes — OpenDescent Pro, £5/month. It's <strong>optional</strong>. Every core feature (messaging, calls, hubs, encryption) is free forever. Pro unlocks larger file transfers, more hubs, and helps fund the project.</div>
+    <div class="qa-a">Yes: OpenDescent Pro, £5/month. It's <strong>optional</strong>. Every core feature (messaging, calls, hubs, encryption) is free forever. Pro unlocks larger file transfers, more hubs, and helps fund the project.</div>
     <div class="qa-tags"><span class="qa-tag">Pro</span></div>
   </div>
 
@@ -736,7 +736,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
       <ul>
         <li>Larger file transfers (500MB per file vs 35MB on free)</li>
         <li>Unlimited groups and hubs (free tier caps both)</li>
-        <li>Dead Man's Switch — auto-send messages on missed check-in</li>
+        <li>Dead Man's Switch: auto-send messages on missed check-in</li>
         <li>Cosmetic perks: avatar frames, vibe themes, username color</li>
         <li>Priority support on GitHub Discussions</li>
       </ul>
@@ -759,16 +759,16 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="make money business model revenue advertising">
     <div class="qa-q"><div class="qa-q-text">How do you make money if the app is free?</div><div class="qa-q-num">07.05</div></div>
-    <div class="qa-a">Entirely through <strong>Pro subscriptions</strong> and <strong>Founder's Edition</strong> purchases. No ads. No data sales. No "enterprise tier" that compromises on privacy for business customers. We can't run an advertising business because there is no central server to aggregate data from — and that's a feature, not a bug. The subscription model keeps incentives aligned with users, not advertisers.</div>
+    <div class="qa-a">Entirely through <strong>Pro subscriptions</strong> and <strong>Founder's Edition</strong> purchases. No ads. No data sales. No "enterprise tier" that compromises on privacy for business customers. We can't run an advertising business because there is no central server to aggregate data from, and that's a feature, not a bug. The subscription model keeps incentives aligned with users, not advertisers.</div>
     <div class="qa-tags"><span class="qa-tag">Business model</span></div>
   </div>
 
   <div class="qa" data-search="payment privacy stripe peer id link identity anonymous redemption code">
     <div class="qa-q"><div class="qa-q-text">Does paying for Pro link my real identity to my peer ID?</div><div class="qa-q-num">07.06</div></div>
     <div class="qa-a">
-      <strong>No — Stripe never sees your peer ID.</strong> When you click "Unlock Pro," the checkout session is created without any peer-ID metadata. Stripe sees a payment from your card; it does not see a link to your OpenDescent identity.
+      <strong>No. Stripe never sees your peer ID.</strong> When you click "Unlock Pro," the checkout session is created without any peer-ID metadata. Stripe sees a payment from your card; it does not see a link to your OpenDescent identity.
       <br><br>
-      After checkout, you receive a <strong>redemption code</strong> on the success page. You paste that code into the app, where your peer ID lives locally. The code-to-peer-ID binding happens on our license server — Stripe is not part of that handshake.
+      After checkout, you receive a <strong>redemption code</strong> on the success page. You paste that code into the app, where your peer ID lives locally. The code-to-peer-ID binding happens on our license server, and Stripe is not part of that handshake.
       <br><br>
       For maximum privacy, toggle <strong>Anonymous renewal</strong> at redemption time. The license server will then forget your peer ID after activation, and you'll receive a fresh redemption code by email each renewal cycle. Trade-off: small UX friction, no persistent peer-ID record on our side.
       <br><br>
@@ -779,13 +779,13 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="redemption code redeem activate license key paste">
     <div class="qa-q"><div class="qa-q-text">What is the redemption code I see after checkout?</div><div class="qa-q-num">07.07</div></div>
-    <div class="qa-a">A 16-character code (formatted as <code>XXXX-XXXX-XXXX-XXXX</code>) that proves you paid, without identifying you to Stripe. Open the app, go to <strong>Settings → Redeem Code</strong>, paste the code, and click Activate. The code is deleted on redemption — single-use, single-binding to your peer ID. If you lose the code before redeeming, contact support with your Stripe receipt and we can re-issue it.</div>
+    <div class="qa-a">A 16-character code (formatted as <code>XXXX-XXXX-XXXX-XXXX</code>) that proves you paid, without identifying you to Stripe. Open the app, go to <strong>Settings → Redeem Code</strong>, paste the code, and click Activate. The code is deleted on redemption: single-use, single-binding to your peer ID. If you lose the code before redeeming, contact support with your Stripe receipt and we can re-issue it.</div>
     <div class="qa-tags"><span class="qa-tag">Pro</span></div>
   </div>
 
   <div class="qa" data-search="donate contribute support help fund">
     <div class="qa-q"><div class="qa-q-text">Can I donate or contribute?</div><div class="qa-q-num">07.08</div></div>
-    <div class="qa-a">Buying Pro or Founder's Edition is the most direct way to support the project financially. Code contributions are welcome on <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a> — we review all PRs. Spreading the word (Reddit, GitHub stars, sharing comparison pages) materially helps too.</div>
+    <div class="qa-a">Buying Pro or Founder's Edition is the most direct way to support the project financially. Code contributions are welcome on <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener">GitHub</a>, and we review all PRs. Spreading the word (Reddit, GitHub stars, sharing comparison pages) materially helps too.</div>
     <div class="qa-tags"><span class="qa-tag">Support</span></div>
   </div>
 </section>
@@ -800,12 +800,12 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
   <div class="qa" data-search="cant connect peer discovery offline no contacts">
     <div class="qa-q"><div class="qa-q-text">Why can't I connect to other peers?</div><div class="qa-q-num">08.01</div></div>
-    <div class="qa-a">Usually one of these: (1) your firewall is blocking the libp2p ports — try enabling the app through Windows Firewall when prompted; (2) your NAT is particularly aggressive and DCUtR hole-punching isn't working — circuit relay should kick in automatically; (3) the peer you're trying to reach is offline and store-and-forward hasn't resolved yet — messages will deliver when they return. If problems persist, open a GitHub Discussion with your logs.</div>
+    <div class="qa-a">Usually one of these: (1) your firewall is blocking the libp2p ports, so try enabling the app through Windows Firewall when prompted; (2) your NAT is particularly aggressive and DCUtR hole-punching isn't working, in which case circuit relay should kick in automatically; (3) the peer you're trying to reach is offline and store-and-forward hasn't resolved yet, so messages will deliver when they return. If problems persist, open a GitHub Discussion with your logs.</div>
     <div class="qa-tags"><span class="qa-tag">Connectivity</span></div>
   </div>
 
   <div class="qa" data-search="voice video call not working audio problem">
-    <div class="qa-q"><div class="qa-q-text">Voice calls aren't working — what do I check?</div><div class="qa-q-num">08.02</div></div>
+    <div class="qa-q"><div class="qa-q-text">Voice calls aren't working: what do I check?</div><div class="qa-q-num">08.02</div></div>
     <div class="qa-a">WebRTC calls need: (1) microphone permission in Windows; (2) UDP traffic to STUN/TURN servers; (3) at least one peer that can route the call. If you're on a corporate or school network, UDP is often blocked. On a normal home network, allow OpenDescent through Windows Defender Firewall and it should work. Check that your microphone is selected correctly in Settings.</div>
     <div class="qa-tags"><span class="qa-tag">Calls</span></div>
   </div>
@@ -816,21 +816,21 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="qa-tags"><span class="qa-tag">Bugs</span></div>
   </div>
 
-  <div class="qa" data-search="smartscreen warning unsigned installer windows">
+  <div class="qa" data-search="smartscreen warning signed installer windows verify signature certum">
     <div class="qa-q"><div class="qa-q-text">Why does Windows show a SmartScreen warning when I install?</div><div class="qa-q-num">08.04</div></div>
-    <div class="qa-a">Because the installer isn't yet signed with an Extended Validation code-signing certificate (those cost several hundred pounds per year, and we're working up to it). Windows SmartScreen flags any unsigned installer from a new publisher. Click "More info" → "Run anyway" to proceed. You can also verify the installer's SHA-256 hash against the one listed on the <a href="https://github.com/Jaguwa/OpenDescent/releases" target="_blank" rel="noopener">GitHub Releases page</a> before running it.</div>
+    <div class="qa-a">The installer <strong>is</strong> code-signed (by "Open Source Developer Alan Ivanovas", via Certum), but with a standard certificate rather than an Extended Validation one, so SmartScreen still warns until the certificate builds reputation across enough installs. Click "More info" → "Run anyway" to proceed. You can confirm the signature (right-click the .exe → Properties → Digital Signatures) and verify the SHA-256 against the hash on the <a href="https://github.com/Jaguwa/OpenDescent/releases" target="_blank" rel="noopener">GitHub Releases page</a>.</div>
     <div class="qa-tags"><span class="qa-tag">Install</span></div>
   </div>
 
   <div class="qa" data-search="security vulnerability disclosure report cve">
     <div class="qa-q"><div class="qa-q-text">Where do I report a security issue?</div><div class="qa-q-num">08.05</div></div>
-    <div class="qa-a">Please use <a href="https://github.com/Jaguwa/OpenDescent/security/advisories" target="_blank" rel="noopener">GitHub Security Advisories</a> for responsible disclosure. We aim to respond within 48 hours on weekdays, coordinate on a disclosure timeline, and credit reporters unless they prefer otherwise. Do not open a public issue for security problems — use the Security tab.</div>
+    <div class="qa-a">Please use <a href="https://github.com/Jaguwa/OpenDescent/security/advisories" target="_blank" rel="noopener">GitHub Security Advisories</a> for responsible disclosure. We aim to respond within 48 hours on weekdays, coordinate on a disclosure timeline, and credit reporters unless they prefer otherwise. Do not open a public issue for security problems; use the Security tab.</div>
     <div class="qa-tags"><span class="qa-tag">Security</span></div>
   </div>
 
   <div class="qa" data-search="mnemonic lost locked out cant recover">
-    <div class="qa-q"><div class="qa-q-text">I lost my mnemonic — am I locked out forever?</div><div class="qa-q-num">08.06</div></div>
-    <div class="qa-a">If you no longer have both (a) your mnemonic and (b) a device that still has your identity, then yes — the account is gone. This is the trade-off of real end-to-end encryption: the thing that prevents <em>us</em> from reading your messages also prevents us from restoring your account. You can create a new identity and tell your contacts to re-add you. Future releases may include optional social-recovery options (distribute encrypted shards of your key to trusted contacts), but v0.5.6 doesn't have that yet.</div>
+    <div class="qa-q"><div class="qa-q-text">I lost my mnemonic: am I locked out forever?</div><div class="qa-q-num">08.06</div></div>
+    <div class="qa-a">If you no longer have both (a) your mnemonic and (b) a device that still has your identity, then yes, the account is gone. This is the trade-off of real end-to-end encryption: the thing that prevents <em>us</em> from reading your messages also prevents us from restoring your account. You can create a new identity and tell your contacts to re-add you. Future releases may include optional social-recovery options (distribute encrypted shards of your key to trusted contacts), but v0.5.6 doesn't have that yet.</div>
     <div class="qa-tags"><span class="qa-tag">Recovery</span></div>
   </div>
 </section>
@@ -843,13 +843,13 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div style="text-align: center; margin-bottom: 48px;">
       <div class="kicker kicker-ghost" style="justify-content: center; margin-bottom: 14px;">Still stuck?</div>
       <h2 style="font-family: var(--display); font-size: clamp(1.6rem, 2.8vw, 2.2rem); font-weight: 700; color: var(--text-strong); margin-bottom: 12px; line-height: 1.15;">Didn't find what you were looking for?</h2>
-      <p style="font-family: var(--body); font-size: 15px; color: var(--text-mid); line-height: 1.7; max-width: 600px; margin: 0 auto;">Ask on GitHub Discussions — you'll get a real response from the people who actually built the thing.</p>
+      <p style="font-family: var(--body); font-size: 15px; color: var(--text-mid); line-height: 1.7; max-width: 600px; margin: 0 auto;">Ask on GitHub Discussions, and you'll get a real response from the people who actually built the thing.</p>
     </div>
     <div class="stuck-grid reveal">
       <div class="stuck-card">
         <div class="stuck-kicker">Ask</div>
         <h3>GitHub Discussions</h3>
-        <p>For general questions, feature suggestions, and community conversation. We read everything. Public, but that's often helpful — your question probably helps someone else too.</p>
+        <p>For general questions, feature suggestions, and community conversation. We read everything. Public, but that's often helpful, since your question probably helps someone else too.</p>
         <a href="https://github.com/Jaguwa/OpenDescent/discussions" target="_blank" rel="noopener" class="btn btn-ghost btn-arrow">Open Discussions</a>
       </div>
       <div class="stuck-card">
@@ -881,7 +881,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="footer-grid">
       <div>
         <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
-        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer, because normal life is worth keeping private.</p>
         <div class="footer-micro">
           Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>
           オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth

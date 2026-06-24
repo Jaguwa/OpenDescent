@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>What "Peer-to-Peer" Actually Means (And Why Most "Private" Messengers Aren't) | OpenDescent Blog</title>
-<meta name="description" content="An explainer with diagrams. Three architectural patterns — centralized, federated, and peer-to-peer — where each fails, and why the distinction is load-bearing for privacy.">
+<meta name="description" content="An explainer with diagrams. Three architectural patterns, centralized, federated, and peer-to-peer, where each fails, and why the distinction is load-bearing for privacy.">
 <meta name="keywords" content="peer to peer messaging explained, p2p vs federated vs centralized, what is peer to peer, messaging architecture explained, libp2p explained, decentralized messaging architecture">
 <meta name="author" content="OpenDescent">
 <meta name="theme-color" content="#0f1012">
@@ -32,7 +32,7 @@
 <meta name="twitter:image" content="https://open-descent.com/og-image.png">
 
 <script type="application/ld+json">
-{ "@context": "https://schema.org", "@type": "BlogPosting", "headline": "What Peer-to-Peer Actually Means (And Why Most Private Messengers Aren't)", "description": "A technical explainer on the three architectural patterns used by private messengers — centralized, federated, and peer-to-peer — with diagrams of each and honest analysis of where each fails.", "datePublished": "2026-04-24", "dateModified": "2026-04-24", "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" }, "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } }, "image": "https://open-descent.com/og-image.png", "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/what-peer-to-peer-means.html" }, "wordCount": 2150, "articleSection": "Explainer" }
+{ "@context": "https://schema.org", "@type": "BlogPosting", "headline": "What Peer-to-Peer Actually Means (And Why Most Private Messengers Aren't)", "description": "A technical explainer on the three architectural patterns used by private messengers, centralized, federated, and peer-to-peer, with diagrams of each and honest analysis of where each fails.", "datePublished": "2026-04-24", "dateModified": "2026-04-24", "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" }, "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } }, "image": "https://open-descent.com/og-image.png", "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/what-peer-to-peer-means.html" }, "wordCount": 2150, "articleSection": "Explainer" }
 </script>
 
 <script type="application/ld+json">
@@ -201,7 +201,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
 </head>
 <body>
 
-<div class="breaking"><div class="breaking-viewport"><div class="breaking-label">▶ Breaking</div><div class="breaking-track"><div class="breaking-content">Meta is ending end-to-end encryption on Instagram DMs — May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released — run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span>Meta is ending end-to-end encryption on Instagram DMs — May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released — run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span></div></div></div></div>
+<div class="breaking"><div class="breaking-viewport"><div class="breaking-label">▶ Breaking</div><div class="breaking-track"><div class="breaking-content">Meta is ending end-to-end encryption on Instagram DMs. May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released: run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span>Meta is ending end-to-end encryption on Instagram DMs. May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released: run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span></div></div></div></div>
 
 <nav class="top"><div class="nav-inner"><a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a><ul class="nav-links"><li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li><li><a href="/features.html">Features</a></li><li><a href="/security.html">Security</a></li><li><a href="/blog/">Blog</a></li><li><a href="/faq.html">FAQ</a></li><li class="nav-li-cta"><a href="/download.html" class="nav-cta">Download</a></li></ul></div></nav>
 
@@ -213,7 +213,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
   <div class="container-narrow">
     <div class="post-kicker-row"><span class="post-tag">▸ Explainer</span><span class="post-date">2026-04-24</span><span class="post-read">▸ 11 min read</span></div>
     <h1>What "peer-to-peer" <em>actually means</em> (and why most "private" messengers aren't).</h1>
-    <p class="post-standfirst">"Peer-to-peer" is a phrase you'll see on almost every privacy product's marketing page. Most of them use it incorrectly. An explainer, with diagrams, of the <strong>three architectural patterns</strong> messengers actually use — centralised, federated, and peer-to-peer — where each fails, and why the distinction is load-bearing for privacy.</p>
+    <p class="post-standfirst">"Peer-to-peer" is a phrase you'll see on almost every privacy product's marketing page. Most of them use it incorrectly. An explainer, with diagrams, of the <strong>three architectural patterns</strong> messengers actually use, centralised, federated, and peer-to-peer, where each fails, and why the distinction is load-bearing for privacy.</p>
     <div class="post-byline">
       <div class="byline-author"><span class="dot"></span>OpenDescent Team</div>
       <div class="byline-share">
@@ -229,7 +229,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
   <div class="container-narrow prose">
 
     <p>
-      There is a phrase that appears on roughly every privacy product's homepage: <strong>"peer-to-peer."</strong> We like the phrase. We use it ourselves, because our messenger genuinely is peer-to-peer. But the phrase does a lot of work it shouldn't have to, because many products using it are <em>not</em> peer-to-peer in any architecturally meaningful sense. They are using the phrase as a vibe — "not Big Tech" — rather than as a technical description.
+      There is a phrase that appears on roughly every privacy product's homepage: <strong>"peer-to-peer."</strong> We like the phrase. We use it ourselves, because our messenger genuinely is peer-to-peer. But the phrase does a lot of work it shouldn't have to, because many products using it are <em>not</em> peer-to-peer in any architecturally meaningful sense. They are using the phrase as a vibe ("not Big Tech") rather than as a technical description.
     </p>
 
     <p>
@@ -244,7 +244,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
 
     <div class="arch-card red">
       <div class="arch-label">Pattern 01</div>
-      <h3>Centralised — <em>one company's servers in the middle</em>.</h3>
+      <h3>Centralised: <em>one company's servers in the middle</em>.</h3>
       <div class="arch-examples"><strong>Examples:</strong> Discord · WhatsApp · Signal · iMessage · Telegram · Slack</div>
 
       <svg viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg">
@@ -293,7 +293,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     </p>
 
     <p>
-      <strong>End-to-end encryption is orthogonal to this pattern.</strong> Signal, WhatsApp, and iMessage all encrypt message content such that the server can't read it. That's good! It means the server being compromised doesn't spill your message text. But the server still sees <em>who is talking to whom</em>, still has a database of accounts, still requires you to trust that it is running the software it says it is. This is the "privacy as policy" pattern — the encryption guarantees are real, right up until the policy changes. Instagram on May 8, 2026 is the canonical example of the policy changing.
+      <strong>End-to-end encryption is orthogonal to this pattern.</strong> Signal, WhatsApp, and iMessage all encrypt message content such that the server can't read it. That's good! It means the server being compromised doesn't spill your message text. But the server still sees <em>who is talking to whom</em>, still has a database of accounts, still requires you to trust that it is running the software it says it is. This is the "privacy as policy" pattern: the encryption guarantees are real, right up until the policy changes. Instagram on May 8, 2026 is the canonical example of the policy changing.
     </p>
 
     <div class="pullquote">
@@ -304,7 +304,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
 
     <div class="arch-card amber">
       <div class="arch-label">Pattern 02</div>
-      <h3>Federated — <em>many servers, speaking the same protocol</em>.</h3>
+      <h3>Federated: <em>many servers, speaking the same protocol</em>.</h3>
       <div class="arch-examples"><strong>Examples:</strong> Matrix / Element · Mastodon · Email · XMPP / Jabber</div>
 
       <svg viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg">
@@ -366,14 +366,14 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     </p>
 
     <p>
-      Matrix deserves specific credit for one thing: <strong>end-to-end encryption across servers</strong>. When two users on different Matrix servers chat, the message is E2E encrypted between their devices — neither server can read it. That's a meaningful architectural achievement. It still means each server sees the <em>fact</em> of the conversation — who talked to whom, when — but the content is protected.
+      Matrix deserves specific credit for one thing: <strong>end-to-end encryption across servers</strong>. When two users on different Matrix servers chat, the message is E2E encrypted between their devices. Neither server can read it. That's a meaningful architectural achievement. It still means each server sees the <em>fact</em> of the conversation (who talked to whom, when), but the content is protected.
     </p>
 
     <h2><span class="num">§ 03</span>Pattern 3: True peer-to-peer</h2>
 
     <div class="arch-card teal">
       <div class="arch-label">Pattern 03</div>
-      <h3>Peer-to-peer — <em>no servers at all</em>.</h3>
+      <h3>Peer-to-peer: <em>no servers at all</em>.</h3>
       <div class="arch-examples"><strong>Examples:</strong> OpenDescent · Briar · SimpleX · Cwtch · BitTorrent (non-messaging, but same pattern) · GNU Jami</div>
 
       <svg viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg">
@@ -413,12 +413,12 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
 
       <div class="arch-points">
         <div class="arch-point pro"><span class="tag">Pros</span>No server to compromise, subpoena, or shut down. Nothing to breach. No company in a position to change encryption policy. Network exists as long as its users do. Architectural privacy guarantees.</div>
-        <div class="arch-point con"><span class="tag">Cons</span>Harder to build. Moderation is harder — no central authority to remove bad actors. NAT traversal is a real engineering problem. Spam prevention requires different mechanisms (invite gating, trust web, PoW). Smaller user bases today.</div>
+        <div class="arch-point con"><span class="tag">Cons</span>Harder to build. Moderation is harder: no central authority to remove bad actors. NAT traversal is a real engineering problem. Spam prevention requires different mechanisms (invite gating, trust web, PoW). Smaller user bases today.</div>
       </div>
     </div>
 
     <p>
-      In a true peer-to-peer messenger, your device talks to your friend's device directly. There is no intermediary server that either of you connects to first. When you want to send a message, your device finds your friend's device through a distributed peer-discovery mechanism (usually a Kademlia DHT or similar), opens an encrypted connection, and sends the message. The message goes from your device to theirs — possibly through other peers acting as forwarders if direct connection isn't possible, but never through a company-operated server.
+      In a true peer-to-peer messenger, your device talks to your friend's device directly. There is no intermediary server that either of you connects to first. When you want to send a message, your device finds your friend's device through a distributed peer-discovery mechanism (usually a Kademlia DHT or similar), opens an encrypted connection, and sends the message. The message goes from your device to theirs, possibly through other peers acting as forwarders if direct connection isn't possible, but never through a company-operated server.
     </p>
 
     <p>
@@ -445,8 +445,8 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
         Depends on the handshake. Many voice/video apps (including traditional WebRTC ones) advertise "direct" connections while routing signalling through a central server. If the signalling server is down, the "direct" connection can't start. That's not the same as true P2P.
       </li>
       <li>
-        <strong>"We're decentralised — you can self-host."</strong><br>
-        That's federation, which is good and we respect it, but it's not peer-to-peer. If self-hosting requires running a server, there are still servers — they're just not run by a single company.
+        <strong>"We're decentralised. You can self-host."</strong><br>
+        That's federation, which is good and we respect it, but it's not peer-to-peer. If self-hosting requires running a server, there are still servers. They're just not run by a single company.
       </li>
     </ul>
 
@@ -472,7 +472,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     </ul>
 
     <p>
-      These questions have different answers for each pattern, and the answers matter in different amounts depending on your threat model. For a casual user, centralised + E2E is probably fine most of the time. For a user who cares deeply about architectural guarantees — someone building something they want to outlive any company — the distinction is the whole game.
+      These questions have different answers for each pattern, and the answers matter in different amounts depending on your threat model. For a casual user, centralised + E2E is probably fine most of the time. For a user who cares deeply about architectural guarantees (someone building something they want to outlive any company), the distinction is the whole game.
     </p>
 
     <h2><span class="num">§ 06</span>What this means for picking a messenger</h2>
@@ -498,7 +498,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     <h2><span class="num">§ 07</span>One last note</h2>
 
     <p>
-      The word "peer-to-peer" is having a moment, in the same way "decentralised" had a moment ten years ago and "open source" had a moment twenty years before that. The moment is deserved — these are real ideas with real architectural consequences. But the moment also means the words are about to be applied to every product regardless of whether the architecture actually matches.
+      The word "peer-to-peer" is having a moment, in the same way "decentralised" had a moment ten years ago and "open source" had a moment twenty years before that. The moment is deserved: these are real ideas with real architectural consequences. But the moment also means the words are about to be applied to every product regardless of whether the architecture actually matches.
     </p>
 
     <p>
@@ -511,10 +511,10 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
 
     <div class="sources">
       <div class="sources-label">References</div>
-      <a href="https://libp2p.io/" target="_blank" rel="noopener">libp2p — peer-to-peer networking stack ↗</a>
-      <a href="https://matrix.org/" target="_blank" rel="noopener">Matrix.org — federated messaging protocol ↗</a>
-      <a href="https://briarproject.org/" target="_blank" rel="noopener">Briar — P2P messenger via Tor / Bluetooth / WiFi ↗</a>
-      <a href="https://simplex.chat/" target="_blank" rel="noopener">SimpleX — messaging without user identifiers ↗</a>
+      <a href="https://libp2p.io/" target="_blank" rel="noopener">libp2p: peer-to-peer networking stack ↗</a>
+      <a href="https://matrix.org/" target="_blank" rel="noopener">Matrix.org: federated messaging protocol ↗</a>
+      <a href="https://briarproject.org/" target="_blank" rel="noopener">Briar: P2P messenger via Tor / Bluetooth / WiFi ↗</a>
+      <a href="https://simplex.chat/" target="_blank" rel="noopener">SimpleX: messaging without user identifiers ↗</a>
       <a href="https://signal.org/docs/" target="_blank" rel="noopener">Signal Protocol documentation ↗</a>
     </div>
 
@@ -541,7 +541,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     <div class="footer-grid">
       <div>
         <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
-        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer, because normal life is worth keeping private.</p>
         <div class="footer-micro">Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth</div>
       </div>
       <div class="footer-col"><div class="footer-col-title">Product</div><a href="/features.html">Features</a><a href="/security.html">Security</a><a href="/download.html">Download</a><a href="/faq.html">FAQ</a></div>

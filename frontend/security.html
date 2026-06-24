@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenDescent Security: Threat Model, Cryptography, and Message Lifecycle (2026)</title>
-<meta name="description" content="OpenDescent's security model in plain English — Ed25519 identity, X25519 key agreement, AES-256-GCM encryption, libp2p Noise transport, threat model, and honest limitations.">
+<meta name="description" content="OpenDescent's security model in plain English: Ed25519 identity, X25519 key agreement, AES-256-GCM encryption, libp2p Noise transport, threat model, and honest limitations.">
 <meta name="keywords" content="opendescent security, end to end encryption explained, ed25519 aes-256 messaging, p2p messaging security, messenger threat model, cryptographic primitives chat app, how e2e encryption works, forward secrecy messenger">
 <meta name="author" content="OpenDescent">
 <meta name="theme-color" content="#0f1012">
@@ -37,7 +37,7 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "headline": "OpenDescent Security: Threat Model, Cryptography, and Message Lifecycle",
-  "description": "A plain-English walkthrough of OpenDescent's cryptography, threat model, and message lifecycle — including honest limitations.",
+  "description": "A plain-English walkthrough of OpenDescent's cryptography, threat model, and message lifecycle, including honest limitations.",
   "datePublished": "2026-04-24",
   "dateModified": "2026-04-24",
   "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" },
@@ -370,24 +370,24 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="breaking-label">▶ Breaking</div>
     <div class="breaking-track">
       <div class="breaking-content">
-        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        Meta is ending end-to-end encryption on Instagram DMs on May 8 2026.
         <a href="/leaving-instagram.html">Here's what to use instead →</a>
         <span class="sep">//</span>
         Discord leaked 70,000 government IDs.
         <a href="/vs/discord.html">Why we built this →</a>
         <span class="sep">//</span>
-        OpenDescent v0.5.6 released — run the network on your own relay.
+        OpenDescent v0.5.6 released: run the network on your own relay.
         <a href="/#download">Download →</a>
         <span class="sep">//</span>
         Normal life deserves privacy.
         <span class="sep">//</span>
-        Meta is ending end-to-end encryption on Instagram DMs — May 8 2026.
+        Meta is ending end-to-end encryption on Instagram DMs on May 8 2026.
         <a href="/leaving-instagram.html">Here's what to use instead →</a>
         <span class="sep">//</span>
         Discord leaked 70,000 government IDs.
         <a href="/vs/discord.html">Why we built this →</a>
         <span class="sep">//</span>
-        OpenDescent v0.5.6 released — run the network on your own relay.
+        OpenDescent v0.5.6 released: run the network on your own relay.
         <a href="/#download">Download →</a>
         <span class="sep">//</span>
         Normal life deserves privacy.
@@ -428,7 +428,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     </div>
     <h1>Security, <em>explained without the hand-waving</em>.</h1>
     <p class="article-dek">
-      How OpenDescent protects your messages, what cryptographic primitives we use, what the threat model actually covers — and, crucially, what it doesn't. If you're a developer, a journalist doing due diligence, or just a careful person, this is the page that shows you our work.
+      How OpenDescent protects your messages, what cryptographic primitives we use, what the threat model actually covers and, crucially, what it doesn't. If you're a developer, a journalist doing due diligence, or just a careful person, this is the page that shows you our work.
     </p>
     <div class="hero-ctas">
       <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener" class="btn btn-primary">▶ Read the source</a>
@@ -460,7 +460,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
       <li><strong>Transport:</strong> libp2p with Noise encrypted channels. Every network hop is encrypted; every message inside the channels is encrypted again end-to-end.</li>
       <li><strong>Architecture:</strong> true peer-to-peer. No OpenDescent server exists. Nothing to compromise, subpoena, or shut down.</li>
       <li><strong>What we don't protect against:</strong> compromised endpoints (malware on your device), traffic analysis at the IP level, recipient devices being compromised, coerced disclosure. Covered below.</li>
-      <li><strong>Audit status:</strong> open source, MIT, self-verifiable. No formal third-party audit yet — that's on the roadmap.</li>
+      <li><strong>Audit status:</strong> open source, MIT, self-verifiable. No formal third-party audit yet. That's on the roadmap.</li>
     </ul>
   </div>
 </div>
@@ -469,7 +469,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section id="threat">
   <div class="container">
     <div class="section-header reveal">
-      <h2 class="section-title">Threat model — <em>what we protect, what we don't</em>.</h2>
+      <h2 class="section-title">Threat model: <em>what we protect, what we don't</em>.</h2>
       <div class="section-sub">§ 01 &nbsp;/&nbsp; Scope</div>
     </div>
     <div class="threat-grid reveal">
@@ -537,7 +537,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
           </li>
           <li>
             <strong>Mistakes you make</strong>
-            Sharing your mnemonic, sending screenshots, trusting a wrong key because you skipped TOFU verification — these are outside the reach of any protocol.
+            Sharing your mnemonic, sending screenshots, trusting a wrong key because you skipped TOFU verification: these are outside the reach of any protocol.
           </li>
         </ul>
       </div>
@@ -549,7 +549,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section id="primitives" class="prims-section">
   <div class="container">
     <div class="section-header reveal">
-      <h2 class="section-title">Cryptographic primitives — <em>what's doing the work</em>.</h2>
+      <h2 class="section-title">Cryptographic primitives: <em>what's doing the work</em>.</h2>
       <div class="section-sub">§ 02 &nbsp;/&nbsp; Ingredients</div>
     </div>
     <div class="prims-grid reveal">
@@ -604,7 +604,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
           <div class="prim-role">Authenticated encryption</div>
         </div>
         <div class="prim-desc">
-          Authenticated encryption with associated data. Protects <strong>both confidentiality and integrity</strong> — a tampered ciphertext fails authentication and is rejected. Nonce is random per message.
+          Authenticated encryption with associated data. Protects <strong>both confidentiality and integrity</strong>. A tampered ciphertext fails authentication and is rejected. Nonce is random per message.
         </div>
         <div class="prim-params">
           <span>Key</span><span>256-bit</span>
@@ -634,7 +634,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
           <div class="prim-role">Transport encryption</div>
         </div>
         <div class="prim-desc">
-          Every libp2p connection uses the <strong>Noise Protocol Framework</strong> to establish an encrypted channel between peers. Your E2E messages travel inside already-encrypted tunnels — defence in depth.
+          Every libp2p connection uses the <strong>Noise Protocol Framework</strong> to establish an encrypted channel between peers. Your E2E messages travel inside already-encrypted tunnels: defence in depth.
         </div>
         <div class="prim-params">
           <span>Pattern</span><span>XX</span>
@@ -648,7 +648,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="source-callout reveal">
       <div class="source-callout-label">Verifiable</div>
       <p>
-        <strong>All of these are standard, peer-reviewed, widely-deployed primitives.</strong> They are the same primitives used by TLS 1.3, SSH, WhatsApp (Signal Protocol), Age, Wireguard, and the browser you're reading this page in. The innovation in OpenDescent isn't in the primitives — it's in the architecture that removes the server entirely. The primitives themselves are chosen specifically because they <em>aren't</em> novel: novel crypto is dangerous crypto.
+        <strong>All of these are standard, peer-reviewed, widely-deployed primitives.</strong> They are the same primitives used by TLS 1.3, SSH, WhatsApp (Signal Protocol), Age, Wireguard, and the browser you're reading this page in. The innovation in OpenDescent isn't in the primitives. It's in the architecture that removes the server entirely. The primitives themselves are chosen specifically because they <em>aren't</em> novel: novel crypto is dangerous crypto.
       </p>
     </div>
   </div>
@@ -658,7 +658,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section id="lifecycle">
   <div class="container">
     <div class="section-header reveal">
-      <h2 class="section-title">Message lifecycle — <em>one message, from your keyboard to theirs</em>.</h2>
+      <h2 class="section-title">Message lifecycle: <em>one message, from your keyboard to theirs</em>.</h2>
       <div class="section-sub">§ 03 &nbsp;/&nbsp; End-to-end</div>
     </div>
 
@@ -697,7 +697,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
           <div class="lc-step-num">02</div>
           <div>
             <div class="lc-step-title">Generate ephemeral X25519 keypair</div>
-            <div class="lc-step-body">A throwaway keypair created for this message only. When the message is sent, the private half is discarded — that's where forward secrecy comes from.</div>
+            <div class="lc-step-body">A throwaway keypair created for this message only. When the message is sent, the private half is discarded. That's where forward secrecy comes from.</div>
             <div class="lc-step-tech">X25519.keygen() · discard after send</div>
           </div>
         </div>
@@ -777,7 +777,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
           <div class="lc-step-num">12</div>
           <div>
             <div class="lc-step-title">Plaintext revealed</div>
-            <div class="lc-step-body">"I love you" is shown on the recipient's screen. No server saw the plaintext. No company has a copy. The ephemeral key used to encrypt it was discarded after step 02 — nobody can decrypt this message a second time, even with the recipient's long-term key.</div>
+            <div class="lc-step-body">"I love you" is shown on the recipient's screen. No server saw the plaintext. No company has a copy. The ephemeral key used to encrypt it was discarded after step 02. Nobody can decrypt this message a second time, even with the recipient's long-term key.</div>
             <div class="lc-step-tech">✓ delivered · forward-secure</div>
           </div>
         </div>
@@ -790,12 +790,12 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section id="architecture" class="arch-section">
   <div class="container">
     <div class="section-header reveal">
-      <h2 class="section-title">Architecture — <em>why there's nothing to breach</em>.</h2>
+      <h2 class="section-title">Architecture: <em>why there's nothing to breach</em>.</h2>
       <div class="section-sub">§ 04 &nbsp;/&nbsp; P2P vs central</div>
     </div>
     <div class="prose reveal" style="margin-bottom: 32px;">
       <p>
-        Most messengers — including Signal, the good one — solve privacy with <strong>encryption on a central server</strong>. The server can't read messages, but it still knows who's talking to whom, when, from where. A compromise of that server, a subpoena, or a policy change can reshape what users can expect.
+        Most messengers (including Signal, the good one) solve privacy with <strong>encryption on a central server</strong>. The server can't read messages, but it still knows who's talking to whom, when, from where. A compromise of that server, a subpoena, or a policy change can reshape what users can expect.
       </p>
       <p>
         OpenDescent removes the server entirely. <strong>Your messages travel peer-to-peer through libp2p</strong>. There is no OpenDescent-operated machine between your device and your recipient's device. There's no DB to leak, no admin account to phish, no IP address log in a data centre.
@@ -863,7 +863,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="source-callout reveal" style="margin-top: 28px;">
       <div class="source-callout-label">Why this matters</div>
       <p>
-        <strong>Encryption plus centralisation</strong> means you trust a company to keep running its servers honestly. <strong>Encryption plus peer-to-peer</strong> removes the company from the equation. The guarantees become architectural — they can't be rolled back by a privacy-policy update, because there's no policy surface to update.
+        <strong>Encryption plus centralisation</strong> means you trust a company to keep running its servers honestly. <strong>Encryption plus peer-to-peer</strong> removes the company from the equation. The guarantees become architectural. They can't be rolled back by a privacy-policy update, because there's no policy surface to update.
       </p>
     </div>
   </div>
@@ -883,7 +883,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
       <h3>Endpoint security is <em>your</em> problem</h3>
       <p>
-        End-to-end encryption protects the path, not the endpoint. If your device is compromised — malware, a malicious browser extension, a shoulder-surfer — the attacker sees plaintext before it's encrypted. The same applies to the recipient's device. This is true of <strong>every</strong> E2E messenger, including Signal, WhatsApp, and iMessage. It's a fundamental limit of the model, not a specific OpenDescent weakness.
+        End-to-end encryption protects the path, not the endpoint. If your device is compromised (malware, a malicious browser extension, a shoulder-surfer), the attacker sees plaintext before it's encrypted. The same applies to the recipient's device. This is true of <strong>every</strong> E2E messenger, including Signal, WhatsApp, and iMessage. It's a fundamental limit of the model, not a specific OpenDescent weakness.
       </p>
 
       <h3>Traffic analysis <em>can</em> leak information</h3>
@@ -893,12 +893,12 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 
       <h3>No plausible deniability</h3>
       <p>
-        Unlike some protocols (OTR, for historical reasons), OpenDescent signs messages with your long-term Ed25519 key. This is good for integrity and spam resistance, but it means messages are cryptographically <em>attributable</em> — you signed them, and the signature is verifiable forever. If you need deniability for your threat model, consider combining OpenDescent with other tools.
+        Unlike some protocols (OTR, for historical reasons), OpenDescent signs messages with your long-term Ed25519 key. This is good for integrity and spam resistance, but it means messages are cryptographically <em>attributable</em>: you signed them, and the signature is verifiable forever. If you need deniability for your threat model, consider combining OpenDescent with other tools.
       </p>
 
       <h3>Peer metadata, not zero metadata</h3>
       <p>
-        A peer you directly connect to can record <em>that</em> you connected, your IP at the time, and packet sizes. This is local metadata, not global — nobody has the whole network graph. But it's not literally zero. If this matters for your threat model, onion-routed <a href="/features.html#anonymous">Dead Drops</a> are designed for exactly this case.
+        A peer you directly connect to can record <em>that</em> you connected, your IP at the time, and packet sizes. This is local metadata, not global. Nobody has the whole network graph. But it's not literally zero. If this matters for your threat model, onion-routed <a href="/features.html#anonymous">Dead Drops</a> are designed for exactly this case.
       </p>
 
       <h3>Not post-quantum yet</h3>
@@ -925,7 +925,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
       <div class="audit-box">
         <h3>No formal third-party audit <em>yet</em>.</h3>
         <p>
-          OpenDescent is open source under the MIT license and uses standard, peer-reviewed cryptographic primitives. The code is available for anyone to read on GitHub. But <strong>we have not yet commissioned a professional cryptographic audit</strong> — the kind that firms like Trail of Bits, NCC Group, or Cure53 perform on Signal, SimpleX, and Proton.
+          OpenDescent is open source under the MIT license and uses standard, peer-reviewed cryptographic primitives. The code is available for anyone to read on GitHub. But <strong>we have not yet commissioned a professional cryptographic audit</strong>, the kind that firms like Trail of Bits, NCC Group, or Cure53 perform on Signal, SimpleX, and Proton.
         </p>
         <p>
           A proper audit costs in the tens of thousands of GBP. It's on the roadmap and is one of the specific things the <a href="/#founder">Founder's Edition</a> subscription helps fund. We will not claim "audited" until we are.
@@ -957,16 +957,16 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
         </p>
         <ul style="list-style: none; padding-left: 0; margin: 18px 0;">
           <li style="padding: 6px 0; font-family: var(--mono); font-size: 13px; color: var(--text-mid);">
-            <span style="color: var(--teal);">›</span> &nbsp;<a href="https://github.com/Jaguwa/OpenDescent/blob/master/src/crypto/identity.ts" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none;">src/crypto/identity.ts</a> <span style="color: var(--text-ghost);">— Ed25519 keypair, sign/verify, seed derivation</span>
+            <span style="color: var(--teal);">›</span> &nbsp;<a href="https://github.com/Jaguwa/OpenDescent/blob/master/src/crypto/identity.ts" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none;">src/crypto/identity.ts</a> <span style="color: var(--text-ghost);">: Ed25519 keypair, sign/verify, seed derivation</span>
           </li>
           <li style="padding: 6px 0; font-family: var(--mono); font-size: 13px; color: var(--text-mid);">
-            <span style="color: var(--teal);">›</span> &nbsp;<a href="https://github.com/Jaguwa/OpenDescent/blob/master/src/crypto/encryption.ts" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none;">src/crypto/encryption.ts</a> <span style="color: var(--text-ghost);">— ephemeral X25519 DH + HKDF + AES-256-GCM</span>
+            <span style="color: var(--teal);">›</span> &nbsp;<a href="https://github.com/Jaguwa/OpenDescent/blob/master/src/crypto/encryption.ts" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none;">src/crypto/encryption.ts</a> <span style="color: var(--text-ghost);">: ephemeral X25519 DH + HKDF + AES-256-GCM</span>
           </li>
           <li style="padding: 6px 0; font-family: var(--mono); font-size: 13px; color: var(--text-mid);">
-            <span style="color: var(--teal);">›</span> &nbsp;<a href="https://github.com/Jaguwa/OpenDescent/blob/master/src/crypto/mnemonic.ts" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none;">src/crypto/mnemonic.ts</a> <span style="color: var(--text-ghost);">— BIP39 wordlist, generate/validate/toSeed</span>
+            <span style="color: var(--teal);">›</span> &nbsp;<a href="https://github.com/Jaguwa/OpenDescent/blob/master/src/crypto/mnemonic.ts" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none;">src/crypto/mnemonic.ts</a> <span style="color: var(--text-ghost);">: BIP39 wordlist, generate/validate/toSeed</span>
           </li>
           <li style="padding: 6px 0; font-family: var(--mono); font-size: 13px; color: var(--text-mid);">
-            <span style="color: var(--teal);">›</span> &nbsp;<a href="https://github.com/Jaguwa/OpenDescent/blob/master/src/network/node.ts" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none;">src/network/node.ts</a> <span style="color: var(--text-ghost);">— libp2p node, 21 protocols, Noise transport</span>
+            <span style="color: var(--teal);">›</span> &nbsp;<a href="https://github.com/Jaguwa/OpenDescent/blob/master/src/network/node.ts" target="_blank" rel="noopener" style="color: var(--teal); text-decoration: none;">src/network/node.ts</a> <span style="color: var(--text-ghost);">: libp2p node, 21 protocols, Noise transport</span>
           </li>
         </ul>
         <p>
@@ -991,27 +991,27 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>How is forward secrecy achieved without the Double Ratchet?</span><span class="faq-q-num">02</span></div>
-        <div class="faq-a">Every message uses a fresh ephemeral X25519 keypair generated on the sender's device. After the message is sent, the ephemeral private key is discarded. If your long-term key is compromised later, past messages can't be decrypted — their ephemeral private keys are gone.</div>
+        <div class="faq-a">Every message uses a fresh ephemeral X25519 keypair generated on the sender's device. After the message is sent, the ephemeral private key is discarded. If your long-term key is compromised later, past messages can't be decrypted, because their ephemeral private keys are gone.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>What happens if someone steals my 12-word mnemonic?</span><span class="faq-q-num">03</span></div>
-        <div class="faq-a">They can reconstruct your identity and read messages you receive going forward. Past messages remain safe due to forward secrecy. Treat the mnemonic like the master password it is — save it in a password manager, or write it on paper in a safe place. Do not send it in any message, anywhere.</div>
+        <div class="faq-a">They can reconstruct your identity and read messages you receive going forward. Past messages remain safe due to forward secrecy. Treat the mnemonic like the master password it is: save it in a password manager, or write it on paper in a safe place. Do not send it in any message, anywhere.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>Is the server closed-source like WhatsApp's?</span><span class="faq-q-num">04</span></div>
-        <div class="faq-a">There is no server. The entire app is open source, MIT licensed, on GitHub. You can read every line, build it yourself, run it locally, and modify it. There's no "closed-source server-side" — because there's no server.</div>
+        <div class="faq-a">There is no server. The entire app is open source, MIT licensed, on GitHub. You can read every line, build it yourself, run it locally, and modify it. There's no "closed-source server-side", because there's no server.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>What's the role of libp2p Noise if messages are already E2E encrypted?</span><span class="faq-q-num">05</span></div>
-        <div class="faq-a">Defence in depth. The libp2p transport encrypts the connection between peers (Noise XX with ChaCha20-Poly1305). Your messages inside that connection are E2E encrypted with AES-256-GCM. A network-level attacker sees <code>Noise(libp2p(AES(plaintext)))</code> — two independent layers of encryption.</div>
+        <div class="faq-a">Defence in depth. The libp2p transport encrypts the connection between peers (Noise XX with ChaCha20-Poly1305). Your messages inside that connection are E2E encrypted with AES-256-GCM. A network-level attacker sees <code>Noise(libp2p(AES(plaintext)))</code>: two independent layers of encryption.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>Can OpenDescent protect against a state actor?</span><span class="faq-q-num">06</span></div>
-        <div class="faq-a">For message content, yes — the cryptography is modern and well-understood. For traffic analysis and endpoint targeting, depends on the specifics. A state actor targeting you specifically can likely compromise your endpoint (zero-days, physical access), which bypasses any messenger's E2E. Against passive mass surveillance of communication content, yes. Against a targeted TAO-level adversary, nothing short of air-gapping + Tails + a cold war is sufficient, and even that has limits.</div>
+        <div class="faq-a">For message content, yes: the cryptography is modern and well-understood. For traffic analysis and endpoint targeting, depends on the specifics. A state actor targeting you specifically can likely compromise your endpoint (zero-days, physical access), which bypasses any messenger's E2E. Against passive mass surveillance of communication content, yes. Against a targeted TAO-level adversary, nothing short of air-gapping + Tails + a cold war is sufficient, and even that has limits.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>How do you prevent spam without a central registration server?</span><span class="faq-q-num">07</span></div>
-        <div class="faq-a">Three mechanisms. (1) You only receive messages from peers you've added or who've joined a hub via an invite. (2) Per-identity reputation flows through the trust web — an abuser's new identity has no vouches. (3) For Dead Drops specifically, proof-of-work is required per post. No anti-spam measure is perfect, and this is an area where decentralisation is genuinely harder than centralisation.</div>
+        <div class="faq-a">Three mechanisms. (1) You only receive messages from peers you've added or who've joined a hub via an invite. (2) Per-identity reputation flows through the trust web, so an abuser's new identity has no vouches. (3) For Dead Drops specifically, proof-of-work is required per post. No anti-spam measure is perfect, and this is an area where decentralisation is genuinely harder than centralisation.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>How do I report a vulnerability?</span><span class="faq-q-num">08</span></div>
@@ -1026,7 +1026,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
   <div class="container-narrow">
     <div class="kicker kicker-ghost" style="justify-content: center; margin-bottom: 14px;">Read the source</div>
     <h2>The whole codebase is public. <em>Verify everything on this page.</em></h2>
-    <p>Open source under MIT. Standard, peer-reviewed primitives. No proprietary crypto. No "trust us" — just "read us."</p>
+    <p>Open source under MIT. Standard, peer-reviewed primitives. No proprietary crypto. No "trust us", just "read us."</p>
     <div class="btns">
       <a href="https://github.com/Jaguwa/OpenDescent" target="_blank" rel="noopener" class="btn btn-primary">▶ View source on GitHub</a>
       <a href="/#download" class="btn btn-ghost btn-arrow">Download</a>
@@ -1040,7 +1040,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
     <div class="footer-grid">
       <div>
         <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
-        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer, because normal life is worth keeping private.</p>
         <div class="footer-micro">
           Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>
           オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth

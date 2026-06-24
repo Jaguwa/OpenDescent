@@ -10,8 +10,8 @@
     <description>Essays, explainers, and editorial notes from OpenDescent on encryption, peer-to-peer architecture, and the privacy news cycle. Because normal life is worth keeping private.</description>
     <language>en-gb</language>
     <copyright>© 2026 OpenDescent · MIT licensed</copyright>
-    <lastBuildDate>Fri, 24 Apr 2026 00:00:00 +0000</lastBuildDate>
-    <pubDate>Fri, 24 Apr 2026 00:00:00 +0000</pubDate>
+    <lastBuildDate>Wed, 24 Jun 2026 10:00:00 +0000</lastBuildDate>
+    <pubDate>Wed, 24 Jun 2026 10:00:00 +0000</pubDate>
     <ttl>1440</ttl>
     <generator>OpenDescent</generator>
     <image>
@@ -23,6 +23,71 @@
     </image>
 
     <item>
+      <title>When a Government's Own "Secure" Messenger Gets Scraped</title>
+      <link>https://open-descent.com/blog/government-messaging-breach.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/government-messaging-breach.html</guid>
+      <pubDate>Wed, 24 Jun 2026 10:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Editorial</category>
+      <category>Privacy</category>
+      <description><![CDATA[
+        France's own government messenger was scraped through one compromised account. The lesson isn't about politics or cryptography. It's about where the data sits.
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Age Verification Is Quietly Becoming Mass Surveillance</title>
+      <link>https://open-descent.com/blog/age-verification-surveillance.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/age-verification-surveillance.html</guid>
+      <pubDate>Wed, 24 Jun 2026 09:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Policy</category>
+      <category>Regulation</category>
+      <description><![CDATA[
+        Half of US states now mandate it, and the price is a government ID or a face scan. How a child-safety measure became adult surveillance.
+      ]]></description>
+    </item>
+
+    <item>
+      <title>The 2026 War on End-to-End Encryption</title>
+      <link>https://open-descent.com/blog/war-on-encryption-2026.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/war-on-encryption-2026.html</guid>
+      <pubDate>Wed, 24 Jun 2026 08:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Policy</category>
+      <category>Encryption</category>
+      <description><![CDATA[
+        Governments want lawful access to encrypted messaging. A backdoor for the good guys is a backdoor for everyone. The fight is over who holds the keys.
+      ]]></description>
+    </item>
+
+    <item>
+      <title>You Can't Backdoor a Network That Has No Operator</title>
+      <link>https://open-descent.com/blog/no-operator-no-backdoor.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/no-operator-no-backdoor.html</guid>
+      <pubDate>Wed, 24 Jun 2026 07:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Explainer</category>
+      <category>Architecture</category>
+      <description><![CDATA[
+        A backdoor order needs someone to serve it to. Why an operator-less peer-to-peer network has no one to compel, and what that does and doesn't protect.
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Discord Hit Pause on Age Verification. That Tells You Everything.</title>
+      <link>https://open-descent.com/blog/discord-age-verification-delay.html</link>
+      <guid isPermaLink="true">https://open-descent.com/blog/discord-age-verification-delay.html</guid>
+      <pubDate>Wed, 24 Jun 2026 06:00:00 +0000</pubDate>
+      <dc:creator>OpenDescent Team</dc:creator>
+      <category>Editorial</category>
+      <category>Regulation</category>
+      <description><![CDATA[
+        When even Discord, a company that wants this to work, delays its own age checks after an ID breach, the model is telling you something.
+      ]]></description>
+    </item>
+
+    <item>
       <title>May 8: The Day Meta Admitted It Wants to Read Your DMs</title>
       <link>https://open-descent.com/blog/instagram-dms-may-8.html</link>
       <guid isPermaLink="true">https://open-descent.com/blog/instagram-dms-may-8.html</guid>
@@ -32,7 +97,7 @@
       <category>Privacy</category>
       <category>Meta</category>
       <description><![CDATA[
-        Meta is removing Instagram's end-to-end encryption on May 8, 2026, because "very few people were opting in" — a statement that is true in exactly the sense that "very few people use the emergency exit on a train" is true. An editorial on what Meta actually said, why the real story isn't about Instagram, and why privacy as a policy is not the same thing as privacy as architecture.
+        Meta is removing Instagram's end-to-end encryption on May 8, 2026, because "very few people were opting in", a statement that is true in exactly the sense that "very few people use the emergency exit on a train" is true. An editorial on what Meta actually said, why the real story isn't about Instagram, and why privacy as a policy is not the same thing as privacy as architecture.
       ]]></description>
     </item>
 
@@ -45,12 +110,12 @@
       <category>Manifesto</category>
       <category>Privacy</category>
       <description><![CDATA[
-        A manifesto, more or less, for why the standard "I have nothing to hide" reply to privacy stories misses the point. Your family birthday plans, your best friend's worst week, your "I love you" before bed — these aren't content. They're yours. Privacy isn't the absence of observation — it's the presence of dignity.
+        A manifesto, more or less, for why the standard "I have nothing to hide" reply to privacy stories misses the point. Your family birthday plans, your best friend's worst week, your "I love you" before bed. These aren't content. They're yours. Privacy isn't the absence of observation, it's the presence of dignity.
       ]]></description>
     </item>
 
     <item>
-      <title>We'll Never Ask for Your Phone Number — Here's Why</title>
+      <title>We'll Never Ask for Your Phone Number: Here's Why</title>
       <link>https://open-descent.com/blog/no-phone-number.html</link>
       <guid isPermaLink="true">https://open-descent.com/blog/no-phone-number.html</guid>
       <pubDate>Fri, 24 Apr 2026 08:00:00 +0000</pubDate>
@@ -58,7 +123,7 @@
       <category>Product</category>
       <category>Identity</category>
       <description><![CDATA[
-        Signal's own team calls the phone number requirement their critics' most persistent complaint. A post on what a phone number actually is (a government-issued identifier tied to your legal identity), why it doesn't belong in a messenger, and how OpenDescent solves the spam problem it normally solves — without one.
+        Signal's own team calls the phone number requirement their critics' most persistent complaint. A post on what a phone number actually is (a government-issued identifier tied to your legal identity), why it doesn't belong in a messenger, and how OpenDescent solves the spam problem it normally solves, without one.
       ]]></description>
     </item>
 
@@ -71,7 +136,7 @@
       <category>Explainer</category>
       <category>Architecture</category>
       <description><![CDATA[
-        "Peer-to-peer" is a phrase you'll see on almost every privacy product's marketing page. Most of them use it incorrectly. An explainer, with diagrams, of the three architectural patterns messengers actually use — centralised, federated, and peer-to-peer — where each one fails, and why the distinction is load-bearing for privacy.
+        "Peer-to-peer" is a phrase you'll see on almost every privacy product's marketing page. Most of them use it incorrectly. An explainer, with diagrams, of the three architectural patterns messengers actually use (centralised, federated, and peer-to-peer) where each one fails, and why the distinction is load-bearing for privacy.
       ]]></description>
     </item>
 
@@ -84,7 +149,7 @@
       <category>Policy</category>
       <category>Regulation</category>
       <description><![CDATA[
-        Discord leaked 70,000 government-ID photos in October 2025. Its verification partner Persona exposed another 2,500 files in February 2026. These weren't implementation bugs — this is the system working as specified. You cannot have both mandatory identity collection at scale AND a world where identity doesn't leak.
+        Discord leaked 70,000 government-ID photos in October 2025. Its verification partner Persona exposed another 2,500 files in February 2026. These weren't implementation bugs. This is the system working as specified. You cannot have both mandatory identity collection at scale AND a world where identity doesn't leak.
       ]]></description>
     </item>
 

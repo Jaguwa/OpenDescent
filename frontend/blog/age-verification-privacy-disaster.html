@@ -32,7 +32,7 @@
 <meta name="twitter:image" content="https://open-descent.com/og-image.png">
 
 <script type="application/ld+json">
-{ "@context": "https://schema.org", "@type": "BlogPosting", "headline": "Mandatory Age Verification Is a Privacy Disaster by Design", "description": "An argument that mandatory online age verification is structurally broken — not because of implementation mistakes, but because collecting 100M+ government IDs in a central database is, itself, the problem.", "datePublished": "2026-04-24", "dateModified": "2026-04-24", "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" }, "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } }, "image": "https://open-descent.com/og-image.png", "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/age-verification-privacy-disaster.html" }, "wordCount": 1780, "articleSection": "Policy" }
+{ "@context": "https://schema.org", "@type": "BlogPosting", "headline": "Mandatory Age Verification Is a Privacy Disaster by Design", "description": "An argument that mandatory online age verification is structurally broken, not because of implementation mistakes, but because collecting 100M+ government IDs in a central database is, itself, the problem.", "datePublished": "2026-04-24", "dateModified": "2026-04-24", "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" }, "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } }, "image": "https://open-descent.com/og-image.png", "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/age-verification-privacy-disaster.html" }, "wordCount": 1780, "articleSection": "Policy" }
 </script>
 
 <script type="application/ld+json">
@@ -183,7 +183,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
 </head>
 <body>
 
-<div class="breaking"><div class="breaking-viewport"><div class="breaking-label">▶ Breaking</div><div class="breaking-track"><div class="breaking-content">Meta is ending end-to-end encryption on Instagram DMs — May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released — run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span>Meta is ending end-to-end encryption on Instagram DMs — May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released — run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span></div></div></div></div>
+<div class="breaking"><div class="breaking-viewport"><div class="breaking-label">▶ Breaking</div><div class="breaking-track"><div class="breaking-content">Meta is ending end-to-end encryption on Instagram DMs on May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released: run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span>Meta is ending end-to-end encryption on Instagram DMs on May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released: run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span></div></div></div></div>
 
 <nav class="top"><div class="nav-inner"><a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a><ul class="nav-links"><li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li><li><a href="/features.html">Features</a></li><li><a href="/security.html">Security</a></li><li><a href="/blog/">Blog</a></li><li><a href="/faq.html">FAQ</a></li><li class="nav-li-cta"><a href="/download.html" class="nav-cta">Download</a></li></ul></div></nav>
 
@@ -195,7 +195,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
   <div class="container-narrow">
     <div class="post-kicker-row"><span class="post-tag">▸ Policy</span><span class="post-date">2026-04-24</span><span class="post-read">▸ 10 min read</span></div>
     <h1>Mandatory age verification is a <em>privacy disaster by design</em>.</h1>
-    <p class="post-standfirst">Discord leaked <strong>70,000 government-ID photos</strong> in October 2025. Its verification partner <em>Persona</em> exposed another <strong>2,500 files</strong> in February 2026. These weren't implementation bugs. This is the system working as specified — and no amount of better engineering can fix a <em>structural</em> problem.</p>
+    <p class="post-standfirst">Discord leaked <strong>70,000 government-ID photos</strong> in October 2025. Its verification partner <em>Persona</em> exposed another <strong>2,500 files</strong> in February 2026. These weren't implementation bugs. This is the system working as specified. No amount of better engineering can fix a <em>structural</em> problem.</p>
     <div class="post-byline">
       <div class="byline-author"><span class="dot"></span>OpenDescent Team</div>
       <div class="byline-share">
@@ -211,11 +211,11 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
   <div class="container-narrow prose">
 
     <p>
-      The Discord story, briefly, in case you missed it. On October 3, 2025, attackers compromised a single customer-service account at <strong>5CA</strong>, a third-party vendor Discord uses for support. The attackers — who <a href="https://discord.com/press-releases/update-on-security-incident-involving-third-party-customer-service" target="_blank" rel="noopener">called themselves</a> "Scattered LAPSUS$ Hunters" — kept the access for 58 hours. Among the data they stole were <strong>approximately 70,000 government-ID photos</strong> that Discord users had uploaded when appealing age-related decisions.
+      The Discord story, briefly, in case you missed it. On October 3, 2025, attackers compromised a single customer-service account at <strong>5CA</strong>, a third-party vendor Discord uses for support. The attackers (who <a href="https://discord.com/press-releases/update-on-security-incident-involving-third-party-customer-service" target="_blank" rel="noopener">called themselves</a> "Scattered LAPSUS$ Hunters") kept the access for 58 hours. Among the data they stole were <strong>approximately 70,000 government-ID photos</strong> that Discord users had uploaded when appealing age-related decisions.
     </p>
 
     <p>
-      Four months later, in February 2026, Discord's partner for age verification — <em>Persona</em>, a Peter Thiel-backed identity-verification company — was found to have <a href="https://fortune.com/2026/02/24/discord-peter-thiel-backed-persona-identity-verification-breach/" target="_blank" rel="noopener">left its frontend code publicly accessible</a>, with roughly 2,500 files exposed on a government-authorised endpoint. Discord, to its credit, <a href="https://www.gamedeveloper.com/business/-we-failed-at-our-most-basic-job-discord-delays-age-verification-rollout" target="_blank" rel="noopener">cut ties with Persona publicly</a> and delayed its mandatory age-verification rollout from March 2026 to "the second half of 2026."
+      Four months later, in February 2026, Discord's partner for age verification (<em>Persona</em>, a Peter Thiel-backed identity-verification company) was found to have <a href="https://fortune.com/2026/02/24/discord-peter-thiel-backed-persona-identity-verification-breach/" target="_blank" rel="noopener">left its frontend code publicly accessible</a>, with roughly 2,500 files exposed on a government-authorised endpoint. Discord, to its credit, <a href="https://www.gamedeveloper.com/business/-we-failed-at-our-most-basic-job-discord-delays-age-verification-rollout" target="_blank" rel="noopener">cut ties with Persona publicly</a> and delayed its mandatory age-verification rollout from March 2026 to "the second half of 2026."
     </p>
 
     <p>
@@ -229,11 +229,11 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     <h2><span class="num">§ 01</span>This is the system working as specified</h2>
 
     <p>
-      A bug is something that shouldn't happen — a programmer made a mistake, and if they correct the mistake, the problem goes away. What happened to Discord isn't a bug. It's the specified behaviour of the system playing out exactly as the system was built.
+      A bug is something that shouldn't happen: a programmer made a mistake, and if they correct the mistake, the problem goes away. What happened to Discord isn't a bug. It's the specified behaviour of the system playing out exactly as the system was built.
     </p>
 
     <p>
-      Mandatory age verification works like this: a platform is required by regulation (or chooses, in advance of regulation) to confirm that a user is over some age. To do so, it asks the user to upload a government-issued ID, typically via a third-party "identity verification provider." The provider runs some checks — human review, OCR on the ID, a liveness match against a selfie — and returns a verdict. The platform records the verdict. Somewhere in this process, a <strong>complete scan of the user's government ID</strong> exists in storage for some period.
+      Mandatory age verification works like this: a platform is required by regulation (or chooses, in advance of regulation) to confirm that a user is over some age. To do so, it asks the user to upload a government-issued ID, typically via a third-party "identity verification provider." The provider runs some checks (human review, OCR on the ID, a liveness match against a selfie) and returns a verdict. The platform records the verdict. Somewhere in this process, a <strong>complete scan of the user's government ID</strong> exists in storage for some period.
     </p>
 
     <p>
@@ -248,7 +248,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     </ol>
 
     <p>
-      Running this system at any meaningful scale means continuously operating a large database of government-issued identity documents. The database is, by definition, the most valuable target on the internet — millions of passport-and-face tuples, enough to commit identity theft against individual users for the rest of their lives. The only thing between that database and a determined attacker is the aggregate security posture of the provider, their vendors, their contractors, and their customer-service processes.
+      Running this system at any meaningful scale means continuously operating a large database of government-issued identity documents. The database is, by definition, the most valuable target on the internet: millions of passport-and-face tuples, enough to commit identity theft against individual users for the rest of their lives. The only thing between that database and a determined attacker is the aggregate security posture of the provider, their vendors, their contractors, and their customer-service processes.
     </p>
 
     <h2><span class="num">§ 02</span>Every breach of the last twenty years</h2>
@@ -261,42 +261,42 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
       <div class="breach-list-label">▶ A pattern, not a bug</div>
       <div class="breach-item">
         <div class="breach-year">2017</div>
-        <div class="breach-name"><strong>Equifax</strong> — credit-bureau breach exposing Social Security numbers, dates of birth, driver's licence numbers for most American adults.</div>
+        <div class="breach-name"><strong>Equifax</strong>: credit-bureau breach exposing Social Security numbers, dates of birth, driver's licence numbers for most American adults.</div>
         <div class="breach-count">~147M records</div>
       </div>
       <div class="breach-item">
         <div class="breach-year">2019</div>
-        <div class="breach-name"><strong>Capital One</strong> — misconfigured AWS exposed credit-card applications, SSNs, bank account numbers.</div>
+        <div class="breach-name"><strong>Capital One</strong>: misconfigured AWS exposed credit-card applications, SSNs, bank account numbers.</div>
         <div class="breach-count">~106M records</div>
       </div>
       <div class="breach-item">
         <div class="breach-year">2021</div>
-        <div class="breach-name"><strong>T-Mobile</strong> — one of several breaches; SSNs, driver's licences, phone numbers for customers and prospects.</div>
+        <div class="breach-name"><strong>T-Mobile</strong>: one of several breaches; SSNs, driver's licences, phone numbers for customers and prospects.</div>
         <div class="breach-count">~76M records</div>
       </div>
       <div class="breach-item">
         <div class="breach-year">2022</div>
-        <div class="breach-name"><strong>Medibank (Australia)</strong> — health insurance database including claims data and passport numbers, held for ransom.</div>
+        <div class="breach-name"><strong>Medibank (Australia)</strong>: health insurance database including claims data and passport numbers, held for ransom.</div>
         <div class="breach-count">~9.7M records</div>
       </div>
       <div class="breach-item">
         <div class="breach-year">2023</div>
-        <div class="breach-name"><strong>MOVEit / various</strong> — file-transfer product compromise hit hundreds of orgs holding HR/payroll/identity records.</div>
+        <div class="breach-name"><strong>MOVEit / various</strong>: file-transfer product compromise hit hundreds of orgs holding HR/payroll/identity records.</div>
         <div class="breach-count">~70M+ records</div>
       </div>
       <div class="breach-item">
         <div class="breach-year">2024</div>
-        <div class="breach-name"><strong>National Public Data</strong> — data broker exposing SSN+DOB+address tuples for essentially every American.</div>
+        <div class="breach-name"><strong>National Public Data</strong>: data broker exposing SSN+DOB+address tuples for essentially every American.</div>
         <div class="breach-count">~2.9B records</div>
       </div>
       <div class="breach-item">
         <div class="breach-year">2025</div>
-        <div class="breach-name"><strong>Discord / 5CA</strong> — customer-service vendor compromise, government-ID photos from age-appeal uploads.</div>
+        <div class="breach-name"><strong>Discord / 5CA</strong>: customer-service vendor compromise, government-ID photos from age-appeal uploads.</div>
         <div class="breach-count">~70K records</div>
       </div>
       <div class="breach-item">
         <div class="breach-year">2026</div>
-        <div class="breach-name"><strong>Discord / Persona</strong> — identity-verification partner left frontend publicly accessible.</div>
+        <div class="breach-name"><strong>Discord / Persona</strong>: identity-verification partner left frontend publicly accessible.</div>
         <div class="breach-count">~2.5K files</div>
       </div>
     </div>
@@ -316,18 +316,18 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     </p>
 
     <ul>
-      <li><strong>UK Online Safety Act</strong> — "highly effective" age assurance for pornography sites and parts of social platforms. Enforced by Ofcom.</li>
-      <li><strong>EU Chat Control 2.0 / CSAR</strong> — the broader regulation includes age-assurance provisions alongside the more-discussed message-scanning provisions. <a href="https://www.eff.org/deeplinks/2026/04/eu-parliament-blocks-mass-scanning-our-chats-whats-next" target="_blank" rel="noopener">Status as of April 2026</a>: Parliament blocked Chat Control 1.0; 2.0 is in trilogue with a target deal of July 2026.</li>
-      <li><strong>Various US states</strong> — Louisiana, Texas, Utah, Mississippi, Virginia, and others have passed age-verification laws for certain types of sites. Some are being challenged in court.</li>
-      <li><strong>Australia's Online Safety Amendment</strong> — rolling out age-assurance requirements for social media platforms for users under 16.</li>
+      <li><strong>UK Online Safety Act</strong>: "highly effective" age assurance for pornography sites and parts of social platforms. Enforced by Ofcom.</li>
+      <li><strong>EU Chat Control 2.0 / CSAR</strong>: the broader regulation includes age-assurance provisions alongside the more-discussed message-scanning provisions. <a href="https://www.eff.org/deeplinks/2026/04/eu-parliament-blocks-mass-scanning-our-chats-whats-next" target="_blank" rel="noopener">Status as of April 2026</a>: Parliament blocked Chat Control 1.0; 2.0 is in trilogue with a target deal of July 2026.</li>
+      <li><strong>Various US states</strong>: Louisiana, Texas, Utah, Mississippi, Virginia, and others have passed age-verification laws for certain types of sites. Some are being challenged in court.</li>
+      <li><strong>Australia's Online Safety Amendment</strong>: rolling out age-assurance requirements for social media platforms for users under 16.</li>
     </ul>
 
     <p>
-      The common shape across all of these is: a legal requirement for private companies to collect, verify, and retain evidence of users' ages. The specifics vary — some require a strict government-ID check, some allow estimation from selfies, some are more lenient. But the architectural direction is consistent: <em>more companies, required to hold more sensitive identity information, for more users</em>.
+      The common shape across all of these is: a legal requirement for private companies to collect, verify, and retain evidence of users' ages. The specifics vary: some require a strict government-ID check, some allow estimation from selfies, some are more lenient. But the architectural direction is consistent: <em>more companies, required to hold more sensitive identity information, for more users</em>.
     </p>
 
     <p>
-      The EFF has <a href="https://www.eff.org/deeplinks/2026/02/discord-voluntarily-pushes-mandatory-age-verification-despite-recent-data-breach" target="_blank" rel="noopener">made the point repeatedly</a>: "no company — Discord included — should be given custody of your driver's license to chat with your friends." This is a policy position, not a product one. It applies to Discord specifically and to the trend generally.
+      The EFF has <a href="https://www.eff.org/deeplinks/2026/02/discord-voluntarily-pushes-mandatory-age-verification-despite-recent-data-breach" target="_blank" rel="noopener">made the point repeatedly</a>: "no company (Discord included) should be given custody of your driver's license to chat with your friends." This is a policy position, not a product one. It applies to Discord specifically and to the trend generally.
     </p>
 
     <h2><span class="num">§ 04</span>Why we can be confident about the outcome</h2>
@@ -337,7 +337,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     </p>
 
     <p>
-      There are real privacy-preserving identity schemes. <strong>Zero-knowledge age proofs</strong> exist — you can, in theory, prove you're over 18 without revealing your date of birth, name, or document number. Apple's "Verify with Wallet" flow, the EU's proposed eIDAS wallet, and various academic systems all point toward architectures where the user's device produces a signed proof without the verifier ever seeing the underlying document. These designs are real and good.
+      There are real privacy-preserving identity schemes. <strong>Zero-knowledge age proofs</strong> exist: you can, in theory, prove you're over 18 without revealing your date of birth, name, or document number. Apple's "Verify with Wallet" flow, the EU's proposed eIDAS wallet, and various academic systems all point toward architectures where the user's device produces a signed proof without the verifier ever seeing the underlying document. These designs are real and good.
     </p>
 
     <p>
@@ -345,7 +345,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     </p>
 
     <p>
-      Even if a perfect zero-knowledge scheme were universally deployed tomorrow, there would still be a significant deployment window during which imperfect systems were the norm. That window is already several years long. The damage done during the window is cumulative and largely irreversible — once a scan of your passport is in a criminal marketplace, it stays in a criminal marketplace indefinitely.
+      Even if a perfect zero-knowledge scheme were universally deployed tomorrow, there would still be a significant deployment window during which imperfect systems were the norm. That window is already several years long. The damage done during the window is cumulative and largely irreversible. Once a scan of your passport is in a criminal marketplace, it stays in a criminal marketplace indefinitely.
     </p>
 
     <div class="pullquote">
@@ -355,7 +355,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     <h2><span class="num">§ 05</span>What good child-safety regulation would look like</h2>
 
     <p>
-      We think child safety online is a real problem. We do not think "make every company hold everyone's government ID" is a good solution to it. We think it is almost exactly the <em>worst</em> solution to it — a solution that creates a new, catastrophic harm (mass ID breaches) while providing modest, easily-circumvented protection against the original harm.
+      We think child safety online is a real problem. We do not think "make every company hold everyone's government ID" is a good solution to it. We think it is almost exactly the <em>worst</em> solution to it: a solution that creates a new, catastrophic harm (mass ID breaches) while providing modest, easily-circumvented protection against the original harm.
     </p>
 
     <p>
@@ -387,18 +387,18 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
       <p><strong>If Discord's age verification is a reason you're looking for alternatives</strong>, OpenDescent is free, open source, and has no "upload your ID" flow for any purpose. Not for age. Not for appeals. Not for verification badges. We don't ask because we don't want the responsibility of holding the answer.</p>
       <div class="btns">
         <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
-        <a href="/vs/discord.html" class="btn btn-ghost btn-arrow">vs Discord — full comparison</a>
+        <a href="/vs/discord.html" class="btn btn-ghost btn-arrow">vs Discord: full comparison</a>
       </div>
     </div>
 
     <h2><span class="num">§ 07</span>What to do now</h2>
 
     <p>
-      If you live in a jurisdiction that has passed, or is passing, mandatory age-verification laws: engage your representatives. The argument that <em>mandatory identity collection creates more harm than it prevents</em> is technically sound, historically supported, and — based on polling in most jurisdictions — more popular than lawmakers assume. The EFF, Open Rights Group, and equivalent organisations in other countries are doing the detailed policy work, and they can use support.
+      If you live in a jurisdiction that has passed, or is passing, mandatory age-verification laws: engage your representatives. The argument that <em>mandatory identity collection creates more harm than it prevents</em> is technically sound, historically supported, and (based on polling in most jurisdictions) more popular than lawmakers assume. The EFF, Open Rights Group, and equivalent organisations in other countries are doing the detailed policy work, and they can use support.
     </p>
 
     <p>
-      If you use a platform that is rolling out age verification: consider whether the platform is worth the trade-off. Discord has many alternatives for community chat, including <a href="/vs/discord.html">one we built specifically because age verification shouldn't be the price of having a group for your friends</a>. If the alternatives aren't good enough yet, that is itself worth saying out loud — platforms respond to churn.
+      If you use a platform that is rolling out age verification: consider whether the platform is worth the trade-off. Discord has many alternatives for community chat, including <a href="/vs/discord.html">one we built specifically because age verification shouldn't be the price of having a group for your friends</a>. If the alternatives aren't good enough yet, that is itself worth saying out loud. Platforms respond to churn.
     </p>
 
     <p>
@@ -407,13 +407,13 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
 
     <div class="sources">
       <div class="sources-label">Sources cited</div>
-      <a href="https://discord.com/press-releases/update-on-security-incident-involving-third-party-customer-service" target="_blank" rel="noopener">Discord — Update on security incident (5CA breach) ↗</a>
-      <a href="https://www.eff.org/deeplinks/2026/02/discord-voluntarily-pushes-mandatory-age-verification-despite-recent-data-breach" target="_blank" rel="noopener">EFF — Discord voluntarily pushes mandatory age verification ↗</a>
-      <a href="https://fortune.com/2026/02/24/discord-peter-thiel-backed-persona-identity-verification-breach/" target="_blank" rel="noopener">Fortune — Discord cuts ties with Persona after verification data exposed ↗</a>
-      <a href="https://stateofsurveillance.org/news/discord-age-verification-id-biometric-privacy-2026/" target="_blank" rel="noopener">State of Surveillance — Discord leaked 70,000 IDs ↗</a>
-      <a href="https://proton.me/blog/discord-age-verfication-breach" target="_blank" rel="noopener">Proton — Discord ID data breach ↗</a>
-      <a href="https://www.gamedeveloper.com/business/-we-failed-at-our-most-basic-job-discord-delays-age-verification-rollout" target="_blank" rel="noopener">Game Developer — Discord delays age verification rollout ↗</a>
-      <a href="https://www.eff.org/deeplinks/2026/04/eu-parliament-blocks-mass-scanning-our-chats-whats-next" target="_blank" rel="noopener">EFF — EU Parliament blocks Chat Control (April 2026) ↗</a>
+      <a href="https://discord.com/press-releases/update-on-security-incident-involving-third-party-customer-service" target="_blank" rel="noopener">Discord: Update on security incident (5CA breach) ↗</a>
+      <a href="https://www.eff.org/deeplinks/2026/02/discord-voluntarily-pushes-mandatory-age-verification-despite-recent-data-breach" target="_blank" rel="noopener">EFF: Discord voluntarily pushes mandatory age verification ↗</a>
+      <a href="https://fortune.com/2026/02/24/discord-peter-thiel-backed-persona-identity-verification-breach/" target="_blank" rel="noopener">Fortune: Discord cuts ties with Persona after verification data exposed ↗</a>
+      <a href="https://stateofsurveillance.org/news/discord-age-verification-id-biometric-privacy-2026/" target="_blank" rel="noopener">State of Surveillance: Discord leaked 70,000 IDs ↗</a>
+      <a href="https://proton.me/blog/discord-age-verfication-breach" target="_blank" rel="noopener">Proton: Discord ID data breach ↗</a>
+      <a href="https://www.gamedeveloper.com/business/-we-failed-at-our-most-basic-job-discord-delays-age-verification-rollout" target="_blank" rel="noopener">Game Developer: Discord delays age verification rollout ↗</a>
+      <a href="https://www.eff.org/deeplinks/2026/04/eu-parliament-blocks-mass-scanning-our-chats-whats-next" target="_blank" rel="noopener">EFF: EU Parliament blocks Chat Control (April 2026) ↗</a>
     </div>
 
     <p style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
@@ -439,7 +439,7 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
     <div class="footer-grid">
       <div>
         <div class="footer-brand"><span class="footer-brand-dot"></span>OpenDescent</div>
-        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer — because normal life is worth keeping private.</p>
+        <p class="footer-tagline">Private messaging for normal people. End-to-end encrypted, peer-to-peer: because normal life is worth keeping private.</p>
         <div class="footer-micro">Product Interface &nbsp;//&nbsp; Open Descent &copy;2026<br>オープンディセント &nbsp;//&nbsp; P2P-Mesh-Net &nbsp;//&nbsp; No-Central-Auth</div>
       </div>
       <div class="footer-col"><div class="footer-col-title">Product</div><a href="/features.html">Features</a><a href="/security.html">Security</a><a href="/download.html">Download</a><a href="/faq.html">FAQ</a></div>

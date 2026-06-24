@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>We'll Never Ask for Your Phone Number: Here's Why | OpenDescent Blog</title>
-<meta name="description" content="Signal's own team says the phone number requirement is their critics' top complaint. A post on why phone numbers are a broken identifier for messaging, and how we solve the spam problem they normally solve.">
-<meta name="keywords" content="messaging app no phone number, signal phone number problem, private messenger without phone, why phone numbers are bad for messaging, opendescent no phone, messenger identity key">
+<title>Age Verification Is Quietly Becoming Mass Surveillance | OpenDescent Blog</title>
+<meta name="description" content="Age-verification laws now spreading across half of US states force ID uploads and facial scans, turning every covered service into an identity honeypot and adult surveillance.">
+<meta name="keywords" content="age verification privacy, age verification surveillance, online age verification, age verification VPN, digital ID privacy 2026">
 <meta name="author" content="OpenDescent">
 <meta name="theme-color" content="#0f1012">
-<link rel="canonical" href="https://open-descent.com/blog/no-phone-number.html">
+<link rel="canonical" href="https://open-descent.com/blog/age-verification-surveillance.html">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
@@ -16,33 +16,33 @@
 <script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()</script>
 
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://open-descent.com/blog/no-phone-number.html">
-<meta property="og:title" content="We'll Never Ask for Your Phone Number: Here's Why">
-<meta property="og:description" content="Why phone numbers are a broken identifier for messaging, and how we solve the spam problem they normally solve.">
+<meta property="og:url" content="https://open-descent.com/blog/age-verification-surveillance.html">
+<meta property="og:title" content="Age Verification Is Quietly Becoming Mass Surveillance">
+<meta property="og:description" content="To check an age, these systems must collect identity. That turns a child-safety measure into adult surveillance, and a covered service into an identity honeypot.">
 <meta property="og:image" content="https://open-descent.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="OpenDescent">
-<meta property="article:published_time" content="2026-04-24T00:00:00Z">
-<meta property="article:modified_time" content="2026-04-24T00:00:00Z">
-<meta property="article:section" content="Product">
+<meta property="article:published_time" content="2026-06-24T00:00:00Z">
+<meta property="article:modified_time" content="2026-06-24T00:00:00Z">
+<meta property="article:section" content="Policy">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="We'll Never Ask for Your Phone Number">
-<meta name="twitter:description" content="Why phone numbers are broken for messaging.">
+<meta name="twitter:title" content="Age Verification Is Quietly Becoming Mass Surveillance">
+<meta name="twitter:description" content="How age-verification laws turn child-safety measures into adult surveillance.">
 <meta name="twitter:image" content="https://open-descent.com/og-image.png">
 
 <script type="application/ld+json">
 {
   "@context": "https://schema.org", "@type": "BlogPosting",
-  "headline": "We'll Never Ask for Your Phone Number: Here's Why",
-  "description": "A post on why phone numbers are a broken identifier for messaging, and how OpenDescent solves the spam problem they normally solve.",
-  "datePublished": "2026-04-24", "dateModified": "2026-04-24",
-  "author": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com" },
+  "headline": "Age Verification Is Quietly Becoming Mass Surveillance",
+  "description": "Age-verification laws spreading across half of US states force ID uploads and facial scans, turning every covered service into an identity honeypot and a child-safety measure into adult surveillance.",
+  "datePublished": "2026-06-24", "dateModified": "2026-06-24",
+  "author": { "@type": "Organization", "name": "OpenDescent Team", "url": "https://open-descent.com" },
   "publisher": { "@type": "Organization", "name": "OpenDescent", "url": "https://open-descent.com", "logo": { "@type": "ImageObject", "url": "https://open-descent.com/favicon.png" } },
   "image": "https://open-descent.com/og-image.png",
-  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/no-phone-number.html" },
-  "wordCount": 1620, "articleSection": "Product"
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://open-descent.com/blog/age-verification-surveillance.html" },
+  "wordCount": 1780, "articleSection": "Policy"
 }
 </script>
 
@@ -52,7 +52,7 @@
   "itemListElement": [
     { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://open-descent.com/" },
     { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://open-descent.com/blog/" },
-    { "@type": "ListItem", "position": 3, "name": "We'll Never Ask for Your Phone Number", "item": "https://open-descent.com/blog/no-phone-number.html" }
+    { "@type": "ListItem", "position": 3, "name": "Age Verification Is Quietly Becoming Mass Surveillance", "item": "https://open-descent.com/blog/age-verification-surveillance.html" }
   ]
 }
 </script>
@@ -152,7 +152,7 @@ nav.top { position: sticky; top: 0; z-index: 100; background: rgba(15,16,18,0.85
 .sources a { display: block; font-family: var(--mono); font-size: 12px; color: var(--text-mid); text-decoration: none; padding: 4px 0; border-bottom: none; }
 .sources a:hover { color: var(--teal); }
 
-/* Phone identity diagram */
+/* Surveillance flow diagram */
 .phone-diagram { margin: 32px 0; padding: 28px 30px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; position: relative; }
 .phone-diagram::before { content: ''; position: absolute; top: -1px; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, rgba(50,224,196,0.2), transparent); }
 .phone-diagram-label { font-family: var(--mono); font-size: 10px; color: var(--text-ghost); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px; }
@@ -193,25 +193,25 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
 </head>
 <body>
 
-<div class="breaking"><div class="breaking-viewport"><div class="breaking-label">▶ Breaking</div><div class="breaking-track"><div class="breaking-content">Meta is ending end-to-end encryption on Instagram DMs on May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released. Run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span>Meta is ending end-to-end encryption on Instagram DMs on May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released. Run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span></div></div></div></div>
+<div class="breaking"><div class="breaking-viewport"><div class="breaking-label">▶ Breaking</div><div class="breaking-track"><div class="breaking-content">Meta is ending end-to-end encryption on Instagram DMs, May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released. Run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span>Meta is ending end-to-end encryption on Instagram DMs, May 8 2026. <a href="/leaving-instagram.html">Here's what to use instead →</a><span class="sep">//</span>Discord leaked 70,000 government IDs. <a href="/vs/discord.html">Why we built this →</a><span class="sep">//</span>OpenDescent v0.5.6 released. Run the network on your own relay. <a href="/#download">Download →</a><span class="sep">//</span>Normal life deserves privacy. <span class="sep">//</span></div></div></div></div>
 
 <nav class="top"><div class="nav-inner"><a href="/" class="nav-brand"><span class="dot"></span>OpenDescent</a><ul class="nav-links"><li class="nav-li-alert"><a href="/leaving-instagram.html" class="alert">Leaving Instagram?</a></li><li><a href="/features.html">Features</a></li><li><a href="/security.html">Security</a></li><li><a href="/blog/">Blog</a></li><li><a href="/faq.html">FAQ</a></li><li class="nav-li-cta"><a href="/download.html" class="nav-cta">Download</a></li></ul></div></nav>
 
 <div class="container">
-  <div class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">We'll never ask for your phone number</span></div>
+  <div class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">Age verification is quietly becoming mass surveillance</span></div>
 </div>
 
 <section class="post-hero">
   <div class="container-narrow">
-    <div class="post-kicker-row"><span class="post-tag">▸ Product</span><span class="post-date">2026-04-24</span><span class="post-read">▸ 8 min read</span></div>
-    <h1>We'll never ask for your phone number. <em>Here's why.</em></h1>
-    <p class="post-standfirst">Signal's own team calls the phone number requirement their <strong>critics' most persistent complaint</strong>. Here's what a phone number actually is, why it doesn't belong in a messenger, and how we solve the spam problem it normally solves, without one.</p>
+    <div class="post-kicker-row"><span class="post-tag">▸ Policy</span><span class="post-date">2026-06-24</span><span class="post-read">▸ 9 min read</span></div>
+    <h1>Age verification is quietly <em>becoming mass surveillance</em>.</h1>
+    <p class="post-standfirst">Roughly half of US states have passed or are advancing laws that make platforms check how old you are. To check an age, a system has to collect an identity. That quiet substitution, <strong>from a child-safety measure into adult surveillance</strong>, is the story almost nobody is telling.</p>
     <div class="post-byline">
       <div class="byline-author"><span class="dot"></span>OpenDescent Team</div>
       <div class="byline-share">
-        <a href="https://twitter.com/intent/tweet?text=We%27ll%20never%20ask%20for%20your%20phone%20number.%20Here%27s%20why.&url=https%3A%2F%2Fopen-descent.com%2Fblog%2Fno-phone-number.html" target="_blank" rel="noopener" class="share-btn">▸ Share on X</a>
-        <a href="https://www.reddit.com/submit?url=https%3A%2F%2Fopen-descent.com%2Fblog%2Fno-phone-number.html&title=We%27ll%20never%20ask%20for%20your%20phone%20number" target="_blank" rel="noopener" class="share-btn">▸ Post on Reddit</a>
-        <a href="https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fopen-descent.com%2Fblog%2Fno-phone-number.html&t=We%27ll%20never%20ask%20for%20your%20phone%20number" target="_blank" rel="noopener" class="share-btn">▸ Hacker News</a>
+        <a href="https://twitter.com/intent/tweet?text=Age%20verification%20is%20quietly%20becoming%20mass%20surveillance&url=https%3A%2F%2Fopen-descent.com%2Fblog%2Fage-verification-surveillance.html" target="_blank" rel="noopener" class="share-btn">▸ Share on X</a>
+        <a href="https://www.reddit.com/submit?url=https%3A%2F%2Fopen-descent.com%2Fblog%2Fage-verification-surveillance.html&title=Age%20verification%20is%20quietly%20becoming%20mass%20surveillance" target="_blank" rel="noopener" class="share-btn">▸ Post on Reddit</a>
+        <a href="https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fopen-descent.com%2Fblog%2Fage-verification-surveillance.html&t=Age%20verification%20is%20quietly%20becoming%20mass%20surveillance" target="_blank" rel="noopener" class="share-btn">▸ Hacker News</a>
       </div>
     </div>
   </div>
@@ -221,200 +221,147 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
   <div class="container-narrow prose">
 
     <p>
-      Signal is a good app. We mean that. We say it on <a href="/vs/signal.html">our own comparison page</a>, and we said it in <a href="/blog/instagram-dms-may-8.html">the last blog post</a>, and we'll keep saying it as long as it's true. Signal's cryptography is strong, its governance is honest, its intentions are as close to aligned with users as any tech-industry organisation's are ever likely to be. And yet, if you read the <a href="https://signal.org/blog/phone-number-privacy-usernames/" target="_blank" rel="noopener">2024 post introducing Signal usernames</a>, you'll find a rare thing for any company: an explicit admission of its top complaint.
+      Most of the coverage of age verification has been about the leaks. We have written about one of them ourselves: when a third-party vendor lost the government IDs of 70,000 Discord users, that was the predictable failure of a system built to hold identity documents at scale (we set out why in <a href="/blog/age-verification-privacy-disaster.html">our earlier post on the Discord and Persona breaches</a>). That post is about the breach. This one is about what comes before the breach, and what is being built around it. Because the breaches are the visible part. The quieter and more consequential development is the law itself, and the surveillance infrastructure it is steadily normalising.
     </p>
 
-    <div class="blockquote">
-      <p>"Phone numbers are a persistent criticism from our most ardent advocates."</p>
-      <span class="cite">Signal, <a href="https://signal.org/blog/phone-number-privacy-usernames/" target="_blank" rel="noopener">"Keep your phone number private with Signal usernames" (2024)</a></span>
+    <p>
+      Here is the state of play, plainly. Roughly half of US states have now enacted or are advancing laws that require online platforms, adult sites first, then online gaming, then social media, to verify the ages of their users. More of these laws take effect in 2026. They are not all identical, but they share a structure, and the structure is the problem. To know that a user is over a given age, a platform has to do one of two things: ask for a government-issued ID, or take a scan of the user's face. There is no third option that satisfies the law. You cannot confirm an age without first establishing an identity.
+    </p>
+
+    <div class="pullquote">
+      You cannot confirm an age without first establishing an identity. The age check is the front door. <em>Identity collection is the building behind it.</em>
     </div>
 
+    <h2><span class="num">§ 01</span>The substitution nobody voted for</h2>
+
     <p>
-      Signal added usernames as a response. They let you hide your phone number from <em>other users</em>. But the phone number is still required <em>at registration</em>. Signal itself still needs to know your phone number to let you create an account. This has not changed.
+      The case for these laws is made in the language of child safety, and that case is sincere. Nobody reasonable wants children stumbling into pornography or being groomed in a gaming lobby. The intention is good. But intention is not architecture, and the architecture these laws require has a property their authors rarely discuss in public: it does not check ages, exactly. It checks identities, and infers ages from them.
     </p>
 
     <p>
-      We built OpenDescent on a different answer. We don't require a phone number, because we don't have a registration step that would ever need one. This isn't us being clever. It's a consequence of choosing a different architecture. This post explains what that means, why we think phone numbers are the wrong identifier for a messaging app, and how we solve the problem (spam prevention) that phone numbers usually solve.
+      When a law says "verify that this user is over eighteen," and the only practical way to comply is "collect this user's driving licence or scan their face," then in effect the law has mandated identity collection by every covered service. A pornography site that previously knew nothing about you now holds, or has handed to a contractor who holds, a copy of your government ID. A social network that you joined under a pseudonym now has your face on file, matched to your account. The age check is the stated purpose. Mass identity collection is the actual mechanism.
     </p>
 
-    <h2><span class="num">§ 01</span>What a phone number actually is</h2>
-
     <p>
-      In most of the world, a phone number is three things at once:
+      This is the substitution nobody voted for. Legislators voted to protect children. What they built, because of how the technology works, is a requirement that adults prove who they are in order to read, watch, or speak online. Civil-liberties advocates have been clear about this for some time. As <a href="https://www.nbcnews.com/tech/tech-news/age-verification-laws-advocates-express-concerns-rcna331835" target="_blank" rel="noopener">NBC News reported</a>, those advocates warn that the effect of these laws is to surveil adults, and a court in Virginia has already cited the First Amendment in pushing back against the approach.
     </p>
 
-    <ol>
-      <li>A way to reach you over the legacy circuit-switched telephony network, which is what it was originally for and what it is increasingly least useful for.</li>
-      <li>A <strong>government-issued identifier</strong>, allocated by a national telecoms regulator to a carrier, which the carrier allocates to a person whose identity they have been legally required to verify in most jurisdictions since roughly 2015.</li>
-      <li>A <strong>permanent key into a hundred other systems</strong> you didn't know were listening. Your bank's two-factor setup. Your tax authority's notification service. Your insurance company's password-reset flow. Your email provider's account recovery. Every loyalty programme you absent-mindedly typed it into at a till.</li>
-    </ol>
+    <h2><span class="num">§ 02</span>Every covered service becomes a honeypot</h2>
 
     <p>
-      The first role is the one most people think about. The second and third are the ones that matter for a messaging app. Handing over a phone number is not a technical step; it is <strong>handing over the most durable identifier most humans have</strong>, tied to their legal identity, cross-indexed across dozens of commercial and governmental databases.
+      Consider what a covered platform now has to be, given the law. It has to hold, for at least some window of time, a population's worth of government IDs and facial scans. Not a handful. Everyone who wants to use the service. That is a database of legal identities, tied to accounts, indexed and queryable. In security terms there is a word for a store of high-value data that an attacker would very much like to reach. It is a honeypot, and these laws turn ordinary websites into honeypots by operation of statute.
     </p>
 
     <div class="phone-diagram">
-      <div class="phone-diagram-label">▸ What a phone number is tied to</div>
-      <svg viewBox="0 0 560 240" xmlns="http://www.w3.org/2000/svg">
-        <!-- Centre: your phone number -->
-        <circle cx="280" cy="120" r="36" fill="rgba(224,64,80,0.12)" stroke="#e04050" stroke-width="1.2"/>
-        <text x="280" y="120" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffbfc4" letter-spacing="1">PHONE #</text>
-        <text x="280" y="136" text-anchor="middle" font-family="monospace" font-size="8" fill="#ffbfc4" letter-spacing="1">legal ID</text>
-        <!-- Satellite systems -->
-        <g fill="rgba(170,170,170,0.15)" stroke="#666" stroke-width="1">
-          <circle cx="60" cy="40" r="22"/>
-          <circle cx="500" cy="40" r="22"/>
-          <circle cx="60" cy="200" r="22"/>
-          <circle cx="500" cy="200" r="22"/>
-          <circle cx="160" cy="20" r="22"/>
-          <circle cx="400" cy="20" r="22"/>
-          <circle cx="160" cy="220" r="22"/>
-          <circle cx="400" cy="220" r="22"/>
-        </g>
-        <g fill="#aaa" font-family="monospace" font-size="8" text-anchor="middle" letter-spacing="1">
-          <text x="60" y="44">BANK</text>
-          <text x="500" y="44">EMAIL</text>
-          <text x="60" y="204">TAX</text>
-          <text x="500" y="204">2FA</text>
-          <text x="160" y="24">CARRIER</text>
-          <text x="400" y="24">LOYALTY</text>
-          <text x="160" y="224">INSURANCE</text>
-          <text x="400" y="224">DELIVERY</text>
-        </g>
-        <!-- Lines -->
-        <g stroke="rgba(224,64,80,0.3)" stroke-width="0.8" fill="none" stroke-dasharray="2 3">
-          <line x1="244" y1="120" x2="82" y2="56"/>
-          <line x1="316" y1="120" x2="478" y2="56"/>
-          <line x1="244" y1="120" x2="82" y2="184"/>
-          <line x1="316" y1="120" x2="478" y2="184"/>
-          <line x1="258" y1="92" x2="172" y2="34"/>
-          <line x1="302" y1="92" x2="388" y2="34"/>
-          <line x1="258" y1="148" x2="172" y2="206"/>
-          <line x1="302" y1="148" x2="388" y2="206"/>
+      <div class="phone-diagram-label">▸ How an age check becomes an identity store</div>
+      <svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Step 1: user with ID/face -->
+        <rect x="20" y="74" width="116" height="56" rx="6" fill="rgba(170,170,170,0.08)" stroke="#666" stroke-width="1"/>
+        <text x="78" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#aaa" letter-spacing="1">YOUR ID</text>
+        <text x="78" y="112" text-anchor="middle" font-family="monospace" font-size="9" fill="#aaa" letter-spacing="1">+ FACE SCAN</text>
+        <!-- arrow -->
+        <line x1="142" y1="102" x2="208" y2="102" stroke="rgba(50,224,196,0.4)" stroke-width="1" stroke-dasharray="2 3"/>
+        <polygon points="208,102 200,98 200,106" fill="rgba(50,224,196,0.5)"/>
+        <!-- Step 2: age check -->
+        <rect x="214" y="74" width="120" height="56" rx="6" fill="rgba(50,224,196,0.08)" stroke="#0D7377" stroke-width="1.2"/>
+        <text x="274" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#5FFFD6" letter-spacing="1">AGE CHECK</text>
+        <text x="274" y="112" text-anchor="middle" font-family="monospace" font-size="8" fill="#5FFFD6" letter-spacing="1">over 18? y/n</text>
+        <!-- arrow -->
+        <line x1="340" y1="102" x2="406" y2="102" stroke="rgba(224,64,80,0.4)" stroke-width="1" stroke-dasharray="2 3"/>
+        <polygon points="406,102 398,98 398,106" fill="rgba(224,64,80,0.6)"/>
+        <!-- Step 3: stored honeypot -->
+        <rect x="412" y="74" width="128" height="56" rx="6" fill="rgba(224,64,80,0.1)" stroke="#e04050" stroke-width="1.2"/>
+        <text x="476" y="94" text-anchor="middle" font-family="monospace" font-size="9" fill="#ffbfc4" letter-spacing="1">STORED</text>
+        <text x="476" y="108" text-anchor="middle" font-family="monospace" font-size="8" fill="#ffbfc4" letter-spacing="1">identity honeypot</text>
+        <text x="476" y="120" text-anchor="middle" font-family="monospace" font-size="8" fill="#ffbfc4" letter-spacing="1">waiting to leak</text>
+        <!-- labels under -->
+        <g font-family="monospace" font-size="8" fill="#666" text-anchor="middle" letter-spacing="1">
+          <text x="78" y="156">what you hand over</text>
+          <text x="274" y="156">a single yes/no</text>
+          <text x="476" y="156">what actually persists</text>
         </g>
       </svg>
-      <div class="phone-diagram-caption">A phone number isn't a messaging handle. It's the joining key for ~a dozen systems that already have your legal identity on file.</div>
+      <div class="phone-diagram-caption">The law only needs a yes or a no. To produce it, the system collects and retains far more, and what it retains is the part that leaks.</div>
     </div>
 
     <p>
-      When a messenger says "we need your phone number to sign you up," what it is actually doing is <em>linking a messaging account to that key</em>. The messenger may never use the number for anything else, and may encrypt message content perfectly. But the link, once made, is indelible. If the messenger is compelled to produce information (by subpoena, by a privacy policy update, by a change of ownership), the link is what it produces. Messages might be safe. The fact that you <em>have</em> an account, under your legal identity, isn't.
+      The logic here is not complicated, and it is worth stating without drama. Mass identity collection guarantees mass identity leakage. Not because any one company is careless, though some are, but because the aggregate of thousands of services each holding millions of identity records, over years, produces breaches as a statistical certainty. The Discord incident was not a freak event. It was an early, visible instance of a pattern that these laws make universal. When you require everyone to collect identity, you have, in the same act, required identity to be lost. The breach is not the exception to the policy. The breach is the policy, played forward in time.
+    </p>
+
+    <h2><span class="num">§ 03</span>People can feel the shape of this</h2>
+
+    <p>
+      One of the more interesting things about age verification is that ordinary people, who do not read security blogs and have never heard the word "honeypot," have nonetheless reacted to it as if they understood the trade exactly. The instinct is correct even where the vocabulary is absent.
+    </p>
+
+    <p>
+      In the United Kingdom, where age-verification rules came into force, the public response was immediate and legible. A petition to repeal the rules gathered around 500,000 signatures within days. At the same time, downloads of some VPN services spiked by more than 1,000 percent, as people reached for the most obvious available tool to put themselves outside the reach of the checks. You do not download a VPN to protect a child. You download it to protect yourself. The surge is a measurement of how many adults experienced the new rules not as a safety feature but as a thing to evade.
+    </p>
+
+    <div class="blockquote">
+      <p>Advocates warn that age-verification laws, in practice, surveil adults rather than protect children, and a Virginia court has cited the First Amendment in pushing back.</p>
+      <span class="cite">NBC News, <a href="https://www.nbcnews.com/tech/tech-news/age-verification-laws-advocates-express-concerns-rcna331835" target="_blank" rel="noopener">"Age verification laws: advocates express concerns" ↗</a></span>
+    </div>
+
+    <p>
+      The corporate response told a similar story from the other side. In February 2026, Discord delayed the rollout of its own age-assurance system after sustained user backlash, with many of those users pointing directly at the breach of a third-party customer-service company that had already exposed 70,000 government IDs. A company does not delay a compliance feature it is keen to ship unless the cost of going ahead, in trust and in risk, has become visibly too high. Both reactions, the petition and the postponement, are people and institutions registering the same fact: an age check is the visible surface, and an identity database is what lies underneath it.
+    </p>
+
+    <h2><span class="num">§ 04</span>Surveillance arrives as a feature, not a coup</h2>
+
+    <p>
+      It is worth being precise about why this matters beyond any single leak. Surveillance infrastructure rarely arrives announced as surveillance. It arrives as a feature with a sympathetic name, attached to a problem nobody wants to be seen defending. Child safety is the ideal vehicle. Who stands against it? And so the machinery gets built, service by service, statute by statute, each step defensible in isolation, until the cumulative result is a web in which using the internet as an adult means continuously proving your identity to private companies who keep the proof.
+    </p>
+
+    <p>
+      As one analysis of the trend put it, the same tools being deployed for child safety double as instruments of <a href="https://www.cnbc.com/2026/03/08/social-media-child-safety-internet-ai-surveillance.html" target="_blank" rel="noopener">internet-wide surveillance</a>, and the privacy concerns this raises, covered in detail by <a href="https://www.marketplace.org/story/2026/02/26/age-verification-rules-on-social-media-spark-privacy-concerns" target="_blank" rel="noopener">reporting on the new social-media rules</a>, are not hypothetical. They are the direct, foreseeable consequence of asking every service to hold what only a passport office used to hold.
+    </p>
+
+    <p>
+      None of this is an argument that children should not be protected. It is an argument that the chosen method protects them by surveilling everyone else, and that there are designs which avoid the trade entirely. The right response to "we must collect identity to keep people safe" is not louder collection. It is to ask whether identity needs to be collected at all.
     </p>
 
     <div class="pullquote">
-      A phone number isn't a messaging handle. It is a <em>government-issued identifier tied to your legal identity</em>, given to a messenger in exchange for simpler onboarding.
+      The breaches are not accidents. <em>Mass identity collection guarantees mass identity leakage.</em> The only safe identity store is the one that was never built.
     </div>
 
-    <h2><span class="num">§ 02</span>The spam argument, and what's right about it</h2>
+    <h2><span class="num">§ 05</span>The only data that cannot leak is the data you never collect</h2>
 
     <p>
-      Signal's stated reason for requiring phone numbers, to be fair to them, isn't "we want to tie you to your legal identity." It is a genuinely hard engineering problem: <strong>spam and Sybil attacks</strong>. Without a costly-to-obtain identifier, it becomes trivial to create infinite accounts and flood the network with garbage.
+      This is where our own position is, we think, simple to the point of being almost boring. OpenDescent asks for no government ID. It asks for no phone number. It asks for no email. There is no sign-up form with a field for any of these, because there is no central account at all. Your identity is a cryptographic key generated on your own device, and we explain why a key beats an assigned identifier in our post on <a href="/blog/no-phone-number.html">why we will never ask for your phone number</a>.
     </p>
 
     <p>
-      Phone numbers are a reasonable proof-of-scarcity. There are only so many humans with only so many phone numbers, and obtaining a new one in most jurisdictions takes enough effort that an attacker can't spin up a million of them overnight. It's not a perfect signal (SIM farms exist, SMS services exist), but it raises the cost.
+      The consequence is direct. If a service holds no identity, there is nothing to verify, nothing to collect, and nothing to leak. We cannot lose your ID in a breach, because we never asked for it. We cannot be compelled to hand over a face-scan database, because no such database exists. We cannot be turned into a honeypot, because there is no central store to fill. This is what we mean when we say privacy at OpenDescent is architecture rather than policy. A policy is a promise a company makes about what it will do with the data it holds. Architecture is the simpler and more durable guarantee that there is no data to hold in the first place.
     </p>
 
     <p>
-      This is a real problem and we don't dismiss it. But we think phone numbers solve the problem in a way that has unrelated side effects (the legal-identity linkage above) that are too expensive for what they buy. If a thing is load-bearing for spam prevention <em>and</em> simultaneously links every account to a legal identity, we'd like a different thing for spam prevention.
-    </p>
-
-    <h2><span class="num">§ 03</span>How we actually do it</h2>
-
-    <p>
-      OpenDescent has no registration server, which means there's nothing to spam-protect at registration time. Your identity is an <strong>Ed25519 keypair</strong> generated on your device. Creating a new identity costs about as much CPU as scrolling past a photo. So how do we prevent a bad actor from creating a million identities and flooding the network?
-    </p>
-
-    <p>
-      Three mechanisms, layered:
-    </p>
-
-    <ol>
-      <li>
-        <strong>Invite-graph gating.</strong> You only receive messages from peers you've explicitly added: by username, by invite link, or by joining a hub. An identity with no invite in is a tree falling in a forest with nobody around: it cannot reach you. A new identity starts with zero social reach and has to acquire it the same way anyone else does, through other users choosing to connect to it.
-      </li>
-      <li>
-        <strong>Trust-web reputation.</strong> When a contact vouches for another contact (see our <a href="/features.html#anonymous">trust web feature</a>), the reputation of a key flows through the social graph. A fresh anonymous identity without a single vouch is treated with appropriate suspicion. The UI flags it, the contact knows nothing about it, and there's no list of strangers to flood because there's no directory of strangers.
-      </li>
-      <li>
-        <strong>Proof-of-work for anonymous features.</strong> For the specific cases where anonymity is a feature (Dead Drops), we require proof-of-work per post. This makes high-volume spamming expensive in CPU terms. It's the same idea as <code>hashcash</code>, designed to make one-off use cheap and bulk abuse expensive.
-      </li>
-    </ol>
-
-    <p>
-      Between them, these three mechanisms do the job phone numbers do for Signal, and they do it without requiring you to hand over a legal identifier to get a messenger account. We don't claim they're <em>better</em> than phone numbers for spam prevention. We claim they're <em>sufficient</em>, and that the trade-off in favour of not collecting phone numbers is worth making.
-    </p>
-
-    <h2><span class="num">§ 04</span>The principle underneath</h2>
-
-    <p>
-      The broader argument isn't about phone numbers specifically. It's about the default expectation of messengers that your identity should be <em>a thing assigned to you by some external authority</em>: a phone number, a government ID, an email address issued by a company. We think that's a historical accident, not a requirement.
-    </p>
-
-    <p>
-      Your identity on a messenger can be, and should be, a <strong>key you generated</strong>. A piece of cryptography that is yours the moment it exists, that proves who you are without needing a third-party authority to confirm it, that you can back up, re-derive on a new device, and throw away if you want to. The key is the identity. Everything else (usernames, display names, avatars) is a convenience layer on top of the key.
-    </p>
-
-    <p>
-      This is, incidentally, how Bitcoin addresses work. It's how SSH keys work. It's how PGP was always supposed to work. The idea that "proving who you are" can mean "demonstrating possession of a private key" is decades old. Messaging apps are unusual in having moved <em>away</em> from this model and toward phone-number-based identity, not because it's a better cryptographic idea, but because of a long chain of product decisions that prioritised smooth onboarding over user ownership.
-    </p>
-
-    <div class="pullquote">
-      Identity should be a <em>key you generate</em>, not a number you were assigned.
-    </div>
-
-    <h2><span class="num">§ 05</span>What it looks like in practice</h2>
-
-    <p>
-      What this means for you, as a user, is concrete. When you install OpenDescent, the app does the following:
-    </p>
-
-    <ul>
-      <li>Generates an Ed25519 keypair locally, with no network request involved.</li>
-      <li>Derives a 12-word <a href="https://en.bitcoin.it/wiki/BIP_0039" target="_blank" rel="noopener">BIP39 mnemonic</a> from the key's entropy. Shows you the 12 words and asks you to save them.</li>
-      <li>Asks you to pick a human-readable username. Not globally registered: usernames exist within your invite graph.</li>
-      <li>That's it. You're in.</li>
-    </ul>
-
-    <p>
-      There's no confirmation email because we have no email. There's no SMS code because we have no phone number. There's no "check your inbox" step. The setup flow is, mechanically, "open the app, save 12 words, pick a name." Total time: about 90 seconds.
-    </p>
-
-    <p>
-      And then, forever after, your identity is yours. If your device is destroyed, the 12 words bring your identity back on any other device. If you want a second identity for different contexts, you make one. The cost is zero. If someone wants to impersonate you, they don't have your private key, and they can't get it without your words.
+      We are not pretending this solves the underlying policy fight. Whether and how to protect children online is a serious question, and reasonable people will disagree about the answers. But on the narrow question of identity, the engineering is settled and has been for years. A system can prove things about a person, including that they hold a particular key, without that system ever storing who the person is. The internet does not have to be built as a sequence of identity checkpoints. It can be built so that there is nothing at the checkpoint to inspect.
     </p>
 
     <div class="inline-cta">
-      <p><strong>If you want to see how this works in practice</strong>, download OpenDescent. The whole flow from installer to first message is under three minutes, and the absence of any "please enter your phone number" step is its own small pleasure.</p>
+      <p><strong>If you would rather not file your identity with one more company</strong>, OpenDescent gives you private, end-to-end encrypted messaging with no ID, no phone number, and no email. Nothing to verify, because there is nothing to collect.</p>
       <div class="btns">
-        <a href="/#download" class="btn btn-primary">▶ Download for Windows</a>
-        <a href="/vs/signal.html" class="btn btn-ghost btn-arrow">vs Signal: full comparison</a>
+        <a href="/download.html" class="btn btn-primary">▶ Download OpenDescent</a>
+        <a href="/features.html" class="btn btn-ghost btn-arrow">See how it works</a>
       </div>
     </div>
 
-    <h2><span class="num">§ 06</span>What we're not saying</h2>
+    <h2><span class="num">§ 06</span>What to keep in view</h2>
 
     <p>
-      We're not saying Signal is wrong to require phone numbers. Signal is optimising for a different set of constraints: global scale, accessibility to non-technical users, a spam model that has to defend against very large adversaries. The phone number requirement solves real problems in Signal's architecture, and we have genuine respect for how Signal has navigated them.
+      The thing to watch, as more of these laws take effect through 2026, is the quiet drift in what is considered normal. A few years ago, the idea of uploading a passport to read a website or join a chat would have struck most people as absurd. With each statute and each rollout, it becomes a little more ordinary, a little more expected, a little harder to refuse. That normalisation is the surveillance, more than any single database is. The databases come and go and leak. The expectation, once it settles, is what stays.
     </p>
 
     <p>
-      We're also not saying phone numbers are evil. They are just <em>wrong for this particular job</em>. A phone number is a useful thing. Using it as the primary identifier for a messaging account, and tying every message and contact you have to it, is not what it's for.
-    </p>
-
-    <p>
-      The one thing we <em>are</em> saying, plainly and without much hedging, is this: if you are building a messenger in 2026, and you have the option of architecturally not needing a phone number, you should take that option. The spam problem is real but solvable. The cost of handing users' legal identifiers to every messaging company is higher than it looks, and the longer we all collectively do it, the harder it becomes to ask for anything else.
-    </p>
-
-    <p>
-      We'll never ask for your phone number. Not because we're making a dramatic statement (although it does read a little dramatic), but because we genuinely don't need it to do our job, and neither does any messenger that chooses to build this way.
+      Normal people doing normal things, reading, talking, joining a group, should not have to surrender their legal identity to do them. That is not a fringe position. It is the default we all lived under until very recently, and it is worth keeping. The technology to keep it exists. The question is only whether we choose to build on it, or keep building checkpoints instead.
     </p>
 
     <div class="sources">
       <div class="sources-label">Sources cited</div>
-      <a href="https://signal.org/blog/phone-number-privacy-usernames/" target="_blank" rel="noopener">Signal: Keep your phone number private with Signal usernames (2024) ↗</a>
-      <a href="https://theintercept.com/2024/03/04/signal-app-username-phone-number-privacy/" target="_blank" rel="noopener">The Intercept: Signal's new usernames help keep the cops out of your data ↗</a>
-      <a href="https://theintercept.com/2024/07/16/signal-app-privacy-phone-number/" target="_blank" rel="noopener">The Intercept: How I got a truly anonymous Signal account ↗</a>
-      <a href="https://en.bitcoin.it/wiki/BIP_0039" target="_blank" rel="noopener">BIP39 specification ↗</a>
+      <a href="https://www.nbcnews.com/tech/tech-news/age-verification-laws-advocates-express-concerns-rcna331835" target="_blank" rel="noopener">NBC News: Age verification laws, advocates express concerns ↗</a>
+      <a href="https://www.cnbc.com/2026/03/08/social-media-child-safety-internet-ai-surveillance.html" target="_blank" rel="noopener">CNBC: Social media, child safety, and internet surveillance ↗</a>
+      <a href="https://www.marketplace.org/story/2026/02/26/age-verification-rules-on-social-media-spark-privacy-concerns" target="_blank" rel="noopener">Marketplace: Age-verification rules on social media spark privacy concerns ↗</a>
     </div>
 
     <p style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
@@ -427,10 +374,10 @@ footer { padding: 72px 0 48px; background: var(--bg); border-top: 1px solid var(
   <div class="container-narrow">
     <div class="related-title">▸ Related posts</div>
     <div class="related-grid">
-      <a href="/blog/instagram-dms-may-8.html" class="related-card"><h3>May 8: the day Meta <em>admitted it wants to read your DMs</em>.</h3><p>On what Meta actually said about ending Instagram encryption, and the difference between privacy as policy and privacy as architecture.</p><div class="meta">▸ 9 min read · Editorial</div></a>
-      <a href="/blog/group-chat-is-not-content.html" class="related-card"><h3>Your group chat is <em>not content</em>.</h3><p>A manifesto on why "I have nothing to hide" is the wrong answer to privacy stories.</p><div class="meta">▸ 7 min read · Manifesto</div></a>
-      <a href="/blog/what-peer-to-peer-means.html" class="related-card"><h3>What "peer-to-peer" <em>actually means</em>.</h3><p>Three architectural patterns (centralized, federated, peer-to-peer), and where each one fails.</p><div class="meta">▸ 11 min read · Explainer</div></a>
       <a href="/blog/age-verification-privacy-disaster.html" class="related-card"><h3>Mandatory age verification is a <em>privacy disaster by design</em>.</h3><p>Why the Discord ID breach wasn't an implementation bug. It was the system working as specified.</p><div class="meta">▸ 10 min read · Policy</div></a>
+      <a href="/blog/no-phone-number.html" class="related-card"><h3>We'll never ask for your <em>phone number</em>.</h3><p>Why a government-issued number is the wrong identifier for a messenger, and how we solve spam without one.</p><div class="meta">▸ 8 min read · Product</div></a>
+      <a href="/blog/group-chat-is-not-content.html" class="related-card"><h3>Your group chat is <em>not content</em>.</h3><p>A manifesto on why "I have nothing to hide" is the wrong answer to privacy stories.</p><div class="meta">▸ 7 min read · Manifesto</div></a>
+      <a href="/blog/what-peer-to-peer-means.html" class="related-card"><h3>What "peer-to-peer" <em>actually means</em>.</h3><p>Three architectural patterns (centralized, federated, peer-to-peer) and where each one fails.</p><div class="meta">▸ 11 min read · Explainer</div></a>
     </div>
   </div>
 </section>
