@@ -803,6 +803,23 @@ select:hover { border-color: rgba(50, 224, 196, 0.3); }
 .clickable-name { cursor: pointer; }
 .clickable-name:hover { text-decoration: underline; }
 
+#chat-peer-info { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.conn-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  cursor: default;
+}
+.conn-chip.conn-direct  { background: rgba(50, 224, 196, 0.12); color: var(--accent, #32e0c4); }
+.conn-chip.conn-yours   { background: rgba(50, 224, 196, 0.18); color: var(--accent, #32e0c4); }
+.conn-chip.conn-public  { background: rgba(230, 170, 60, 0.14); color: var(--orange, #e6aa3c); }
+.conn-chip.conn-offline { background: rgba(150, 150, 150, 0.12); color: var(--text-muted, #8a8a8a); }
+
 #chat-actions {
   display: flex;
   gap: 8px;

@@ -379,6 +379,28 @@ export class DecentraNode {
     });
   }
 
+  /**
+   * Describe how we are currently connected to a peer:
+   *  - 'direct' — peer-to-peer (incl. after a DCUtR hole-punch upgrade)
+   *  - 'relay'  — through a circuit relay (relayPeerId = the relay's libp2p id)
+   *  - 'none'   — not connected
+   */
+  getConnectionPath(decentraId: string): { connected: boolean; transport: 'direct' | 'relay' | 'none'; relayPeerId?: string } {
+    const libp2pId = this.decentraToLibp2p.get(decentraId);
+    if (!libp2pId || !this.node) return { connected: false, transport: 'none' };
+    const conns = this.node.getConnections().filter((c) => c.remotePeer.toString() === libp2pId);
+    if (conns.length === 0) return { connected: false, transport: 'none' };
+    // Prefer a direct connection if one exists alongside a relayed one.
+    for (const c of conns) {
+      if (!(c.remoteAddr?.toString() || '').includes('/p2p-circuit')) {
+        return { connected: true, transport: 'direct' };
+      }
+    }
+    const addr = conns[0].remoteAddr?.toString() || '';
+    const m = addr.match(/\/p2p\/([^/]+)\/p2p-circuit/);
+    return { connected: true, transport: 'relay', relayPeerId: m ? m[1] : undefined };
+  }
+
   /** Get a peer profile by DecentraNet PeerId */
   getKnownPeer(decentraId: string): PeerProfile | undefined {
     return this.knownPeers.get(decentraId);

@@ -595,6 +595,7 @@
           <div id="chat-peer-info">
             <span id="chat-peer-name" class="clickable-name"></span>
             <span id="chat-peer-status" class="subtle"></span>
+            <span id="chat-conn-chip" class="conn-chip hidden" title="How you're connected to this contact. Messages are always end-to-end encrypted."></span>
           </div>
           <div id="chat-actions">
             <button id="btn-voice-call" class="icon-btn" title="Voice Call"><svg class="icon"><use href="#i-phone"/></svg></button>
@@ -972,12 +973,14 @@
           </label>
           <label class="toggle-label" style="margin-top:6px">
             <input type="checkbox" id="setting-direct-calls" onchange="toggleDirectCalls(this.checked)">
-            Direct P2P only (no relay)
+            Calls: direct connection only
           </label>
           <p class="micro-text" style="margin-top:6px; line-height:1.6; font-size:8px; color:var(--text-muted)">
             NOISE GATE SILENCES AUDIO BELOW A THRESHOLD — CUTS KEYBOARD CLICKS, FAN NOISE, AND ROOM AMBIENCE.
             BROWSER NOISE SUPPRESSION AND ECHO CANCELLATION ARE ALWAYS ENABLED.
-            DIRECT P2P MODE DISABLES RELAY FALLBACK — CALLS MAY FAIL BEHIND STRICT NAT.
+            "CALLS: DIRECT CONNECTION ONLY" AFFECTS VOICE/VIDEO ONLY — IT IS SEPARATE FROM YOUR RELAY SETTING ABOVE.
+            WHEN ON, CALLS WON'T FALL BACK TO A TURN RELAY SERVER, SO THEY MAY FAIL BEHIND STRICT NAT. LEAVE IT OFF
+            UNLESS YOU SPECIFICALLY WANT TO AVOID CALL RELAYS.
           </p>
         </div>
 

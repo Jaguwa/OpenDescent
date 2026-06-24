@@ -923,6 +923,17 @@ export class APIServer {
           return this.ok(id, { customRelay, relayOnly, restartRequired: true });
         }
 
+        case 'get_connection_info': {
+          const info = this.deps.node.getConnectionPath(data.peerId);
+          let relayKind: 'yours' | 'public' | undefined;
+          if (info.transport === 'relay') {
+            const customRelay = (await this.deps.store.getMeta('custom_relay')) || '';
+            const myRelayId = customRelay.match(/\/p2p\/([^/]+)/)?.[1];
+            relayKind = info.relayPeerId && myRelayId && info.relayPeerId === myRelayId ? 'yours' : 'public';
+          }
+          return this.ok(id, { connected: info.connected, transport: info.transport, relayKind });
+        }
+
         case 'discover_network': {
           // Background DHT discovery to warm the peer cache
           this.deps.node.discoverPeers('', 30, 15_000).catch(() => {});

@@ -733,6 +733,7 @@ function handleEvent(event, data) {
     case 'peer_online':
       showToast(`${data.displayName || 'Peer'} is online`, data.peerId);
       refreshContacts();
+      if (state.activeChat && state.activeChat.type === 'dm' && state.activeChat.peerId === data.peerId) updateConnChip(data.peerId);
       refreshConversations();
       // Refresh again after a brief delay to catch late mapping updates
       setTimeout(() => refreshContacts(), 1500);
@@ -1112,6 +1113,9 @@ async function openConversation(conversationId, displayName, isGroup) {
   document.getElementById('chat-peer-name').onclick = () => { if (peerId) openPeerProfile(peerId); };
   const callBtns = document.getElementById('chat-actions');
   callBtns.style.display = type === 'dm' ? 'flex' : 'none';
+  // Connection status chip — DMs only
+  if (type === 'dm') updateConnChip(peerId);
+  else document.getElementById('chat-conn-chip').className = 'conn-chip hidden';
   document.querySelectorAll('.list-item').forEach((el) => el.classList.remove('active'));
   const messagesEl = document.getElementById('messages');
   messagesEl.innerHTML = '<div class="loading-state"><div class="spinner"></div>Loading messages...</div>';
@@ -1130,6 +1134,31 @@ function startDM(peerId, displayName) {
   openConversation(conversationId, displayName, false);
   switchTab('chats');
 }
+
+// ─── Connection status chip (DM chat header) ────────────────────────────────
+// Shows that a conversation is end-to-end encrypted and HOW it's connected:
+// directly, via the user's own relay, or via a public relay. Encryption is the
+// same in all cases — the path just tells the user who carries their traffic.
+async function updateConnChip(peerId) {
+  const chip = document.getElementById('chat-conn-chip');
+  if (!chip) return;
+  if (!peerId) { chip.className = 'conn-chip hidden'; return; }
+  try {
+    const info = await send('get_connection_info', { peerId });
+    let label, cls;
+    if (!info || !info.connected) { label = '○ Offline'; cls = 'conn-offline'; }
+    else if (info.transport === 'relay' && info.relayKind === 'yours') { label = '🔒 Encrypted · Via your relay'; cls = 'conn-yours'; }
+    else if (info.transport === 'relay') { label = '🔒 Encrypted · Via public relay'; cls = 'conn-public'; }
+    else { label = '🔒 Encrypted · Direct'; cls = 'conn-direct'; }
+    chip.textContent = label;
+    chip.className = 'conn-chip ' + cls;
+  } catch { chip.className = 'conn-chip hidden'; }
+}
+
+// Refresh the chip while a DM is open (catches direct <-> relay changes / drops)
+setInterval(() => {
+  if (state.activeChat && state.activeChat.type === 'dm') updateConnChip(state.activeChat.peerId);
+}, 5000);
 
 async function removeFriend(peerId, name) {
   if (!await showConfirm(`Remove ${name} from contacts?`)) return;
