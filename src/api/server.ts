@@ -70,6 +70,8 @@ export interface APIServerDeps {
   frontendDir?: string;
   /** Override temp directory for file shares/downloads (default: cwd) */
   tempDir?: string;
+  /** Trigger a manual app-update check (desktop/Electron only) */
+  checkForUpdatesNow?: () => void;
 }
 
 // ─── MIME Types ─────────────────────────────────────────────────────────────
@@ -932,6 +934,24 @@ export class APIServer {
             relayKind = info.relayPeerId && myRelayId && info.relayPeerId === myRelayId ? 'yours' : 'public';
           }
           return this.ok(id, { connected: info.connected, transport: info.transport, relayKind });
+        }
+
+        case 'get_update_setting': {
+          const autoCheck = (await this.deps.store.getMeta('auto_update_check')) !== 'false';
+          return this.ok(id, { autoCheck });
+        }
+
+        case 'set_update_setting': {
+          await this.deps.store.setMeta('auto_update_check', data.autoCheck === false ? 'false' : 'true');
+          return this.ok(id, { autoCheck: data.autoCheck !== false });
+        }
+
+        case 'check_for_updates': {
+          if (this.deps.checkForUpdatesNow) {
+            this.deps.checkForUpdatesNow();
+            return this.ok(id, { checking: true });
+          }
+          return this.ok(id, { checking: false, supported: false });
         }
 
         case 'discover_network': {

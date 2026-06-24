@@ -742,6 +742,7 @@ function handleEvent(event, data) {
       showToast(`${data.displayName || 'Peer'} went offline`);
       refreshContacts();
       break;
+    case 'update_status': onUpdateStatus(data); break;
     case 'file_received': onFileReceived(data); break;
     case 'call_signal': onCallSignal(data); break;
     case 'key_changed': onKeyChanged(data); break;
@@ -2115,6 +2116,12 @@ function showSettingsModal() {
     document.getElementById('setting-relay-only').checked = !!s.relayOnly;
   }).catch(() => {});
 
+  // App update preference
+  send('get_update_setting').then((s) => {
+    if (s) document.getElementById('setting-auto-update').checked = s.autoCheck !== false;
+  }).catch(() => {});
+  document.getElementById('update-status').textContent = '';
+
   // Version
   document.getElementById('settings-version').textContent = 'OpenDescent v0.5.6';
 
@@ -2211,6 +2218,31 @@ function onRelayOnlyToggle(checked) {
   }
 }
 
+// ─── App updates ────────────────────────────────────────────────────────────
+function onUpdateStatus(data) {
+  const el = document.getElementById('update-status');
+  if (!el) return;
+  switch (data.state) {
+    case 'checking': el.textContent = 'Checking...'; break;
+    case 'up_to_date': el.textContent = `You're up to date${data.version ? ' (v' + data.version + ')' : ''}.`; break;
+    case 'available': el.textContent = `Update available: v${data.version || ''}.`; break;
+    case 'downloading': el.textContent = `Downloading... ${data.percent || 0}%`; break;
+    case 'downloaded': el.textContent = 'Downloaded. Restart to install.'; break;
+    case 'error': el.textContent = 'Update check unavailable right now.'; break;
+  }
+}
+
+async function checkForUpdatesNow() {
+  const el = document.getElementById('update-status');
+  if (el) el.textContent = 'Checking...';
+  try {
+    const r = await send('check_for_updates');
+    if (r && r.supported === false && el) el.textContent = 'Updates apply to the installed desktop app only.';
+  } catch {
+    if (el) el.textContent = 'Could not check right now.';
+  }
+}
+
 async function saveSettings() {
   // Relay/network settings — validate first so we can keep the modal open on error
   const customRelay = document.getElementById('setting-custom-relay').value.trim();
@@ -2265,6 +2297,9 @@ async function saveSettings() {
   // Save discoverability
   const discoverable = document.getElementById('setting-discoverable').checked;
   send('set_discoverable', { discoverable }).catch(() => {});
+
+  // Save app-update preference
+  send('set_update_setting', { autoCheck: document.getElementById('setting-auto-update').checked }).catch(() => {});
 
   // Save relay / network settings (applied on next app restart)
   try {

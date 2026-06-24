@@ -864,7 +864,7 @@ Options:
   });
 
   // Wire feed sync handler
-  const FEED_WINDOW_DAYS = 35;
+  const FEED_WINDOW_DAYS = 90;
   node.setFeedSyncHandler(async (data) => {
     try {
       const msg = JSON.parse(data);

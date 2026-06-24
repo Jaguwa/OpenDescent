@@ -1007,6 +1007,19 @@
           <p class="subtle" style="margin-top:4px">Replay the welcome tour and feature walkthrough.</p>
         </div>
 
+        <div class="settings-section">
+          <h4>App Updates</h4>
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-auto-update" checked>
+            Automatically check for updates
+          </label>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">
+            <button id="btn-check-updates" class="btn-secondary" onclick="checkForUpdatesNow()">Check for updates now</button>
+            <span id="update-status" class="subtle"></span>
+          </div>
+          <p class="subtle" style="margin-top:6px">Checks on launch and every few hours. Turn it off to never be prompted. (Desktop app only.)</p>
+        </div>
+
         <div class="settings-section danger-zone">
           <h4 style="color:var(--red)">Danger Zone</h4>
           <button class="btn-danger" onclick="deleteAccount()">Delete Account</button>

@@ -53,6 +53,7 @@ let mainWindow = null;
 let backendNode = null;
 let backendStore = null;
 let apiServer = null;
+let triggerUpdateCheck = null; // set by the auto-updater; lets the UI request a manual check
 
 async function startApp() {
   // 1. Find free ports
@@ -83,7 +84,7 @@ async function startApp() {
   const tempDir = dataDir;
 
   // 4. Dynamically import ESM backend modules
-  const { DecentraNode } = await import(
+  const { DecentraNode, PROTOCOLS } = await import(
     /* webpackIgnore: true */ '../dist/network/node.js'
   );
   const { LocalStore } = await import(
@@ -342,7 +343,103 @@ async function startApp() {
     return new TextEncoder().encode(payload);
   });
 
-  // Persist peer profiles on connect
+  // ─── Broadcast feed sync (mirrors src/index.ts) ────────────────────────────
+  // The desktop app previously never synced the public feed, so it only ever
+  // showed posts created locally. This pulls broadcast posts/vouches that peers
+  // (including the always-on relay) accumulated while this client was offline.
+  const FEED_WINDOW_DAYS = 90;
+
+  backendNode.setFeedSyncHandler(async (data) => {
+    try {
+      const msg = JSON.parse(data);
+      if (msg.type === 'digest_request') {
+        const digest = await posts.getPostDigest(msg.since || 0);
+        const vouchIds = await backendStore.getAllVouchIds();
+        const revocationIds = await backendStore.getAllRevocationIds();
+        return JSON.stringify({ type: 'digest', ...digest, vouchIds, revocationIds });
+      }
+      if (msg.type === 'sync_request') {
+        const allPosts = await posts.getPostsSince(msg.since || 0, 200);
+        const excludeSet = new Set(msg.exclude || []);
+        const filtered = allPosts.filter((p) => !excludeSet.has(p.postId));
+        const excludeVouches = new Set(msg.excludeVouches || []);
+        const allVouches = await backendStore.getAllVouches();
+        const newVouches = allVouches.filter((v) => !excludeVouches.has(v.vouchId));
+        return JSON.stringify({ type: 'sync_response', posts: filtered, vouches: newVouches });
+      }
+      return 'OK';
+    } catch {
+      return 'ERROR';
+    }
+  });
+
+  async function syncFeedWithPeer(peerId) {
+    const peerName = backendNode.getKnownPeer(peerId)?.displayName || peerId.slice(0, 12);
+    console.log(`[FeedSync] Starting sync with ${peerName}...`);
+    try {
+      const since = Date.now() - (FEED_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+      const digestReq = new TextEncoder().encode(JSON.stringify({ type: 'digest_request', since }));
+      const digestResp = await backendNode.sendToPeer(peerId, PROTOCOLS.FEED_SYNC, digestReq);
+      if (!digestResp) { console.log(`[FeedSync] No response from ${peerName}`); return; }
+      const digest = JSON.parse(new TextDecoder().decode(digestResp));
+      console.log(`[FeedSync] ${peerName} has ${digest.count} posts, ${(digest.vouchIds || []).length} vouches`);
+      if (digest.type !== 'digest') return;
+      const ourPostIds = await backendStore.getPostIds(since);
+      const ourVouchIds = await backendStore.getAllVouchIds();
+      const missingPosts = (digest.postIds || []).filter((id) => !new Set(ourPostIds).has(id));
+      const missingVouches = (digest.vouchIds || []).filter((id) => !new Set(ourVouchIds).has(id));
+      if (missingPosts.length === 0 && missingVouches.length === 0) return;
+      const syncReq = new TextEncoder().encode(JSON.stringify({
+        type: 'sync_request', since, exclude: ourPostIds, excludeVouches: ourVouchIds,
+      }));
+      const syncResp = await backendNode.sendToPeer(peerId, PROTOCOLS.FEED_SYNC, syncReq);
+      if (!syncResp) return;
+      const syncData = JSON.parse(new TextDecoder().decode(syncResp));
+      if (syncData.type !== 'sync_response') return;
+      let importedPosts = 0;
+      if (syncData.posts && syncData.posts.length > 0) {
+        importedPosts = await posts.importPosts(syncData.posts);
+      }
+      let importedVouches = 0;
+      if (syncData.vouches && syncData.vouches.length > 0) {
+        for (const vouch of syncData.vouches) {
+          const existing = await backendStore.getVouch(vouch.vouchId);
+          if (!existing && !(await backendStore.isRevoked(vouch.vouchId))) {
+            await backendStore.storeVouch(vouch);
+            importedVouches++;
+          }
+        }
+      }
+      if (importedPosts > 0 || importedVouches > 0) {
+        console.log(`[FeedSync] Synced ${importedPosts} post(s), ${importedVouches} vouch(es) from ${peerName}`);
+      }
+    } catch (err) {
+      console.log(`[FeedSync] Sync with ${peerName} failed: ${err?.message?.slice(0, 60) || 'unknown'}`);
+    }
+  }
+
+  // Remote post/message deletion propagation
+  let deleteNotifyBroadcast = null;
+  backendNode.setDeleteNotifyHandler(async (data) => {
+    try {
+      const notification = JSON.parse(data);
+      if (notification.type === 'delete_message' && notification.conversationId && notification.msgTimestamp && notification.targetId) {
+        await backendStore.deleteHistoryMessage(notification.conversationId, notification.msgTimestamp, notification.targetId);
+        console.log(`[Delete] Remote deletion: message ${notification.targetId} from ${notification.from}`);
+        if (deleteNotifyBroadcast) {
+          deleteNotifyBroadcast('message_deleted', {
+            conversationId: notification.conversationId,
+            messageId: notification.targetId,
+            from: notification.from,
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[Delete] Failed to process notification:', e.message);
+    }
+  });
+
+  // Persist peer profiles on connect, then catch up on their broadcast feed
   backendNode.on('peer:connected', async (event) => {
     if (event.data && typeof event.data === 'object' && 'peerId' in event.data) {
       const peerProfile = event.data;
@@ -352,6 +449,8 @@ async function startApp() {
       if (match) {
         await backendStore.storePeerIdMapping(match.libp2pId, peerProfile.peerId);
       }
+      // Pull broadcast posts/vouches this peer (incl. the relay) has that we missed
+      setTimeout(() => syncFeedWithPeer(peerProfile.peerId), 6000);
     }
   });
 
@@ -370,6 +469,23 @@ async function startApp() {
     if (closed > 0) console.log(`[Polls] Closed ${closed} expired polls`);
   }, 15 * 60 * 1000);
 
+  // Startup feed sync: catch up with all connected peers (incl. the relay)
+  setTimeout(async () => {
+    const connectedPeers = backendNode.getConnectedPeers().filter((p) => p.decentraId);
+    for (let i = 0; i < connectedPeers.length; i++) {
+      const peer = connectedPeers[i];
+      if (peer.decentraId) {
+        setTimeout(() => syncFeedWithPeer(peer.decentraId), i * 2000);
+      }
+    }
+  }, 8000);
+
+  // Periodic broadcast-post cleanup (older than the 90-day feed window)
+  setInterval(async () => {
+    const cleaned = await backendStore.cleanOldPosts(FEED_WINDOW_DAYS);
+    if (cleaned > 0) console.log(`[FeedSync] Cleaned ${cleaned} expired post(s)`);
+  }, 6 * 60 * 60 * 1000);
+
   // 7. Start API server with custom paths
   apiServer = new APIServer(apiPort, {
     node: backendNode,
@@ -384,7 +500,11 @@ async function startApp() {
     hubs,
     frontendDir,
     tempDir,
+    checkForUpdatesNow: () => { if (triggerUpdateCheck) triggerUpdateCheck(true); },
   });
+
+  // Let remote deletions push a live UI update
+  deleteNotifyBroadcast = (event, data) => apiServer.broadcastEvent(event, data);
 
   // 8. Create the browser window
   mainWindow = new BrowserWindow({
@@ -421,30 +541,60 @@ async function startApp() {
     mainWindow = null;
   });
 
-  // Auto-update (only in packaged builds)
+  // ─── Auto-update (packaged builds only) ────────────────────────────────────
   if (app.isPackaged) {
     try {
       const { autoUpdater } = require('electron-updater');
       autoUpdater.autoDownload = false;
-      autoUpdater.checkForUpdates().catch(() => {});
+      autoUpdater.autoInstallOnAppQuit = true;
+
+      const status = (state, extra = {}) => {
+        try { if (apiServer) apiServer.broadcastEvent('update_status', { state, ...extra }); } catch {}
+      };
+
+      autoUpdater.on('checking-for-update', () => status('checking'));
+      autoUpdater.on('update-not-available', (info) => status('up_to_date', { version: info && info.version }));
+      autoUpdater.on('download-progress', (p) => status('downloading', { percent: Math.round((p && p.percent) || 0) }));
+      autoUpdater.on('error', (err) => status('error', { message: ((err && err.message) || 'unknown').slice(0, 120) }));
+
       autoUpdater.on('update-available', (info) => {
+        status('available', { version: info && info.version });
         if (!mainWindow) return;
         dialog.showMessageBox(mainWindow, {
           type: 'info',
           title: 'Update Available',
           message: `Version ${info.version} is available. Download now?`,
           buttons: ['Download', 'Later'],
-        }).then(r => { if (r.response === 0) autoUpdater.downloadUpdate(); });
+        }).then((r) => { if (r.response === 0) autoUpdater.downloadUpdate(); });
       });
+
       autoUpdater.on('update-downloaded', () => {
+        status('downloaded');
         if (!mainWindow) return;
         dialog.showMessageBox(mainWindow, {
           type: 'info',
           title: 'Update Ready',
           message: 'Restart to install the update?',
           buttons: ['Restart', 'Later'],
-        }).then(r => { if (r.response === 0) autoUpdater.quitAndInstall(); });
+        }).then((r) => { if (r.response === 0) autoUpdater.quitAndInstall(); });
       });
+
+      // Manual checks always run; automatic checks respect the user's toggle.
+      const runCheck = async (manual = false) => {
+        try {
+          if (!manual) {
+            const enabled = (await backendStore.getMeta('auto_update_check')) !== 'false';
+            if (!enabled) return;
+          }
+          await autoUpdater.checkForUpdates();
+        } catch (e) {
+          status('error', { message: ((e && e.message) || 'check failed').slice(0, 120) });
+        }
+      };
+      triggerUpdateCheck = runCheck;
+
+      runCheck(false);                                         // on launch
+      setInterval(() => runCheck(false), 6 * 60 * 60 * 1000);  // every 6 hours
     } catch (e) {
       console.warn('[AutoUpdate] Failed to initialize:', e.message);
     }
