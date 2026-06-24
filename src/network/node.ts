@@ -181,9 +181,12 @@ export class DecentraNode {
 
     console.log(`[Node] Starting on TCP:${this.config.port} WS:${wsPort}${isPublic ? ' (PUBLIC mode)' : ''}${this.config.disableMdns ? ' (mDNS disabled)' : ''}...`);
 
-    // Merge default + user-supplied bootstrap peers
+    // Merge default + user-supplied bootstrap peers.
+    // --no-default-bootstrap drops the built-in relays so a node can run purely
+    // on self-hosted infrastructure (e.g. a relay on your own static IP).
+    const defaultBootstrap = this.config.disableDefaultBootstrap ? [] : DEFAULT_BOOTSTRAP_PEERS;
     const allBootstrapPeers = [
-      ...DEFAULT_BOOTSTRAP_PEERS,
+      ...defaultBootstrap,
       ...this.config.bootstrapPeers,
     ].filter((addr, i, arr) => arr.indexOf(addr) === i); // dedupe
 
@@ -194,12 +197,14 @@ export class DecentraNode {
       announce.push(`/ip4/${this.config.announceIp}/tcp/${wsPort}/ws`);
     }
 
-    // Build circuit relay listen addresses — explicitly target public bootstrap relays
-    // so we get a reservation on a publicly-routable relay, not just a LAN peer
+    // Build circuit relay listen addresses — explicitly target a bootstrap relay
+    // so we get a reservation on a publicly-routable relay, not just a LAN peer.
+    // Prefer a user-supplied relay (e.g. a self-hosted one) over the built-in
+    // defaults, so "bring your own relay" actually carries this node's traffic.
     const circuitListenAddrs: string[] = [];
     if (!isPublic) {
-      // Pick the first TCP (non-WS) bootstrap peer for an explicit relay reservation
-      const tcpBootstrap = allBootstrapPeers.find(a => !a.includes('/ws/'));
+      const userTcpBootstrap = this.config.bootstrapPeers.find(a => !a.includes('/ws/'));
+      const tcpBootstrap = userTcpBootstrap || allBootstrapPeers.find(a => !a.includes('/ws/'));
       if (tcpBootstrap) {
         circuitListenAddrs.push(`${tcpBootstrap}/p2p-circuit`);
       } else {
@@ -522,10 +527,15 @@ export class DecentraNode {
       }
     }
 
-    // Relay fallback: construct circuit address through bootstrap peers
+    // Relay fallback: construct circuit address through bootstrap peers.
+    // Prefer user-supplied relays; include the built-in defaults unless disabled.
     const libp2pId = this.findLibp2pIdForPeer(decentraId);
     if (libp2pId) {
-      for (const relayAddr of DEFAULT_BOOTSTRAP_PEERS) {
+      const relayCandidates = [
+        ...this.config.bootstrapPeers,
+        ...(this.config.disableDefaultBootstrap ? [] : DEFAULT_BOOTSTRAP_PEERS),
+      ];
+      for (const relayAddr of relayCandidates) {
         if (relayAddr.includes('/ws/')) continue; // skip WS duplicates
         const circuitAddr = `${relayAddr}/p2p-circuit/p2p/${libp2pId}`;
         try {
@@ -855,7 +865,13 @@ export class DecentraNode {
     if (!connected && payload.l) {
       console.log(`[Invite] Direct dials failed — trying relay fallback...`);
 
-      for (const relayAddr of DEFAULT_BOOTSTRAP_PEERS) {
+      // Prefer user-supplied relays (e.g. a self-hosted one); include the
+      // built-in defaults unless the node opted out via --no-default-bootstrap.
+      const relayCandidates = [
+        ...this.config.bootstrapPeers,
+        ...(this.config.disableDefaultBootstrap ? [] : DEFAULT_BOOTSTRAP_PEERS),
+      ];
+      for (const relayAddr of relayCandidates) {
         // Skip WS duplicates (only need one transport per relay)
         if (relayAddr.includes('/ws/')) continue;
 

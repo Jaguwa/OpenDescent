@@ -81,6 +81,9 @@ function parseArgs(): ParsedArgs {
       case '--no-mdns':
         config.disableMdns = true;
         break;
+      case '--no-default-bootstrap':
+        config.disableDefaultBootstrap = true;
+        break;
       case '--onion-routing':
         config.onionRouting = true;
         break;
@@ -708,6 +711,7 @@ Options:
   --passphrase <string>    Passphrase for identity encryption
   --public                  Run as public node (DHT server + relay)
   --no-mdns                Disable mDNS discovery (hides node from LAN)
+  --no-default-bootstrap   Ignore built-in relays; use only --bootstrap peers
   --onion-routing          Enable onion-routed transport (3-hop circuits)
   --connect, -c <code>     Connect to peer using invite code on startup
   --help, -h               Show this help
@@ -765,6 +769,7 @@ Options:
     enableRelay: true,
     messageRetentionSeconds: 7 * 24 * 60 * 60,
     disableMdns: args.disableMdns || false,
+    disableDefaultBootstrap: args.disableDefaultBootstrap || false,
   };
 
   console.log('Starting OpenDescent node...\n');

@@ -163,9 +163,31 @@ Users can connect to your relay by adding your bootstrap address. There are two 
 node dist/index.js --name "UserName" --bootstrap /ip4/YOUR_VPS_IP/tcp/6001/p2p/YOUR_PEER_ID
 ```
 
+Clients prefer a relay you give them with `--bootstrap` over the built-in defaults, so their circuit reservation lands on **your** relay — meaning your relay actually carries their traffic.
+
 ### Via the App
 
 Share your relay's invite code (shown on startup) — users paste it in the Connect Peer modal.
+
+---
+
+## Running an Independent Network (No Default Relays)
+
+By default, clients also keep the project's built-in bootstrap relays as a fallback. If you want a node to run **purely on your own infrastructure** — for example, a home connection with a static IP supporting all your LAN clients — add `--no-default-bootstrap` to both the relay and the clients:
+
+```bash
+# Relay (the always-on machine with forwarded ports + static IP)
+node dist/index.js --name "MyRelay" --public --no-default-bootstrap \
+  --port 6001 --announce-ip YOUR_STATIC_IP --data ./data-relay
+
+# Client (no port-forwarding needed — reaches the relay outbound)
+node dist/index.js --name "UserName" --no-default-bootstrap \
+  --bootstrap /ip4/YOUR_STATIC_IP/tcp/6001/p2p/YOUR_PEER_ID --data ./data-user
+```
+
+With this, the built-in relays are ignored entirely and your relay is the sole anchor for the network — it keeps clients reachable regardless of which ones are online. Clients on the LAN need no port-forwarding of their own; only the relay box needs its ports forwarded.
+
+> **Note on calls:** messages, files, and voice notes route through your relay. Live voice/video *call media* uses WebRTC (STUN/TURN), not the libp2p relay — same-LAN calls connect directly, but cross-network **video** needs a TURN server (see the CoTURN section above).
 
 ---
 

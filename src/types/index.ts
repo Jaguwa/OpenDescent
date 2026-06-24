@@ -274,6 +274,8 @@ export interface NodeConfig {
   enableRelay: boolean;
   messageRetentionSeconds: number;
   disableMdns?: boolean;
+  /** Don't merge the built-in DEFAULT_BOOTSTRAP_PEERS — run only on user-supplied relays */
+  disableDefaultBootstrap?: boolean;
 }
 
 export const DEFAULT_CONFIG: Partial<NodeConfig> = {
