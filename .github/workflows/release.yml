@@ -1,0 +1,55 @@
+name: Release build (transparency)
+
+# On every version tag, build the Windows installer in public CI from the exact
+# tagged source, generate SHA-256 checksums, and attach a SLSA build-provenance
+# attestation. This is an UNSIGNED transparency build — it proves the tag
+# compiles to an installer from clean source. The official download is the
+# locally-signed build (signing needs the Certum hardware token, which can't
+# live in CI). Hashes will differ from the signed binary by the signature.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Build installer (unsigned)
+        # Override the signing config so CI never tries to use the Certum cert.
+        run: npx electron-builder --win -c.win.certificateSubjectName=null
+
+      - name: Generate checksums
+        run: node scripts/checksums.mjs
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'release/*.exe'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: opendescent-windows-unsigned
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
+          if-no-files-found: error

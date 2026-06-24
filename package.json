@@ -11,6 +11,9 @@
   "homepage": "https://open-descent.com",
   "type": "module",
   "main": "electron/main.cjs",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -19,6 +22,7 @@
     "charlie": "node dist/index.js --port 6005 --name Charlie --web-port 3002 -d ./data-charlie",
     "start:electron": "electron .",
     "dist": "electron-builder --win",
+    "checksums": "node scripts/checksums.mjs",
     "test:integration": "node dist/test/integration.js",
     "test:multi": "node dist/test/multi-peer.js",
     "test:all": "node dist/test/integration.js && node dist/test/multi-peer.js",
