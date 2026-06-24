@@ -168,6 +168,18 @@ async function startApp() {
   backendStore = new LocalStore(config.dataDir, config.maxStorageBytes);
 
   await backendStore.open();
+
+  // Apply persisted network settings saved from Settings → Relay & Network.
+  // The .exe has no CLI flags, so this is how a desktop user points the app
+  // at their own relay. Read before start() — node config is read at startup.
+  const persistedRelay = (await backendStore.getMeta('custom_relay')) || '';
+  if (persistedRelay && !config.bootstrapPeers.includes(persistedRelay)) {
+    config.bootstrapPeers.unshift(persistedRelay);
+  }
+  if ((await backendStore.getMeta('relay_only')) === 'true') {
+    config.disableDefaultBootstrap = true;
+  }
+
   await backendNode.start();
 
   // Restore known peers

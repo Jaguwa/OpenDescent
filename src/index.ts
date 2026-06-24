@@ -778,6 +778,17 @@ Options:
   const store = new LocalStore(config.dataDir, config.maxStorageBytes);
 
   await store.open();
+
+  // Apply persisted network settings saved from the UI (custom relay / relay-only).
+  // Any --bootstrap / --no-default-bootstrap flags still apply on top of these.
+  const persistedRelay = (await store.getMeta('custom_relay')) || '';
+  if (persistedRelay && !config.bootstrapPeers.includes(persistedRelay)) {
+    config.bootstrapPeers.unshift(persistedRelay);
+  }
+  if ((await store.getMeta('relay_only')) === 'true') {
+    config.disableDefaultBootstrap = true;
+  }
+
   await node.start();
 
   // Restore known peers from storage into the node's memory

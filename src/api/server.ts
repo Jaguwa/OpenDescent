@@ -901,6 +901,28 @@ export class APIServer {
           return this.ok(id, { discoverable: data.discoverable });
         }
 
+        case 'get_network_settings': {
+          const customRelay = (await this.deps.store.getMeta('custom_relay')) || '';
+          const relayOnly = (await this.deps.store.getMeta('relay_only')) === 'true';
+          return this.ok(id, { customRelay, relayOnly });
+        }
+
+        case 'set_network_settings': {
+          const customRelay = typeof data.customRelay === 'string' ? data.customRelay.trim() : '';
+          // Light validation: a libp2p relay multiaddr with a peer id.
+          if (customRelay && !(/^\/(ip4|ip6|dns4|dns6|dnsaddr)\//.test(customRelay) && customRelay.includes('/p2p/'))) {
+            return this.err(id, 'Relay address must look like /ip4/<ip>/tcp/<port>/p2p/<peerId>');
+          }
+          const relayOnly = !!data.relayOnly;
+          if (relayOnly && !customRelay) {
+            return this.err(id, 'Enter your relay address before enabling "use only my relay".');
+          }
+          await this.deps.store.setMeta('custom_relay', customRelay);
+          await this.deps.store.setMeta('relay_only', relayOnly ? 'true' : 'false');
+          // Applies on next start — node config is read at startup.
+          return this.ok(id, { customRelay, relayOnly, restartRequired: true });
+        }
+
         case 'discover_network': {
           // Background DHT discovery to warm the peer cache
           this.deps.node.discoverPeers('', 30, 15_000).catch(() => {});

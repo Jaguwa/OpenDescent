@@ -950,6 +950,21 @@
         </div>
 
         <div class="settings-section">
+          <h4>Relay &amp; Network</h4>
+          <label for="setting-custom-relay" style="display:block;margin-bottom:5px;font-size:12px;color:var(--text-secondary)">Your relay address (optional)</label>
+          <input type="text" id="setting-custom-relay" placeholder="/ip4/1.2.3.4/tcp/6001/p2p/12D3KooW..." style="width:100%;margin-bottom:0">
+          <label class="toggle-label" style="margin-top:10px">
+            <input type="checkbox" id="setting-relay-only" onchange="onRelayOnlyToggle(this.checked)">
+            Use only my relay (ignore the built-in relays)
+          </label>
+          <p class="subtle" style="margin-top:6px;line-height:1.5">
+            Run your own relay (see the relay guide) and point this app at it. Leave blank to use the default network.
+            <br><strong>Use only my relay</strong> makes this device rely solely on your relay — leave it off to keep the
+            built-in relays as a fallback. Changes take effect after you <strong>restart the app</strong>.
+          </p>
+        </div>
+
+        <div class="settings-section">
           <h4>Voice & Video Calls</h4>
           <label class="toggle-label">
             <input type="checkbox" id="setting-noise-gate" checked onchange="toggleNoiseGate(this.checked)">

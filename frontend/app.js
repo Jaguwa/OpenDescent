@@ -2078,8 +2078,16 @@ function showSettingsModal() {
   document.getElementById('setting-noise-gate').checked = noiseGateEnabled;
   document.getElementById('setting-direct-calls').checked = state.directCallsOnly;
 
+  // Network / relay settings
+  send('get_network_settings').then((s) => {
+    if (!s) return;
+    state._networkSettings = { customRelay: s.customRelay || '', relayOnly: !!s.relayOnly };
+    document.getElementById('setting-custom-relay').value = s.customRelay || '';
+    document.getElementById('setting-relay-only').checked = !!s.relayOnly;
+  }).catch(() => {});
+
   // Version
-  document.getElementById('settings-version').textContent = 'OpenDescent v0.5.3';
+  document.getElementById('settings-version').textContent = 'OpenDescent v0.5.6';
 
   modal.classList.remove('hidden');
 }
@@ -2167,7 +2175,26 @@ function selectPreset(id) {
   }
 }
 
+function onRelayOnlyToggle(checked) {
+  if (checked && !document.getElementById('setting-custom-relay').value.trim()) {
+    showToast('Add your relay first', 'Enter your relay address above to use only your relay.', 'info');
+    document.getElementById('setting-custom-relay').focus();
+  }
+}
+
 async function saveSettings() {
+  // Relay/network settings — validate first so we can keep the modal open on error
+  const customRelay = document.getElementById('setting-custom-relay').value.trim();
+  const relayOnly = document.getElementById('setting-relay-only').checked;
+  if (relayOnly && !customRelay) {
+    showToast('Add your relay address', 'Enter your relay address before turning on "use only my relay".', 'error');
+    return;
+  }
+  if (customRelay && !(/^\/(ip4|ip6|dns4|dns6|dnsaddr)\//.test(customRelay) && customRelay.includes('/p2p/'))) {
+    showToast('Check the relay address', 'It should look like /ip4/<ip>/tcp/<port>/p2p/<peerId>.', 'error');
+    return;
+  }
+
   const presetId = document.querySelector('.theme-preset-btn.active')?.dataset.preset || 'default';
   const fontSize = parseInt(document.getElementById('setting-font-size').value);
   const radius = parseInt(document.getElementById('setting-radius').value);
@@ -2209,6 +2236,18 @@ async function saveSettings() {
   // Save discoverability
   const discoverable = document.getElementById('setting-discoverable').checked;
   send('set_discoverable', { discoverable }).catch(() => {});
+
+  // Save relay / network settings (applied on next app restart)
+  try {
+    const before = state._networkSettings || { customRelay: '', relayOnly: false };
+    const res = await send('set_network_settings', { customRelay, relayOnly });
+    state._networkSettings = { customRelay: res.customRelay, relayOnly: res.relayOnly };
+    if (before.customRelay !== res.customRelay || before.relayOnly !== res.relayOnly) {
+      showToast('Relay settings saved', 'Restart OpenDescent to apply.', 'success');
+    }
+  } catch (e) {
+    showToast('Relay settings not saved', e.message, 'error');
+  }
 
   try { await send('set_theme', prefs); } catch (e) { showToast('Failed to save theme', e.message, 'error'); }
   document.getElementById('settings-modal').classList.add('hidden');
