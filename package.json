@@ -22,6 +22,7 @@
     "charlie": "node dist/index.js --port 6005 --name Charlie --web-port 3002 -d ./data-charlie",
     "start:electron": "electron .",
     "dist": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
     "checksums": "node scripts/checksums.mjs",
     "test:integration": "node dist/test/integration.js",
     "test:multi": "node dist/test/multi-peer.js",
@@ -54,6 +55,14 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "artifactName": "OpenDescent-${version}.${ext}",
+      "icon": "OpenDLogo.png",
+      "category": "Network",
+      "synopsis": "Decentralized P2P social network",
+      "description": "Encrypted P2P messaging, voice/video calls, community hubs, and anonymous drops — no central servers."
     },
     "publish": {
       "provider": "github",

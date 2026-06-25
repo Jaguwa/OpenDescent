@@ -58,3 +58,46 @@ jobs:
             release/*.exe
             release/SHA256SUMS.txt
           if-no-files-found: error
+
+  linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Build AppImage (unsigned)
+        id: appimage
+        continue-on-error: true
+        run: npx electron-builder --linux AppImage
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # never attempt code signing in CI
+
+      - name: Generate checksums
+        if: steps.appimage.outcome == 'success'
+        run: node scripts/checksums.mjs
+
+      - name: Attest build provenance
+        if: steps.appimage.outcome == 'success'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'release/*.AppImage'
+
+      - name: Upload build artifacts
+        if: steps.appimage.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: opendescent-linux-appimage
+          path: |
+            release/*.AppImage
+            release/SHA256SUMS.txt
+          if-no-files-found: error
