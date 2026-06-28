@@ -55,17 +55,17 @@
     { "@type": "Question", "name": "Is OpenDescent safe?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent uses standard, peer-reviewed cryptographic primitives: Ed25519 for identity and signatures, X25519 for key agreement, AES-256-GCM for message encryption, HKDF-SHA256 for key derivation, and libp2p Noise for transport encryption. Messages are end-to-end encrypted before leaving your device. There are no central servers to breach. The codebase is open source under MIT and auditable by anyone. A formal third-party audit has not yet been performed; it is on the roadmap." } },
     { "@type": "Question", "name": "Can OpenDescent read my messages?", "acceptedAnswer": { "@type": "Answer", "text": "No. And technically, there is no 'OpenDescent' in a position to. Messages are encrypted on your device before they leave, and OpenDescent has no central servers. There is no company-operated infrastructure between your device and your recipient's. Messages are readable only on the two endpoints, after decryption with the recipient's key." } },
     { "@type": "Question", "name": "What happens if I lose my 12-word mnemonic phrase?", "acceptedAnswer": { "@type": "Answer", "text": "Your account cannot be recovered without the mnemonic. Because there is no central server storing your identity, there is no 'forgot password' option: the mnemonic is the only way to reconstruct your cryptographic identity on a new device. This is the trade-off of true end-to-end encryption: security properties require that nobody, including us, can recover your account without your key." } },
-    { "@type": "Question", "name": "How is OpenDescent different from Signal?", "acceptedAnswer": { "@type": "Answer", "text": "Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes community hubs with channels and roles (Discord-style) which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps. OpenDescent is currently Windows-only. Use Signal for 1-on-1 with existing contacts; use OpenDescent for peer-to-peer, no-phone-number, or community use cases." } },
+    { "@type": "Question", "name": "How is OpenDescent different from Signal?", "acceptedAnswer": { "@type": "Answer", "text": "Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes community hubs with channels and roles (Discord-style) which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps. OpenDescent currently runs on Windows and Linux. Use Signal for 1-on-1 with existing contacts; use OpenDescent for peer-to-peer, no-phone-number, or community use cases." } },
     { "@type": "Question", "name": "How is OpenDescent different from Discord?", "acceptedAnswer": { "@type": "Answer", "text": "Discord text messages are not end-to-end encrypted; Discord servers can read them. OpenDescent's community hubs offer the same shape (text channels, voice channels, categories, roles, invites) but everything is end-to-end encrypted and peer-replicated across members' devices rather than on Discord-operated servers. Discord also leaked 70,000 government-ID photos in October 2025 through a third-party vendor and is pushing mandatory age verification; OpenDescent never asks for your ID." } },
     { "@type": "Question", "name": "How is OpenDescent different from WhatsApp?", "acceptedAnswer": { "@type": "Answer", "text": "WhatsApp is end-to-end encrypted via the Signal Protocol, and the cryptography itself is good. The difference is ownership and architecture: WhatsApp is owned by Meta (the same company ending Instagram encryption on May 8, 2026) and runs on Meta-operated infrastructure. WhatsApp also requires your phone number. OpenDescent has no owning company in a position to roll back encryption via policy update, and requires no phone number." } },
     { "@type": "Question", "name": "Does OpenDescent have community servers like Discord?", "acceptedAnswer": { "@type": "Answer", "text": "Yes: we call them hubs. A hub has text channels, voice channels, categories, roles and permissions, and invite links. The difference from Discord is that hubs are peer-replicated across members' devices rather than hosted on a central server. There is no hub owner who can be subpoenaed and no company that can shut a hub down from outside." } },
-    { "@type": "Question", "name": "What platforms does OpenDescent work on?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent currently ships as a Windows desktop app (Windows 10+). macOS and Linux builds are in progress. A mobile Progressive Web App is on the roadmap. For now, if you primarily message from a phone, Signal or another mobile-first option may be a better fit today." } },
+    { "@type": "Question", "name": "What platforms does OpenDescent work on?", "acceptedAnswer": { "@type": "Answer", "text": "OpenDescent currently ships as desktop apps for Windows (10+) and Linux (AppImage). A macOS build is in progress. A mobile Progressive Web App is on the roadmap. For now, if you primarily message from a phone, Signal or another mobile-first option may be a better fit today." } },
     { "@type": "Question", "name": "Can I make voice and video calls on OpenDescent?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Voice and video calls use WebRTC with DTLS-SRTP encryption end-to-end. Calls connect directly between peers when possible and fall back to TURN relays when NAT prevents direct connections. Relays see encrypted packets only; they never have decryption keys." } },
     { "@type": "Question", "name": "Does OpenDescent collect analytics or track users?", "acceptedAnswer": { "@type": "Answer", "text": "No. The app itself has no analytics, no telemetry, and no tracking. The project cannot know who uses the app, from where, or how often, because there is no central server to report to. The marketing website uses Plausible, a privacy-friendly analytics service that does not use cookies and does not collect personal information." } },
     { "@type": "Question", "name": "Is OpenDescent open source?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The full codebase is open source under the MIT license at https://github.com/Jaguwa/OpenDescent. You can read it, build it, fork it, modify it, and contribute to it." } },
     { "@type": "Question", "name": "What is a Dead Drop?", "acceptedAnswer": { "@type": "Answer", "text": "A Dead Drop is an anonymous, onion-routed post that travels through several layered-encrypted hops before landing in a public space. Each hop only sees the next hop, so none knows both sender and destination. Proof-of-work prevents spam, and a daily rotating network key means past drops cannot be correlated with current ones. Dead Drops are designed for journalists, sources, and any situation where a message needs to exist without an attributable author." } },
     { "@type": "Question", "name": "What is a Dead Man's Switch?", "acceptedAnswer": { "@type": "Answer", "text": "A Dead Man's Switch is a feature that automatically sends pre-arranged messages to specific people if you don't check in before a timer expires. You can set the timer from 1 hour to 30 days, choose recipients, and write the messages to send. If you miss a check-in, the messages are released. Useful for travel, activist preparation, or any 'if I don't respond by X, tell these people Y' scenario." } },
-    { "@type": "Question", "name": "Can I use OpenDescent on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Not yet. OpenDescent is currently a Windows desktop app. A mobile Progressive Web App (PWA) is on the roadmap. Native iOS and Android apps are longer-term." } },
+    { "@type": "Question", "name": "Can I use OpenDescent on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Not yet. OpenDescent is currently a desktop app (Windows and Linux). A mobile Progressive Web App (PWA) is on the roadmap. Native iOS and Android apps are longer-term." } },
     { "@type": "Question", "name": "How do you make money if OpenDescent is free?", "acceptedAnswer": { "@type": "Answer", "text": "Through an optional Pro subscription (£5/month) that unlocks larger file transfers and more hubs, and through a one-time Founder's Edition (£1 lifetime Pro) for early supporters. Every core feature is free forever, with or without Pro. There are no ads, no data sales, and no tracking, because there is no central infrastructure to run those on." } }
   ]
 }
@@ -394,7 +394,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section class="cat" id="getting-started">
   <div class="cat-header">
     <div class="cat-num">01</div>
-    <div class="cat-title">Getting started &mdash; <em>the basics</em>.</div>
+    <div class="cat-title">Getting started: <em>the basics</em>.</div>
     <div class="cat-count">8 questions</div>
   </div>
 
@@ -428,7 +428,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
       <ul>
         <li><strong>Windows 10+</strong>: fully supported today (v0.5.7)</li>
         <li><strong>macOS</strong>: build in progress, coming soon</li>
-        <li><strong>Linux</strong>: build in progress, coming soon</li>
+        <li><strong>Linux</strong>: AppImage available today (v0.5.9)</li>
         <li><strong>iOS / Android</strong>: a Progressive Web App (PWA) is on the roadmap; native apps are longer-term</li>
       </ul>
       If mobile-first is a hard requirement for you today, Signal is probably a better fit while we work on it.
@@ -459,7 +459,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section class="cat" id="privacy">
   <div class="cat-header">
     <div class="cat-num">02</div>
-    <div class="cat-title">Privacy &amp; security &mdash; <em>what actually happens to your data</em>.</div>
+    <div class="cat-title">Privacy &amp; security: <em>what actually happens to your data</em>.</div>
     <div class="cat-count">9 questions</div>
   </div>
 
@@ -522,7 +522,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section class="cat" id="features">
   <div class="cat-header">
     <div class="cat-num">03</div>
-    <div class="cat-title">Features &mdash; <em>what the app actually does</em>.</div>
+    <div class="cat-title">Features: <em>what the app actually does</em>.</div>
     <div class="cat-count">9 questions</div>
   </div>
 
@@ -585,13 +585,13 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section class="cat" id="compare">
   <div class="cat-header">
     <div class="cat-num">04</div>
-    <div class="cat-title">Comparisons &mdash; <em>how we stack up</em>.</div>
+    <div class="cat-title">Comparisons: <em>how we stack up</em>.</div>
     <div class="cat-count">6 questions</div>
   </div>
 
   <div class="qa" data-search="signal alternative difference comparison">
     <div class="qa-q"><div class="qa-q-text">How is OpenDescent different from Signal?</div><div class="qa-q-num">04.01</div></div>
-    <div class="qa-a">Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes Discord-style community hubs which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps. OpenDescent is currently Windows-only. See <a href="/vs/signal.html">the full comparison</a>.</div>
+    <div class="qa-a">Signal is end-to-end encrypted but runs on central servers and requires a phone number. OpenDescent is peer-to-peer (no central servers) and requires no phone number, no email, no account. OpenDescent also includes Discord-style community hubs which Signal does not. Signal has a longer independent audit track record, a larger user base, and native mobile apps. OpenDescent currently runs on Windows and Linux. See <a href="/vs/signal.html">the full comparison</a>.</div>
     <div class="qa-tags"><span class="qa-tag">vs Signal</span></div>
   </div>
 
@@ -630,7 +630,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section class="cat" id="account">
   <div class="cat-header">
     <div class="cat-num">05</div>
-    <div class="cat-title">Account &amp; recovery &mdash; <em>your identity, your keys</em>.</div>
+    <div class="cat-title">Account &amp; recovery: <em>your identity, your keys</em>.</div>
     <div class="cat-count">6 questions</div>
   </div>
 
@@ -675,7 +675,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section class="cat" id="technical">
   <div class="cat-header">
     <div class="cat-num">06</div>
-    <div class="cat-title">Technical &mdash; <em>how it works under the hood</em>.</div>
+    <div class="cat-title">Technical: <em>how it works under the hood</em>.</div>
     <div class="cat-count">6 questions</div>
   </div>
 
@@ -720,7 +720,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section class="cat" id="pricing">
   <div class="cat-header">
     <div class="cat-num">07</div>
-    <div class="cat-title">Pricing &amp; Pro &mdash; <em>how we fund a free app</em>.</div>
+    <div class="cat-title">Pricing &amp; Pro: <em>how we fund a free app</em>.</div>
     <div class="cat-count">8 questions</div>
   </div>
 
@@ -794,7 +794,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
 <section class="cat" id="troubleshoot">
   <div class="cat-header">
     <div class="cat-num">08</div>
-    <div class="cat-title">Troubleshooting &mdash; <em>when things go wrong</em>.</div>
+    <div class="cat-title">Troubleshooting: <em>when things go wrong</em>.</div>
     <div class="cat-count">6 questions</div>
   </div>
 
