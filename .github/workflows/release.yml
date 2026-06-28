@@ -11,7 +11,7 @@ on:
     tags: ['v*']
 
 permissions:
-  contents: read
+  contents: write          # needed to attach the AppImage to a GitHub Release
   id-token: write
   attestations: write
 
@@ -91,6 +91,21 @@ jobs:
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: 'release/*.AppImage'
+
+      - name: Publish AppImage to GitHub Release
+        if: steps.appimage.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Create the release (as a pre-release so it doesn't disturb the
+          # Windows auto-updater, which ignores pre-releases). If a release for
+          # this tag already exists, just upload/replace the Linux assets.
+          gh release create "$GITHUB_REF_NAME" \
+            --title "OpenDescent $GITHUB_REF_NAME (Linux)" \
+            --notes "Linux AppImage build. Download the .AppImage, then run: chmod +x OpenDescent-*.AppImage && ./OpenDescent-*.AppImage" \
+            --prerelease \
+            release/*.AppImage release/SHA256SUMS.txt \
+          || gh release upload "$GITHUB_REF_NAME" release/*.AppImage release/SHA256SUMS.txt --clobber
 
       - name: Upload build artifacts
         if: steps.appimage.outcome == 'success'
