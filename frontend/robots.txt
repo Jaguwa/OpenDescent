@@ -9,7 +9,6 @@ Sitemap: https://open-descent.com/sitemap.xml
 
 # App assets and build artifacts — don't index
 Disallow: /fonts/
-Disallow: /favicon.svg
 Disallow: /icons/
 Disallow: /audio-capture-worklet.js
 Disallow: /audio-playback-worklet.js
