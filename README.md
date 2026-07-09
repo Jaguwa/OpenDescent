@@ -1,7 +1,7 @@
 # OpenDescent
 
 **Group chats. Voice & video calls. Community hubs. Anonymous drops.**
-**All encrypted. All peer-to-peer. No servers. No surveillance. No compromise.**
+**All encrypted. All peer-to-peer. No central servers. No surveillance. No compromise.**
 
 OpenDescent is a decentralized communication platform where your identity is a cryptographic keypair — not an email, not a phone number, not a password. Your messages are end-to-end encrypted before they leave your device. Your data lives on your device, not someone else's. There are no central servers. Just you and the mesh.
 
@@ -46,9 +46,12 @@ The relay infrastructure cannot read your data. All encryption happens on your d
 
 ## Download
 
-**Windows:** [Download from open-descent.com](https://open-descent.com)
+**Windows:** [Download from open-descent.com](https://open-descent.com) — code-signed (Certum,
+standard cert; SmartScreen may still warn until the certificate builds reputation).
 
-macOS and Linux coming soon.
+**Linux:** [AppImage](https://github.com/Jaguwa/OpenDescent/releases) — `SHA256SUMS.txt` published on the release.
+
+macOS coming soon.
 
 Or run from source:
 

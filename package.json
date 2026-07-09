@@ -45,6 +45,7 @@
       "package.json"
     ],
     "asar": false,
+    "forceCodeSigning": true,
     "win": {
       "target": "nsis",
       "icon": "OpenDLogo.png",
