@@ -482,7 +482,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
           </li>
           <li>
             <strong>Server compromise</strong>
-            We have no servers, so there's no server-side database to breach. Nothing central stores your messages, contact list, or metadata.
+            There is no central server, so there's no server-side database to breach. Nothing central stores your messages, contact list, or metadata. Bootstrap nodes and relays do exist — peers need them to discover each other and traverse NAT — but they route encrypted bytes and never hold your keys, your plaintext, or your history. You can run your own, or point the client at someone else's.
           </li>
           <li>
             <strong>Compelled disclosure by a service provider</strong>
@@ -998,7 +998,7 @@ footer { padding: 72px 0 48px; background: var(--bg-deep); border-top: 1px solid
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>Is the server closed-source like WhatsApp's?</span><span class="faq-q-num">04</span></div>
-        <div class="faq-a">There is no server. The entire app is open source, MIT licensed, on GitHub. You can read every line, build it yourself, run it locally, and modify it. There's no "closed-source server-side", because there's no server.</div>
+        <div class="faq-a">There's no closed-source server-side, because there's no central server holding your data or identity. The entire app is open source, MIT licensed, on GitHub — you can read every line, build it yourself, run it locally, and modify it. The bootstrap and relay nodes that help peers find each other run that same open code, and you're free to run your own.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q"><span>What's the role of libp2p Noise if messages are already E2E encrypted?</span><span class="faq-q-num">05</span></div>
