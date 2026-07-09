@@ -13,3 +13,7 @@ desktop.ini
 release/
 release2/
 .claude/
+
+# Local launch notes — never publish
+marketing/
+prototype/
