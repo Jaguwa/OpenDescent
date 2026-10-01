@@ -60,7 +60,9 @@ jobs:
           if-no-files-found: error
 
   linux-appimage:
-    runs-on: ubuntu-latest
+    # Oldest supported LTS so native modules (classic-level) link against an
+    # older glibc/libstdc++ and the AppImage runs on older distros too.
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
